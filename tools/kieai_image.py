@@ -4,7 +4,9 @@ API: https://api.kie.ai
 Polling alle 10 Sekunden bis Bild fertig oder Timeout (15 Min).
 """
 
+import base64
 import io
+import json
 import os
 import sys
 import time
@@ -19,6 +21,10 @@ KIEAI_API_KEY = os.getenv("KIEAI_API_KEY", "19445902ad562e4343e93799081400b9")
 KIEAI_BASE_URL = "https://api.kie.ai/api/v1"
 POLL_INTERVAL_SECONDS = 10
 MAX_POLL_ATTEMPTS = 90  # 90 × 10s = 15 Minuten
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_REPO = "jollymarketer/influencer-posts-recycling"
+GITHUB_IMAGES_PATH = "images"
 
 LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "Resources", "Jolly Marketer_logo_horizontal.png")
 LOGO_PADDING = 28       # Abstand vom Rand in px
@@ -45,6 +51,34 @@ def _overlay_logo(image_bytes: bytes) -> bytes:
     out = io.BytesIO()
     base.save(out, format="PNG")
     return out.getvalue()
+
+
+def _upload_to_github(image_bytes: bytes, filename: str) -> str:
+    """Lädt Bild zu GitHub hoch und gibt permanente raw.githubusercontent.com URL zurück."""
+    if not GITHUB_TOKEN:
+        raise RuntimeError("GITHUB_TOKEN nicht gesetzt")
+
+    path = f"{GITHUB_IMAGES_PATH}/{filename}"
+    api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
+
+    content_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "message": f"Add generated image {filename}",
+        "content": content_b64,
+    }
+
+    resp = requests.put(api_url, headers=headers, json=payload, timeout=60)
+    resp.raise_for_status()
+
+    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{path}"
+    print(f"  GitHub Upload: {raw_url}", flush=True)
+    return raw_url
 
 
 def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1") -> str:
@@ -117,7 +151,6 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
 
         if state == "success":
             result_json_str = poll_data["data"].get("resultJson", "{}")
-            import json
             result = json.loads(result_json_str)
             urls = result.get("resultUrls", [])
             if not urls:
@@ -125,19 +158,26 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
             image_url = urls[0]
             print(f"  kie.ai: FERTIG -> {image_url}", flush=True)
 
-            # Logo einblenden und lokal speichern
+            # Logo einblenden + zu GitHub hochladen
             try:
                 img_bytes = requests.get(image_url, timeout=30).content
                 final_bytes = _overlay_logo(img_bytes)
+
+                # Lokal speichern (.tmp)
                 os.makedirs(".tmp", exist_ok=True)
                 local_path = f".tmp/generated_{task_id[:8]}.png"
                 with open(local_path, "wb") as f:
                     f.write(final_bytes)
                 print(f"  Logo eingeblendet -> {local_path}", flush=True)
-            except Exception as e:
-                print(f"  Logo-Overlay fehlgeschlagen: {e}", flush=True)
 
-            return image_url
+                # Zu GitHub hochladen → permanente URL
+                filename = f"generated_{task_id[:8]}.png"
+                permanent_url = _upload_to_github(final_bytes, filename)
+                return permanent_url
+
+            except Exception as e:
+                print(f"  Upload fehlgeschlagen: {e} — fallback auf kie.ai URL", flush=True)
+                return image_url
 
         elif state == "fail":
             fail_msg = poll_data["data"].get("failMsg", "Unbekannter Fehler")
