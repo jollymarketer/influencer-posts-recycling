@@ -1,0 +1,207 @@
+"""
+Notion DB Interface für Influencer Posts Recycling.
+DB ID: 778bd719db9147ff994ddbf8a4ecac34
+Direkte Notion API (kein MCP) — für Python-Scripts und Railway.
+"""
+
+import os
+from datetime import datetime, timezone
+
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+NOTION_TOKEN = os.getenv("NOTION_TOKEN")
+NOTION_DB_ID = os.getenv("NOTION_DB_ID", "778bd719db9147ff994ddbf8a4ecac34")
+NOTION_API = "https://api.notion.com/v1"
+NOTION_VERSION = "2022-06-28"
+
+
+def _headers():
+    return {
+        "Authorization": f"Bearer {NOTION_TOKEN}",
+        "Content-Type": "application/json",
+        "Notion-Version": NOTION_VERSION,
+    }
+
+
+def get_existing_post_urls() -> set:
+    """Gibt alle bereits in Notion gespeicherten Post-URLs zurück (für Duplikat-Filterung)."""
+    urls = set()
+    has_more = True
+    start_cursor = None
+
+    while has_more:
+        payload = {"page_size": 100}
+        if start_cursor:
+            payload["start_cursor"] = start_cursor
+
+        resp = requests.post(
+            f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+            headers=_headers(),
+            json=payload,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        for page in data.get("results", []):
+            props = page.get("properties", {})
+            url_prop = props.get("LinkedIn Post URL", {})
+            url = url_prop.get("url")
+            if url:
+                urls.add(url)
+
+        has_more = data.get("has_more", False)
+        start_cursor = data.get("next_cursor")
+
+    return urls
+
+
+def create_post_entry(
+    influencer: str,
+    post_url: str,
+    post_text: str,
+    post_date: str,
+    status: str = "Ready to Review",
+    linkedin_draft: str = "",
+    image_prompt: str = "",
+    image_url: str = "",
+) -> str:
+    """
+    Erstellt einen vollstaendigen Eintrag in der Notion DB.
+    Schreibt Original-Text + LinkedIn-Draft in den Seiteninhalt.
+    Gibt die Notion Page ID zurueck.
+    """
+    title = f"{influencer} – {post_text[:60].strip()}..."
+    excerpt = post_text[:300]
+
+    def text_blocks(text):
+        chunks = [text[i:i+2000] for i in range(0, len(text), 2000)]
+        return [
+            {"object": "block", "type": "paragraph",
+             "paragraph": {"rich_text": [{"type": "text", "text": {"content": chunk}}]}}
+            for chunk in chunks
+        ]
+
+    page_children = [
+        {"object": "block", "type": "heading_2",
+         "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Original Post"}}]}},
+        {"object": "block", "type": "bookmark",
+         "bookmark": {"url": post_url}},
+        {"object": "block", "type": "heading_2",
+         "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Post Text (Original)"}}]}},
+        *text_blocks(post_text),
+    ]
+
+    if linkedin_draft:
+        page_children += [
+            {"object": "block", "type": "divider", "divider": {}},
+            {"object": "block", "type": "heading_2",
+             "heading_2": {"rich_text": [{"type": "text", "text": {"content": "LinkedIn Draft (Ready to Post)"}}]}},
+            *text_blocks(linkedin_draft),
+        ]
+
+    if image_url:
+        page_children += [
+            {"object": "block", "type": "heading_2",
+             "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Generated Image"}}]}},
+            {"object": "block", "type": "image",
+             "image": {"type": "external", "external": {"url": image_url}}},
+        ]
+
+    payload = {
+        "parent": {"database_id": NOTION_DB_ID},
+        "properties": {
+            "Title": {"title": [{"text": {"content": title}}]},
+            "Influencer": {"rich_text": [{"text": {"content": influencer}}]},
+            "LinkedIn Post URL": {"url": post_url},
+            "Post Excerpt": {"rich_text": [{"text": {"content": excerpt}}]},
+            "Status": {"select": {"name": status}},
+            "Date Scraped": {"date": {"start": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")}},
+            "LinkedIn Draft": {"rich_text": [{"text": {"content": linkedin_draft[:2000]}}]} if linkedin_draft else {},
+            "Image Prompt": {"rich_text": [{"text": {"content": image_prompt[:2000]}}]} if image_prompt else {},
+            "Image": {"files": [{"name": "featured-image.jpg", "type": "external", "external": {"url": image_url}}]} if image_url else {},
+        },
+        "children": page_children,
+    }
+
+    # Leere Properties entfernen
+    payload["properties"] = {k: v for k, v in payload["properties"].items() if v}
+
+    resp = requests.post(
+        f"{NOTION_API}/pages",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    page_id = resp.json()["id"]
+    return page_id
+
+
+def update_with_draft(page_id: str, linkedin_draft: str, image_prompt: str, image_url: str):
+    """
+    Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
+    Setzt Status auf 'Ready to Review'.
+    """
+    payload = {
+        "properties": {
+            "LinkedIn Draft": {
+                "rich_text": [{"text": {"content": linkedin_draft[:2000]}}]
+            },
+            "Image Prompt": {
+                "rich_text": [{"text": {"content": image_prompt[:2000]}}]
+            },
+            "Image": {
+                "files": [{"name": "featured-image.jpg", "type": "external", "external": {"url": image_url}}] if image_url else []
+            },
+            "Status": {
+                "select": {"name": "Ready to Review"}
+            },
+        }
+    }
+
+    resp = requests.patch(
+        f"{NOTION_API}/pages/{page_id}",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_entry_by_url(post_url: str) -> dict | None:
+    """Gibt den Notion-Eintrag für eine bestimmte Post-URL zurück."""
+    payload = {
+        "filter": {
+            "property": "LinkedIn Post URL",
+            "url": {"equals": post_url}
+        }
+    }
+    resp = requests.post(
+        f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    results = resp.json().get("results", [])
+    return results[0] if results else None
+
+
+def get_entry_by_page_id(page_id: str) -> dict:
+    """Gibt einen Notion-Eintrag anhand seiner Page ID zurück."""
+    resp = requests.get(
+        f"{NOTION_API}/pages/{page_id}",
+        headers=_headers(),
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+if __name__ == "__main__":
+    print("Teste Notion-Verbindung ...")
+    if not NOTION_TOKEN:
+        print("✗ NOTION_TOKEN fehlt in .env")
+    else:
+        urls = get_existing_post_urls()
+        print(f"OK - {len(urls)} Posts bereits in DB")
