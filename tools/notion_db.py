@@ -134,6 +134,8 @@ def create_post_entry(
         headers=_headers(),
         json=payload,
     )
+    if not resp.ok:
+        print(f"  Notion API Fehler {resp.status_code}: {resp.text[:500]}", flush=True)
     resp.raise_for_status()
     page_id = resp.json()["id"]
     return page_id
@@ -168,6 +170,41 @@ def update_with_draft(page_id: str, linkedin_draft: str, image_prompt: str, imag
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def get_recent_linkedin_drafts(limit: int = 7) -> list[str]:
+    """
+    Gibt die LinkedIn-Draft-Texte der letzten N geposteten Eintraege zurueck.
+    Wird fuer Themen-Diversitaets-Check im Scoring verwendet.
+    """
+    payload = {
+        "filter": {
+            "or": [
+                {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Approved"}},
+                {"property": "Status", "select": {"equals": "Ready to Review"}},
+            ]
+        },
+        "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
+        "page_size": limit,
+    }
+    resp = requests.post(
+        f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    results = resp.json().get("results", [])
+
+    drafts = []
+    for page in results:
+        props = page.get("properties", {})
+        draft_prop = props.get("LinkedIn Draft", {})
+        rich_text = draft_prop.get("rich_text", [])
+        text = "".join(rt.get("plain_text", "") for rt in rich_text).strip()
+        if text:
+            drafts.append(text[:500])  # nur Anfang fuer Token-Effizienz
+    return drafts
 
 
 def get_entry_by_url(post_url: str) -> dict | None:

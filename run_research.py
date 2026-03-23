@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from tools.notion_db import get_existing_post_urls, create_post_entry
+from tools.notion_db import get_existing_post_urls, create_post_entry, get_recent_linkedin_drafts
 from tools.linkedin_scraper import scrape_new_posts
 from tools.substack_scraper import scrape_substack_posts
 from tools.post_scorer import score_posts, generate_post_and_image_prompt
@@ -64,16 +64,18 @@ def main():
 
     print(f"  Gesamt: {len(new_posts)} neue Inhalte.")
 
-    # Schritt 3: KI-Vetting
+    # Schritt 3: KI-Vetting (mit Themen-Diversitaet)
     print(f"\nSchritt 3: KI-Vetting {len(new_posts)} Posts ...")
     try:
-        scored_posts = score_posts(new_posts)
+        recent_drafts = get_recent_linkedin_drafts(limit=7)
+        print(f"  Themen-Diversitaet: {len(recent_drafts)} kuerzliche Posts als Referenz geladen.")
+        scored_posts = score_posts(new_posts, recent_drafts=recent_drafts)
         print(f"  Top 3 nach Score:")
         for i, p in enumerate(scored_posts[:3]):
             d = p.get("score_details", {})
             virality = d.get("viralitaet", 0)
             eng = p.get("engagement", {})
-            print(f"    #{i+1} [{p['score']}/50] {p['influencer']}: {p['post_excerpt'][:60]}...")
+            print(f"    #{i+1} [{p['score']}/60] {p['influencer']}: {p['post_excerpt'][:60]}...")
             print(f"         Viralitaet: {virality}/10 ({eng.get('likes',0)} Likes, {eng.get('comments',0)} Comments)")
             print(f"         Reasoning: {p.get('reasoning', '')}")
     except Exception as e:
@@ -126,11 +128,25 @@ def main():
         print(f"  FEHLER - Notion: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Schritt 9: Email-Benachrichtigung via Make.com Webhook
+    MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/wbqkg1cmho8n1qmvdg9hv621nqniuxkg"
+    try:
+        import requests as _req
+        notion_url = f"https://www.notion.so/{page_id.replace('-', '')}"
+        _req.post(MAKE_WEBHOOK_URL, json={
+            "title": f"{winner['influencer']} – {winner['post_text'][:60].strip()}...",
+            "influencer": winner["influencer"],
+            "notion_url": notion_url,
+        }, timeout=10)
+        print(f"  Email-Alert gesendet.")
+    except Exception as e:
+        print(f"  Email-Alert fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+
     # Summary
     duration = (datetime.now(timezone.utc) - start_time).seconds
     print(f"\n=== DONE ===")
     eng = winner.get("engagement", {})
-    print(f"Winner: {winner['influencer']} (Score: {winner['score']}/50 | {eng.get('likes',0)} Likes)")
+    print(f"Winner: {winner['influencer']} (Score: {winner['score']}/60 | {eng.get('likes',0)} Likes)")
     print(f"Notion: https://www.notion.so/{page_id.replace('-', '')}")
     print(f"Status: Ready to Review")
     print(f"Dauer: {duration}s")

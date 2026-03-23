@@ -68,10 +68,18 @@ def _upload_to_github(image_bytes: bytes, filename: str) -> str:
         "Content-Type": "application/json",
     }
 
+    # SHA holen falls Datei bereits existiert (sonst 422 Conflict)
+    sha = None
+    check = requests.get(api_url, headers=headers, timeout=30)
+    if check.status_code == 200:
+        sha = check.json().get("sha")
+
     payload = {
         "message": f"Add generated image {filename}",
         "content": content_b64,
     }
+    if sha:
+        payload["sha"] = sha
 
     resp = requests.put(api_url, headers=headers, json=payload, timeout=60)
     resp.raise_for_status()

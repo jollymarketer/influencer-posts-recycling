@@ -36,7 +36,7 @@ SCORING_PROMPT = """Du bist Content-Stratege bei Jolly Marketer.
 KONTEXT:
 {context}
 
-Bewerte diesen LinkedIn-Post von {influencer} nach 4 inhaltlichen Kriterien (je 0-10 Punkte):
+Bewerte diesen LinkedIn-Post von {influencer} nach 5 inhaltlichen Kriterien (je 0-10 Punkte):
 
 POST:
 {post_text}
@@ -46,14 +46,17 @@ ENGAGEMENT-METRIKEN (bereits gemessen, nicht berechnen):
 - Comments: {comments}
 - Shares: {shares}
 
+{diversity_section}
+
 Bewertungskriterien:
 1. topic_fit (0-10): Passt das Thema zu GTM, Outbound, RevOps, Pipeline, SaaS-Growth, Fractional CMO?
 2. icp_relevanz (0-10): Wuerde Agency Founder / SaaS CEO / B2B Manufacturer diesen Inhalt wollen?
 3. recyclierbarkeit (0-10): Kann man daraus einen DACH-deutschen Thought-Leadership-Post machen? (starke These, konkretes Insight)
 4. einzigartigkeit (0-10): Frisches Insight oder austauschbarer Allgemeinplatz?
+5. themen_diversitaet (0-10): Wie unterschiedlich ist dieses Thema von den kuerzlich geposteten Inhalten? (10 = voellig anderes Thema, 0 = fast identisches Thema wurde kuerzlich gepostet). Falls keine Recent Posts vorhanden: 8 vergeben.
 
 Antworte NUR mit validem JSON (kein Markdown, kein Text davor/danach):
-{{"topic_fit": X, "icp_relevanz": X, "recyclierbarkeit": X, "einzigartigkeit": X, "reasoning": "1-2 Saetze warum dieser Score"}}"""
+{{"topic_fit": X, "icp_relevanz": X, "recyclierbarkeit": X, "einzigartigkeit": X, "themen_diversitaet": X, "reasoning": "1-2 Saetze warum dieser Score"}}"""
 
 DACH_POST_PROMPT = """Du bist Richard von Jolly Marketer (Fractional CMO / GTM as a Service fuer B2B).
 
@@ -182,12 +185,23 @@ def calculate_virality_score(engagement: dict) -> int:
     return score
 
 
-def score_posts(posts: list) -> list:
+def score_posts(posts: list, recent_drafts: list[str] | None = None) -> list:
     """
-    Bewertet Posts nach 5 Dimensionen: 4 inhaltliche (KI) + Viralitaet (Metriken).
-    Max. Score: 50 Punkte.
+    Bewertet Posts nach 6 Dimensionen: 5 inhaltliche (KI) + Viralitaet (Metriken).
+    Dimension 5: Themen-Diversitaet — bevorzugt Themen die kuerzlich nicht gepostet wurden.
+    Max. Score: 60 Punkte.
     """
     scored = []
+
+    # Diversity-Kontext fuer den Prompt vorbereiten
+    if recent_drafts:
+        excerpts = "\n".join(f"- {d[:200]}" for d in recent_drafts)
+        diversity_section = f"""KUERZLICH GEPOSTETE INHALTE (letzten 7 Posts — fuer Themen-Diversitaet):
+{excerpts}
+
+Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven bieten."""
+    else:
+        diversity_section = "KUERZLICH GEPOSTETE INHALTE: Keine vorhanden."
 
     for post in posts:
         # Viralitaet direkt aus Engagement-Metriken
@@ -202,10 +216,11 @@ def score_posts(posts: list) -> list:
                 likes=engagement.get("likes", 0),
                 comments=engagement.get("comments", 0),
                 shares=engagement.get("shares", 0),
+                diversity_section=diversity_section,
             )
             response = client.messages.create(
                 model="claude-haiku-4-5-20251001",
-                max_tokens=256,
+                max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = response.content[0].text.strip()
@@ -220,6 +235,7 @@ def score_posts(posts: list) -> list:
                 + scores["icp_relevanz"]
                 + scores["recyclierbarkeit"]
                 + scores["einzigartigkeit"]
+                + scores.get("themen_diversitaet", 8)
             )
             total = content_total + virality_score
             scored.append({
