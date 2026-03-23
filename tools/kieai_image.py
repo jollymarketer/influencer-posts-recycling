@@ -166,26 +166,47 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
             image_url = urls[0]
             print(f"  kie.ai: FERTIG -> {image_url}", flush=True)
 
-            # Logo einblenden + zu GitHub hochladen
+            # Logo einblenden
+            final_bytes = None
             try:
                 img_bytes = requests.get(image_url, timeout=30).content
                 final_bytes = _overlay_logo(img_bytes)
-
-                # Lokal speichern (.tmp)
                 os.makedirs(".tmp", exist_ok=True)
                 local_path = f".tmp/generated_{task_id[:8]}.png"
                 with open(local_path, "wb") as f:
                     f.write(final_bytes)
                 print(f"  Logo eingeblendet -> {local_path}", flush=True)
-
-                # Zu GitHub hochladen → permanente URL
-                filename = f"generated_{task_id[:8]}.png"
-                permanent_url = _upload_to_github(final_bytes, filename)
-                return permanent_url
-
             except Exception as e:
-                print(f"  Upload fehlgeschlagen: {e} — fallback auf kie.ai URL", flush=True)
-                return image_url
+                print(f"  Logo-Overlay fehlgeschlagen: {e}", flush=True)
+
+            # Permanenten Upload versuchen (mit Logo falls verfuegbar)
+            upload_bytes = final_bytes if final_bytes is not None else requests.get(image_url, timeout=30).content
+            filename = f"generated_{task_id[:8]}.png"
+
+            # Versuch 1: GitHub
+            try:
+                permanent_url = _upload_to_github(upload_bytes, filename)
+                return permanent_url
+            except Exception as e:
+                print(f"  GitHub Upload fehlgeschlagen: {e} — versuche imgbb ...", flush=True)
+
+            # Versuch 2: 0x0.st (kostenlos, kein Account)
+            try:
+                resp_0x0 = requests.post(
+                    "https://0x0.st",
+                    files={"file": (filename, upload_bytes, "image/png")},
+                    timeout=30,
+                )
+                if resp_0x0.ok and resp_0x0.text.strip().startswith("http"):
+                    url_0x0 = resp_0x0.text.strip()
+                    print(f"  0x0.st Upload: {url_0x0}", flush=True)
+                    return url_0x0
+            except Exception as e2:
+                print(f"  0x0.st fehlgeschlagen: {e2}", flush=True)
+
+            # Letzter Fallback: kie.ai URL (kein Logo, laeuft ab)
+            print(f"  Fallback: kie.ai URL (kein Logo, laeuft ab)", flush=True)
+            return image_url
 
         elif state == "fail":
             fail_msg = poll_data["data"].get("failMsg", "Unbekannter Fehler")
