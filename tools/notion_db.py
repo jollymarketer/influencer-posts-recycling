@@ -58,6 +58,13 @@ def get_existing_post_urls() -> set:
     return urls
 
 
+def _sanitize(text: str) -> str:
+    """Entfernt Steuerzeichen und Null-Bytes die Notion ablehnt."""
+    import re
+    # Null-Bytes und andere ungueltige Steuerzeichen entfernen (ausser \n, \t)
+    return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text or "")
+
+
 def create_post_entry(
     influencer: str,
     post_url: str,
@@ -73,6 +80,11 @@ def create_post_entry(
     Schreibt Original-Text + LinkedIn-Draft in den Seiteninhalt.
     Gibt die Notion Page ID zurueck.
     """
+    post_text = _sanitize(post_text)
+    linkedin_draft = _sanitize(linkedin_draft)
+    image_prompt = _sanitize(image_prompt)
+    influencer = _sanitize(influencer)
+
     title = f"{influencer} – {post_text[:60].strip()}..."
     excerpt = post_text[:300]
 
