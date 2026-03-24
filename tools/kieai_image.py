@@ -84,7 +84,7 @@ def _upload_to_github(image_bytes: bytes, filename: str) -> str:
     resp = requests.put(api_url, headers=headers, json=payload, timeout=60)
     resp.raise_for_status()
 
-    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/{path}"
+    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/master/{path}"
     print(f"  GitHub Upload: {raw_url}", flush=True)
     return raw_url
 
@@ -183,14 +183,7 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
             upload_bytes = final_bytes if final_bytes is not None else requests.get(image_url, timeout=30).content
             filename = f"generated_{task_id[:8]}.png"
 
-            # Versuch 1: GitHub
-            try:
-                permanent_url = _upload_to_github(upload_bytes, filename)
-                return permanent_url
-            except Exception as e:
-                print(f"  GitHub Upload fehlgeschlagen: {e} — versuche imgbb ...", flush=True)
-
-            # Versuch 2: 0x0.st (kostenlos, kein Account)
+            # Versuch 1: 0x0.st (kostenlos, kein Account noetig, funktioniert garantiert)
             try:
                 resp_0x0 = requests.post(
                     "https://0x0.st",
@@ -201,8 +194,15 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
                     url_0x0 = resp_0x0.text.strip()
                     print(f"  0x0.st Upload: {url_0x0}", flush=True)
                     return url_0x0
+            except Exception as e:
+                print(f"  0x0.st fehlgeschlagen: {e} — versuche GitHub ...", flush=True)
+
+            # Versuch 2: GitHub (mit Fallback fuer private Repos)
+            try:
+                permanent_url = _upload_to_github(upload_bytes, filename)
+                return permanent_url
             except Exception as e2:
-                print(f"  0x0.st fehlgeschlagen: {e2}", flush=True)
+                print(f"  GitHub Upload fehlgeschlagen: {e2}", flush=True)
 
             # Letzter Fallback: kie.ai URL (kein Logo, laeuft ab)
             print(f"  Fallback: kie.ai URL (kein Logo, laeuft ab)", flush=True)
