@@ -183,21 +183,22 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
             upload_bytes = final_bytes if final_bytes is not None else requests.get(image_url, timeout=30).content
             filename = f"generated_{task_id[:8]}.png"
 
-            # Versuch 1: 0x0.st (kostenlos, kein Account noetig, funktioniert garantiert)
+            # Versuch 1: catbox.moe (kostenlos, permanent, kein Account noetig)
             try:
-                resp_0x0 = requests.post(
-                    "https://0x0.st",
-                    files={"file": (filename, upload_bytes, "image/png")},
+                resp_catbox = requests.post(
+                    "https://catbox.moe/user/api.php",
+                    data={"reqtype": "fileupload"},
+                    files={"fileToUpload": (filename, upload_bytes, "image/png")},
                     timeout=30,
                 )
-                if resp_0x0.ok and resp_0x0.text.strip().startswith("http"):
-                    url_0x0 = resp_0x0.text.strip()
-                    print(f"  0x0.st Upload: {url_0x0}", flush=True)
-                    return url_0x0
+                if resp_catbox.ok and resp_catbox.text.strip().startswith("http"):
+                    url_catbox = resp_catbox.text.strip()
+                    print(f"  catbox.moe Upload: {url_catbox}", flush=True)
+                    return url_catbox
             except Exception as e:
-                print(f"  0x0.st fehlgeschlagen: {e} — versuche GitHub ...", flush=True)
+                print(f"  catbox.moe fehlgeschlagen: {e} — versuche GitHub ...", flush=True)
 
-            # Versuch 2: GitHub (mit Fallback fuer private Repos)
+            # Versuch 2: GitHub (nur fuer oeffentliche Repos)
             try:
                 permanent_url = _upload_to_github(upload_bytes, filename)
                 return permanent_url

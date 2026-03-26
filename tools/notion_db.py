@@ -89,7 +89,7 @@ def create_post_entry(
     excerpt = post_text[:300]
 
     def text_blocks(text):
-        chunks = [text[i:i+2000] for i in range(0, len(text), 2000)]
+        chunks = [text[i:i+1900] for i in range(0, len(text), 1900)]
         return [
             {"object": "block", "type": "paragraph",
              "paragraph": {"rich_text": [{"type": "text", "text": {"content": chunk}}]}}
@@ -153,10 +153,21 @@ def create_post_entry(
     return page_id
 
 
-def update_with_draft(page_id: str, linkedin_draft: str, image_prompt: str, image_url: str):
+MAKE_REVIEW_WEBHOOK = "https://hook.eu2.make.com/wbqkg1cmho8n1qmvdg9hv621nqniuxkg"
+NOTION_PAGE_BASE_URL = "https://www.notion.so/"
+
+
+def update_with_draft(
+    page_id: str,
+    linkedin_draft: str,
+    image_prompt: str,
+    image_url: str,
+    title: str = "",
+    influencer: str = "",
+):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
-    Setzt Status auf 'Ready to Review'.
+    Setzt Status auf 'Ready to Review' und feuert den Make-Webhook fuer die E-Mail-Benachrichtigung.
     """
     payload = {
         "properties": {
@@ -181,7 +192,22 @@ def update_with_draft(page_id: str, linkedin_draft: str, image_prompt: str, imag
         json=payload,
     )
     resp.raise_for_status()
-    return resp.json()
+    result = resp.json()
+
+    # Make-Webhook feuern → E-Mail-Alert an Richard
+    try:
+        notion_url = f"{NOTION_PAGE_BASE_URL}{page_id.replace('-', '')}"
+        webhook_payload = {
+            "title": title or page_id,
+            "influencer": influencer,
+            "notion_url": notion_url,
+        }
+        requests.post(MAKE_REVIEW_WEBHOOK, json=webhook_payload, timeout=10)
+        print(f"  Make-Webhook gefeuert: Ready to Review Alert", flush=True)
+    except Exception as e:
+        print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    return result
 
 
 def get_recent_linkedin_drafts(limit: int = 7) -> list[str]:
