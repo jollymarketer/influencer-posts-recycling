@@ -157,6 +157,16 @@ MAKE_REVIEW_WEBHOOK = "https://hook.eu2.make.com/wbqkg1cmho8n1qmvdg9hv621nqniuxk
 NOTION_PAGE_BASE_URL = "https://www.notion.so/"
 
 
+def set_post_status(page_id: str, status: str) -> None:
+    """Setzt den Status eines Notion-Eintrags (z.B. 'Skipped', 'New')."""
+    resp = requests.patch(
+        f"{NOTION_API}/pages/{page_id}",
+        headers=_headers(),
+        json={"properties": {"Status": {"select": {"name": status}}}},
+    )
+    resp.raise_for_status()
+
+
 def update_with_draft(
     page_id: str,
     linkedin_draft: str,
@@ -168,23 +178,30 @@ def update_with_draft(
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
     Setzt Status auf 'Ready to Review' und feuert den Make-Webhook fuer die E-Mail-Benachrichtigung.
+    Raises ValueError wenn linkedin_draft leer ist.
     """
-    payload = {
-        "properties": {
-            "LinkedIn Draft": {
-                "rich_text": [{"text": {"content": linkedin_draft[:2000]}}]
-            },
-            "Image Prompt": {
-                "rich_text": [{"text": {"content": image_prompt[:2000]}}]
-            },
-            "Image": {
-                "files": [{"name": "featured-image.jpg", "type": "external", "external": {"url": image_url}}] if image_url else []
-            },
-            "Status": {
-                "select": {"name": "Ready to Review"}
-            },
-        }
+    if not linkedin_draft:
+        raise ValueError(f"update_with_draft: linkedin_draft ist leer fuer page_id={page_id}")
+
+    properties = {
+        "Status": {
+            "select": {"name": "Ready to Review"}
+        },
     }
+    if linkedin_draft:
+        properties["LinkedIn Draft"] = {
+            "rich_text": [{"text": {"content": linkedin_draft[:2000]}}]
+        }
+    if image_prompt:
+        properties["Image Prompt"] = {
+            "rich_text": [{"text": {"content": image_prompt[:2000]}}]
+        }
+    if image_url:
+        properties["Image"] = {
+            "files": [{"name": "featured-image.jpg", "type": "external", "external": {"url": image_url}}]
+        }
+
+    payload = {"properties": properties}
 
     resp = requests.patch(
         f"{NOTION_API}/pages/{page_id}",
