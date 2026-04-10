@@ -1,17 +1,17 @@
 """
 Influencer Posts Recycling — Vollautomatischer Daily Pipeline
-Railway Cron: taeglich 07:00 UTC
+Railway Cron: Mo-Fr 07:00 UTC
 
 Flow:
 1. Bestehende Post-URLs aus Notion laden (Duplikat-Filter)
 2. Neue Posts scrapen (LinkedIn + Substack)
-3. Posts in Notion schreiben (Status: "New")
-4. Posts scoren (KI + Engagement)
-5. Winner waehlen (Mindest-Score: 25/60)
-6. DACH-LinkedIn-Draft + Bild-Prompt generieren
-7. Bild generieren (kie.ai)
-8. Notion-Eintrag updaten (Status: "Ready to Review")
-9. Restliche Posts auf "Skipped" setzen
+3. Posts scoren (in-memory, KI + Engagement)
+4. Winner waehlen (Mindest-Score: 25/60)
+5. DACH-LinkedIn-Draft + Bild-Prompt generieren
+6. Bild generieren (kie.ai)
+7. NUR den Winner in Notion speichern (Status: "Ready to Review")
+
+Nur 1 Post pro Tag in Notion. Verlierer werden nicht gespeichert.
 """
 
 import os
@@ -25,7 +25,6 @@ from tools.notion_db import (
     get_recent_linkedin_drafts,
     create_post_entry,
     update_with_draft,
-    set_post_status,
 )
 from tools.linkedin_scraper import scrape_new_posts
 from tools.substack_scraper import scrape_substack_posts
@@ -73,49 +72,28 @@ def main():
 
     print(f"  Gesamt: {len(new_posts)} neue Inhalte.")
 
-    # Schritt 3: Posts in Notion schreiben (Status: "New")
-    print(f"\nSchritt 3: Schreibe {len(new_posts)} Posts in Notion ...")
-    posts_with_ids = []
-    for post in new_posts:
-        try:
-            page_id = create_post_entry(
-                influencer=post["influencer"],
-                post_url=post["post_url"],
-                post_text=post["post_text"],
-                post_date=post["date"],
-                status="New",
-            )
-            posts_with_ids.append({**post, "page_id": page_id})
-            print(f"  OK: {post['influencer']} - {post['post_excerpt'][:50]}...")
-        except Exception as e:
-            print(f"  FEHLER bei {post['influencer']}: {e}", file=sys.stderr)
-
-    if not posts_with_ids:
-        print("  Alle Posts konnten nicht gespeichert werden. Run beendet.")
-        return
-
-    # Schritt 4: Scoren (in-memory, Engagement-Daten noch vorhanden)
-    print(f"\nSchritt 4: Score {len(posts_with_ids)} Posts ...")
+    # Schritt 3: Scoren (alles in-memory, nichts in Notion)
+    print(f"\nSchritt 3: Score {len(new_posts)} Posts ...")
     try:
         recent_drafts = get_recent_linkedin_drafts(7)
-        scored = score_posts(posts_with_ids, recent_drafts=recent_drafts)
-        for p in scored[:3]:
+        scored = score_posts(new_posts, recent_drafts=recent_drafts)
+        for p in scored[:5]:
             print(f"  [{p['score']}/60] {p['influencer']}: {p.get('reasoning', '')[:80]}")
     except Exception as e:
         print(f"  FEHLER beim Scoring: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Schritt 5: Winner waehlen
+    # Schritt 4: Winner waehlen
     winner = scored[0] if scored and scored[0]["score"] >= MIN_SCORE else None
     if not winner:
         top_score = scored[0]["score"] if scored else 0
         print(f"\n  Kein Post erreicht Mindest-Score {MIN_SCORE}/60 (bester: {top_score}). Run beendet.")
         return
 
-    print(f"\nSchritt 5: Winner = {winner['influencer']} (Score: {winner['score']}/60)")
+    print(f"\nSchritt 4: Winner = {winner['influencer']} (Score: {winner['score']}/60)")
 
-    # Schritt 6: LinkedIn-Draft + Bild-Prompt generieren
-    print("\nSchritt 6: Generiere LinkedIn-Draft + Bild-Prompt ...")
+    # Schritt 5: LinkedIn-Draft + Bild-Prompt generieren
+    print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
         linkedin_draft, image_prompt = generate_post_and_image_prompt(winner)
     except Exception as e:
@@ -129,23 +107,30 @@ def main():
     print(f"  Draft: {len(linkedin_draft)} Zeichen")
     print(f"  Bild-Prompt: {'OK' if image_prompt else 'leer'}")
 
-    # Schritt 7: Bild generieren
+    # Schritt 6: Bild generieren
     image_url = ""
     if image_prompt:
-        print("\nSchritt 7: Generiere Bild (kie.ai) ...")
+        print("\nSchritt 6: Generiere Bild (kie.ai) ...")
         try:
             image_url = generate_image(image_prompt)
             print(f"  Bild-URL: {image_url}")
         except Exception as e:
             print(f"  Bildgenerierung fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     else:
-        print("\nSchritt 7: Kein Bild-Prompt — ueberspringe Bildgenerierung.")
+        print("\nSchritt 6: Kein Bild-Prompt — ueberspringe Bildgenerierung.")
 
-    # Schritt 8: Notion-Eintrag updaten
-    print("\nSchritt 8: Notion-Update (Ready to Review) ...")
+    # Schritt 7: NUR Winner in Notion speichern (fertig mit Draft + Bild)
+    print("\nSchritt 7: Winner in Notion speichern (Ready to Review) ...")
     try:
+        page_id = create_post_entry(
+            influencer=winner["influencer"],
+            post_url=winner["post_url"],
+            post_text=winner["post_text"],
+            post_date=winner["date"],
+            status="New",
+        )
         update_with_draft(
-            page_id=winner["page_id"],
+            page_id=page_id,
             linkedin_draft=linkedin_draft,
             image_prompt=image_prompt,
             image_url=image_url,
@@ -154,20 +139,8 @@ def main():
         )
         print(f"  Done: {winner['influencer']} -> Ready to Review")
     except Exception as e:
-        print(f"  FEHLER beim Notion-Update: {e}", file=sys.stderr)
+        print(f"  FEHLER beim Notion-Speichern: {e}", file=sys.stderr)
         sys.exit(1)
-
-    # Schritt 9: Restliche Posts auf "Skipped" setzen
-    print("\nSchritt 9: Restliche Posts -> Skipped ...")
-    skipped = 0
-    for post in posts_with_ids:
-        if post["page_id"] != winner["page_id"]:
-            try:
-                set_post_status(post["page_id"], "Skipped")
-                skipped += 1
-            except Exception as e:
-                print(f"  Skip-Fehler bei {post['influencer']}: {e}", file=sys.stderr)
-    print(f"  {skipped} Posts auf Skipped gesetzt.")
 
     duration = (datetime.now(timezone.utc) - start_time).seconds
     print(f"\n=== DONE ===")

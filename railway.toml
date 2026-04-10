@@ -7,5 +7,5 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
 [[crons]]
-schedule = "0 7 * * *"
+schedule = "0 7 * * 1-5"
 command = "python run_research.py"
