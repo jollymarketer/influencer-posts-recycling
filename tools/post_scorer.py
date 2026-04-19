@@ -63,7 +63,7 @@ DACH_POST_PROMPT = """Du bist Richard von Jolly Marketer (Fractional CMO / GTM a
 KONTEXT:
 {context}
 
-Deine Aufgabe: Recycel den folgenden LinkedIn-Post von {influencer} in einen hochwertigen DACH-deutschen Thought-Leadership-Post PLUS einen Bild-Prompt.
+Deine Aufgabe: Recycel den folgenden LinkedIn-Post von {influencer} in einen hochwertigen DACH-deutschen Thought-Leadership-Post.
 
 ORIGINAL POST:
 {post_text}
@@ -77,11 +77,12 @@ Zielgruppe: CEOs und Founder von B2B SaaS, Agenturen, produzierenden Unternehmen
 Tonalitaet:
 - Schreibe fuer CEOs, nicht fuer Marketer
 - Keine Fachbegriffe ohne Erklaerung. Wenn ein Begriff noetig ist (z.B. ICP = Idealer Zielkunde), erklaere ihn beim ersten Mal kurz
-- Kurze, scannbare Saetze. Konkret statt theoretisch
+- Natuerlich und fluessig schreiben. Variiere Satzlaengen: kurze Saetze fuer Wirkung, laengere fuer Erklaerungen und Zusammenhaenge. Kein Stakkato-Stil mit nur abgehackten Einzelsaetzen. Der Text soll sich lesen wie ein kluger Mensch, der redet, nicht wie eine Bulletpoint-Liste
 - Fokus auf CEO-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit
 - Keine Buzzwords, kein Marketing-Sprech
 - Ich-Form (du bist der Fractional CMO aus der Praxis). Den Leser NICHT direkt ansprechen ("Du"), sondern allgemein formulieren
 - Auf DACH-Marktbedingungen ummuentzen: lokale Marktdynamik, DACH-Unternehmensstrukturen
+- Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
 
 Inhaltliche Regeln:
 - Den Original-Content erkennbar nutzen, aber als eigenstaendige Praxis-Einordnung - keine freie Neuinterpretation
@@ -95,7 +96,7 @@ Post-Struktur (ohne explizite Benennung):
 4. CTA: Frage in die Runde oder Einladung zur Diskussion.
 
 Formatierung:
-- Weissraum ist Pflicht: Ein Gedanke pro Absatz, Leerzeile dazwischen
+- Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, nicht nach jedem Satz
 - Genau EIN Formatierungselement auswaehlen:
   * Emoji-Liste (mind. 3 gleichwertige Punkte): z.B. 📍 fuer Befunde, 👉 fuer Empfehlungen
   * Nummerierte Liste mit Unicode: ➊ ➋ ➌
@@ -112,46 +113,20 @@ Am Ende des Posts: 4-6 relevante Hashtags (#B2BSaaS, #GTM, #RevOps, #Vertrieb, #
 
 ---
 
-TEIL 2 - BILD-PROMPT:
+TEIL 2 - SOUND BYTE:
 
-Das Ziel: SCROLL-STOPP beim CEO im LinkedIn-Feed. Das Bild muss sofort eine emotionale Reaktion ausloesen.
+Extrahiere aus dem generierten Post einen einzigen, kurzen, praegnanten Satz als Sound Byte fuer das Bild.
 
-DESIGN-VORBILD (immer anstreben):
-Landscape-Format, weisser Hintergrund. LINKS: dominante Bold-Typography mit dem zentralen Keyword riesig und fett (wie ein Magazin-Cover-Titel), darunter 1-2 erklaerende Zeilen in kleinerer Schrift. RECHTS: eine reichhaltige, semi-realistische Business-Illustration mit mehreren thematisch vernetzten Icons die das Problem oder den Kontrast visuell erzaehlen. Die Icons sind NICHT flach und isoliert sondern verbunden durch Pfeile oder Bewegungslinien — sie zeigen ein System oder einen Prozess in Aktion. Stil: Editorial-Illustration wie ein B2B-Magazin-Beitrag. Kein Stock-Photo. Keine sterile Infografik.
+Regeln:
+- Kein vollstaendiges Summary des Posts — kein erklaerungsbeduerftiger Satz
+- Muss sofort haengen bleiben und eine Reaktion ausloesen
+- Klingt wie ein starkes Zitat oder eine provokante These
+- Maximal 12 Woerter
+- Auf Deutsch (da der Post auf Deutsch ist)
 
-SCROLL-STOPP REGELN:
-- Das zentrale Keyword (1-3 Woerter) links nimmt 40-50% der Bildhoeehe ein — riesig, kein Kompromiss
-- Die Illustration rechts zeigt aktiv einen Zustand (Chaos, Problem, Prozess) — nicht nur Symbole nebeneinander
-- Zahlen oder krasse Aussagen als Subheadline links (klein, aber lesbar)
-- Alles muss auf dem Handy-Thumbnail sofort verstaendlich sein
+TEIL 3 - KONTEXT (optional):
 
-CANVAS-REGEL: Den GESAMTEN Canvas gleichmaessig nutzen. Kein Leerraum/Whitespace-Bloecke. Die Illustration rechts soll die volle Hoehe und Breite ihrer Haelfte ausfuellen. Das Keyword links soll die volle Hoehe ausschoepfen. KEIN Logo ins Bild generieren — wird separat hinzugefuegt.
-
-Waehle den Stil anhand des Post-Inhalts:
-
-1. Keyword + Problem-Illustration (Standardwahl)
-Linke Seite: riesiges Bold-Keyword + Subheadline (These/Kontrast). Rechte Seite: vernetzte semi-realistische Illustration die das Problem zeigt — Chaos-Elemente, unterbrochene Prozesse, gestresster Business-Charakter, rote Warnsignale.
-Prompt-Basis: landscape B2B editorial illustration, white background, LEFT side: oversized Montserrat ExtraBold keyword [KEYWORD] in Electric Blue #0066FF or Deep Navy #1E2A3A taking up 45% image height, below it 2 lines of medium bold text in dark grey explaining the contrast, RIGHT side: rich semi-realistic business illustration cluster with interconnected icons (funnel, warning signs, tangled arrows, stressed business person, broken chart) showing chaos or problem, connected by flow arrows, editorial magazine style, no stock photo
-
-2. Vorher/Nachher Editorial (bei Transformation, Systemwechsel)
-Zwei klar getrennte Bereiche mit semi-realistischen Szenen. Links: dunkler/muted chaotischer Zustand. Rechts: helle klare Loesung.
-Prompt-Basis: landscape split editorial illustration, LEFT half muted dark grey tones showing frustrated business person surrounded by chaotic disconnected icons and broken processes, label "[PROBLEM-ZUSTAND]" in bold above, RIGHT half bright clean illustration showing organized system with confident character and connected flowing icons, label "[LOESUNG]" in Electric Blue above, bold German headline spanning top of image
-
-3. Schock-Zahl + Kontext-Illustration (bei starken Datenpunkten)
-Die Zahl dominiert links riesig. Rechts erklaert eine Illustration was diese Zahl bedeutet.
-Prompt-Basis: landscape editorial, LEFT side enormous Montserrat ExtraBold number "[X%]" or "[X von Y]" in Electric Blue #0066FF taking 60% of left side height, short German shock-label below in Deep Navy bold, RIGHT side semi-realistic editorial illustration showing the real-world consequence of this statistic, business context icons, interconnected, editorial magazine style
-
-4. Dark Poster Editorial (bei starken Meinungen, klarer Haltung)
-Tiefdunkler Hintergrund, weisse riesige Headline, eine dramatische zentrale Illustration.
-Prompt-Basis: Deep Navy #1E2A3A full background, centered oversized white Montserrat ExtraBold German headline spanning full width, below it one dramatic semi-realistic editorial illustration (spotlight, broken chain, target with arrow, cracked foundation) in Electric Blue and Orange tones, high contrast, poster aesthetic, editorial B2B magazine feel
-
-JOLLY MARKETER BRAND (immer anwenden):
-- Farben: Deep Navy #1E2A3A, Electric Blue #0066FF, Orange #FF6B35 — max 3 Farben pro Bild
-- Orange sparsam als Akzent fuer das wichtigste Element (Pfeil, Zahl, CTA-Element)
-- Typografie: Montserrat ExtraBold fuer Haupt-Keywords/Headlines, Montserrat Bold fuer Subheadlines
-- KEIN Logo in den Prompt aufnehmen — das echte Jolly Marketer Logo wird automatisch per Post-Processing eingeblendet
-
-Format: Landscape 16:9 bevorzugt (wie das Referenzbild). Alles muss auf dem Handy-Thumbnail lesbar sein.
+Fuer wen ist die Aussage besonders relevant? 1-2 Woerter Zielgruppe, z.B. "CEOs, RevOps-Teams" oder leer lassen.
 
 ---
 
@@ -162,8 +137,120 @@ OUTPUT-FORMAT (exakt einhalten):
 
 #Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4
 
-===BILDPROMPT===
-[Detaillierter Bildgenerierungs-Prompt]"""
+===SOUNDBYTE===
+[Sound Byte — ein Satz, max. 12 Woerter]
+
+===KONTEXT===
+[Zielgruppe/Kontext oder leer]"""
+
+
+IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for Jolly Marketer that communicates the core idea of the post through one clear, strategically strong visual concept.
+
+Core message:
+{core_message}
+
+Optional context:
+{context}
+
+Language for all visible text in the image:
+{language}
+
+Objective:
+Create a scroll-stopping LinkedIn featured image that is understood within 1 to 2 seconds on mobile.
+The image should communicate one core idea fast and clearly, not explain an entire framework.
+
+Brand direction:
+Use the Jolly Marketer brand system flexibly.
+The visual identity should feel confident, clean, structured, modern, and premium.
+Use Jolly brand colors and Montserrat-style typography, but do not force one fixed layout, one fixed background color, or one recurring visual trick every time.
+
+Jolly Marketer brand rules:
+
+Background: Always white (#FFFFFF). No dark backgrounds, no colored backgrounds, no gradients.
+Headlines: Deep Navy (#1E2A3A), ultra-bold, integrated into the composition
+Accent colors: Electric Blue (#0066FF) or Bright Orange (#FF6B35) — use sparingly as accent only
+Supporting neutrals: Light Grey #F4F6F8 or #EEF1F5, Mid Grey #8892A4
+Do not use more than 3 colors prominently in the same composition
+Keep the overall look bright, clean, and brand-consistent
+
+Creative discipline:
+
+Reduce the message to one dominant visual idea
+Use one primary visual logic only
+Prefer one focal scene, one focal metaphor, or one strong visual mechanism
+Design for feed impact first, explanation second
+If the concept becomes busy, simplify aggressively
+Prioritize compression over completeness
+The image should feel like a premium editorial social visual, not a workshop slide or business explainer
+
+Concept selection:
+First interpret the message, then choose the strongest visual direction for this specific post.
+Possible directions include:
+
+editorial poster
+symbolic metaphor
+clean comparison
+minimal typographic concept
+conceptual business illustration
+Choose only one primary direction and execute it clearly.
+Do not combine multiple competing concepts.
+
+Simplicity and clarity rules:
+
+Maximum 2 to 4 major visual elements in the whole composition
+One dominant focal point, or one focal point per side only if a comparison is absolutely necessary
+Remove anything that does not strengthen the idea immediately
+No clutter
+No filler objects
+No busy scenes
+No over-detailed environments
+The concept must still read clearly as a small LinkedIn thumbnail
+
+Text discipline:
+
+Use one strong headline only
+Headline must be integrated into the composition
+Headline: ultra-bold, maximum 4 to 6 words
+Optional support line only if truly necessary, maximum 4 to 8 words
+Avoid labels, captions, side notes, repeated text, and explanatory copy by default
+Every word in the image must earn its place
+
+Typography:
+
+Use Montserrat-style bold sans serif typography
+Typography should feel compact, modern, premium, and highly legible
+Avoid weak generic fonts, serif fonts, or presentation-style text layouts
+
+Composition:
+
+Build the image around one clear focal point
+Create strong hierarchy and reading flow
+Use whitespace intentionally, but do not let the image feel empty or unfinished
+The composition should feel designed, not templated
+
+Avoid:
+
+generic stock-business visuals
+bland SaaS social graphics
+infographic clutter
+workshop-slide aesthetics
+multiple explanatory sections
+too many icons or symbols
+literal over-explanation
+decorative clutter
+chaotic comparison layouts
+
+Final check:
+
+Is the core idea instantly clear?
+Is there only one dominant visual concept?
+Is the image understandable within 1 to 2 seconds?
+Is the text minimal and strong?
+Is it still clear at mobile thumbnail size?
+Does it feel premium and brand-consistent?
+
+Output:
+A premium LinkedIn featured image that expresses one clear strategic idea fast, cleanly, and memorably."""
 
 
 def calculate_virality_score(engagement: dict) -> int:
@@ -258,7 +345,7 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
 
 def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
     """
-    Generiert DACH-deutschen LinkedIn-Post + Bild-Prompt in einem Call.
+    Generiert DACH-deutschen LinkedIn-Post + Sound Byte, baut dann den Bild-Prompt.
     Gibt (linkedin_post_text, image_prompt) zurueck.
     """
     prompt = DACH_POST_PROMPT.format(
@@ -273,17 +360,40 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
     )
     raw = response.content[0].text.strip()
 
-    # Parsen: ===POST=== und ===BILDPROMPT=== Trennzeichen
+    # Parsen: ===POST===, ===SOUNDBYTE===, ===KONTEXT===
     linkedin_draft = ""
-    image_prompt = ""
-    if "===POST===" in raw and "===BILDPROMPT===" in raw:
-        parts = raw.split("===BILDPROMPT===")
-        post_part = parts[0].replace("===POST===", "").strip()
-        image_part = parts[1].strip() if len(parts) > 1 else ""
-        linkedin_draft = post_part
-        image_prompt = image_part
+    sound_byte = ""
+    kontext = ""
+
+    if "===POST===" in raw:
+        post_part = raw.split("===POST===")[1]
+        if "===SOUNDBYTE===" in post_part:
+            linkedin_draft = post_part.split("===SOUNDBYTE===")[0].strip()
+        else:
+            linkedin_draft = post_part.strip()
     else:
-        # Fallback: gesamter Output als Post-Text
         linkedin_draft = raw
+
+    if "===SOUNDBYTE===" in raw:
+        soundbyte_part = raw.split("===SOUNDBYTE===")[1]
+        if "===KONTEXT===" in soundbyte_part:
+            sound_byte = soundbyte_part.split("===KONTEXT===")[0].strip()
+        else:
+            sound_byte = soundbyte_part.strip()
+
+    if "===KONTEXT===" in raw:
+        kontext = raw.split("===KONTEXT===")[1].strip()
+
+    # Sprache des Posts erkennen (deutsch, da DACH-Post)
+    language = "German"
+
+    # Bild-Prompt aus Template befuellen
+    image_prompt = ""
+    if sound_byte:
+        image_prompt = IMAGE_PROMPT_TEMPLATE.format(
+            core_message=sound_byte,
+            context=kontext or "B2B CEOs und Founder im DACH-Raum",
+            language=language,
+        )
 
     return linkedin_draft, image_prompt

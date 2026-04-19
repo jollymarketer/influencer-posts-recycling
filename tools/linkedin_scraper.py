@@ -97,6 +97,10 @@ def extract_post_data(item, influencer_name):
     if not post_url or not post_text:
         return None
 
+    # Mindestlaenge: Posts unter 50 Woertern sind kein verwertbarer Content
+    if len(post_text.split()) < 50:
+        return None
+
     # Alter berechnen
     age_hours = parse_post_age_hours(posted_at)
 

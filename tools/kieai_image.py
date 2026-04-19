@@ -191,12 +191,16 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
                     files={"fileToUpload": (filename, upload_bytes, "image/png")},
                     timeout=30,
                 )
-                if resp_catbox.ok and resp_catbox.text.strip().startswith("http"):
-                    url_catbox = resp_catbox.text.strip()
-                    print(f"  catbox.moe Upload: {url_catbox}", flush=True)
-                    return url_catbox
+                body = resp_catbox.text.strip()
+                if resp_catbox.ok and body.startswith("http"):
+                    print(f"  catbox.moe Upload: {body}", flush=True)
+                    return body
+                print(
+                    f"  catbox.moe abgelehnt (HTTP {resp_catbox.status_code}): {body[:200]} — versuche GitHub ...",
+                    flush=True,
+                )
             except Exception as e:
-                print(f"  catbox.moe fehlgeschlagen: {e} — versuche GitHub ...", flush=True)
+                print(f"  catbox.moe Exception: {e} — versuche GitHub ...", flush=True)
 
             # Versuch 2: GitHub (nur fuer oeffentliche Repos)
             try:

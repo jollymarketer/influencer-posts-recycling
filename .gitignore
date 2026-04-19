@@ -5,3 +5,7 @@ __pycache__/
 *.pyo
 token.json
 credentials.json
+.vscode/
+notion_check.json
+notion_posts.json
+Gemini_Generated_Image_*.png

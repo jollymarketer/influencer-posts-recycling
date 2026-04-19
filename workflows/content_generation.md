@@ -47,17 +47,124 @@ Original Post:
 
 ### Schritt 3: Infografik-Prompt generieren
 
+**Ziel:** Das Bild soll die Hauptaussage des Posts durch visuelles Storytelling sofort vermitteln — ohne den Post lesen zu müssen. Sprache im Bild = Sprache des Posts (DE → DE, EN → EN).
+
+**Wichtig:** `{core_message_one_sentence}` wird aus dem **neu generierten LinkedIn-Post** (Schritt 2) abgeleitet — nicht aus dem Original-Post des Influencers. Das Bild soll zur eigenen Aussage passen, nicht zur Vorlage.
+
+Extrahiere dazu aus dem generierten Post:
+
+- Die eine zentrale Kernaussage als **Sound Byte** — ein einziger, kurzer, prägnanter Satz, der gut klingt und sofort hängen bleibt. Kein vollständiges Summary des Posts, keine genaue Erklärung — eher ein Satz, der Neugier weckt oder eine starke Reaktion auslöst. Der Post-Inhalt soll erkennbar sein, aber der Satz selbst soll als eigenständige Aussage funktionieren.
+- Optional: Für wen ist die Aussage relevant (Zielgruppe/Kontext)
+
 **Prompt-Template:**
 ```
-Erstelle einen detaillierten Bildgenerierungs-Prompt für eine LinkedIn-Infografik zum Thema "{topic}".
+Create a premium LinkedIn square image (1:1) for Jolly Marketer that communicates the core idea of the post through one clear, strategically strong visual concept.
 
-Anforderungen:
-- Stil: Professionelle B2B-Infografik, modern, clean
-- Farben: Dunkelblau (#1a2e4a), Weiß, Akzent in Hellblau oder Orange
-- Inhalt: {key_stat_or_insight} visualisiert (Funnel/Chart/Framework)
-- Kein Text im Bild (wird separat als Post-Text verwendet)
-- Aspect Ratio: 1:1 (LinkedIn Post)
-- Resolution: 1K
+Core message:
+{core_message_one_sentence}
+
+Optional context:
+{short_context_or_target_audience_if_relevant}
+
+Language for all visible text in the image:
+{language_of_post}
+
+Objective:
+Create a scroll-stopping LinkedIn featured image that is understood within 1 to 2 seconds on mobile.
+The image should communicate one core idea fast and clearly, not explain an entire framework.
+
+Brand direction:
+Use the Jolly Marketer brand system flexibly.
+The visual identity should feel confident, clean, structured, modern, and premium.
+Use Jolly brand colors and Montserrat-style typography, but do not force one fixed layout, one fixed background color, or one recurring visual trick every time.
+
+Jolly Marketer brand rules:
+
+Background: Always white (#FFFFFF). No dark backgrounds, no colored backgrounds, no gradients.
+Headlines: Deep Navy (#1E2A3A), ultra-bold, integrated into the composition
+Accent colors: Electric Blue (#0066FF) or Bright Orange (#FF6B35) — use sparingly as accent only
+Supporting neutrals: Light Grey #F4F6F8 or #EEF1F5, Mid Grey #8892A4
+Do not use more than 3 colors prominently in the same composition
+Keep the overall look bright, clean, and brand-consistent
+
+Creative discipline:
+
+Reduce the message to one dominant visual idea
+Use one primary visual logic only
+Prefer one focal scene, one focal metaphor, or one strong visual mechanism
+Design for feed impact first, explanation second
+If the concept becomes busy, simplify aggressively
+Prioritize compression over completeness
+The image should feel like a premium editorial social visual, not a workshop slide or business explainer
+
+Concept selection:
+First interpret the message, then choose the strongest visual direction for this specific post.
+Possible directions include:
+
+editorial poster
+symbolic metaphor
+clean comparison
+minimal typographic concept
+conceptual business illustration
+Choose only one primary direction and execute it clearly.
+Do not combine multiple competing concepts.
+
+Simplicity and clarity rules:
+
+Maximum 2 to 4 major visual elements in the whole composition
+One dominant focal point, or one focal point per side only if a comparison is absolutely necessary
+Remove anything that does not strengthen the idea immediately
+No clutter
+No filler objects
+No busy scenes
+No over-detailed environments
+The concept must still read clearly as a small LinkedIn thumbnail
+
+Text discipline:
+
+Use one strong headline only
+Headline must be integrated into the composition
+Headline: ultra-bold, maximum 4 to 6 words
+Optional support line only if truly necessary, maximum 4 to 8 words
+Avoid labels, captions, side notes, repeated text, and explanatory copy by default
+Every word in the image must earn its place
+
+Typography:
+
+Use Montserrat-style bold sans serif typography
+Typography should feel compact, modern, premium, and highly legible
+Avoid weak generic fonts, serif fonts, or presentation-style text layouts
+
+Composition:
+
+Build the image around one clear focal point
+Create strong hierarchy and reading flow
+Use whitespace intentionally, but do not let the image feel empty or unfinished
+The composition should feel designed, not templated
+
+Avoid:
+
+generic stock-business visuals
+bland SaaS social graphics
+infographic clutter
+workshop-slide aesthetics
+multiple explanatory sections
+too many icons or symbols
+literal over-explanation
+decorative clutter
+chaotic comparison layouts
+
+Final check:
+
+Is the core idea instantly clear?
+Is there only one dominant visual concept?
+Is the image understandable within 1 to 2 seconds?
+Is the text minimal and strong?
+Is it still clear at mobile thumbnail size?
+Does it feel premium and brand-consistent?
+
+Output:
+A premium LinkedIn featured image that expresses one clear strategic idea fast, cleanly, and memorably.
 ```
 
 ### Schritt 4: Bild generieren
@@ -65,6 +172,7 @@ Anforderungen:
 from tools.kieai_image import generate_image
 image_url = generate_image(image_prompt)
 ```
+→ Modell: **Nano-Banano II** (`nano-banana-2`) via kie.ai API
 → Polling läuft automatisch alle 10 Sekunden
 
 ### Schritt 5: Notion updaten
