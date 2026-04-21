@@ -20,10 +20,8 @@ Jolly Marketer ist eine B2B Revenue Engine Company (Fractional CMO / GTM as a Se
 
 POSITIONIERUNG: Planbare B2B-Pipeline in 90 Tagen durch systematischen Outbound.
 
-ICPs:
-1. Agency Founders (11-50 MA, Marketing/PR/Digital Agenturen) - bauen Pipeline fuer Clients aber nicht fuer sich selbst
-2. SaaS CEOs/Founders (10-50 MA) - haben Product-Market-Fit, kaempfen mit skalierbarem Outbound
-3. B2B Manufacturers in DACH (51-200 MA) - Vertrieb ueber Messen/Netzwerk, kein strukturiertes Outbound-System
+ICP:
+B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum. Buying Personas: Founder, CEO, CRO, CSO, VP Sales, Head of Sales - Entscheider mit Product-Market-Fit, die planbaren Outbound und eine Revenue Engine brauchen, aber bisher keine interne Rolle haben, die das System denkt (nicht nur bedient).
 
 KERN-THEMEN die den ICP interessieren:
 GTM-Strategie, Outbound-Systeme, Cold Email, Pipeline-Aufbau, RevOps, Sales-Marketing-Alignment,
@@ -50,7 +48,7 @@ ENGAGEMENT-METRIKEN (bereits gemessen, nicht berechnen):
 
 Bewertungskriterien:
 1. topic_fit (0-10): Passt das Thema zu GTM, Outbound, RevOps, Pipeline, SaaS-Growth, Fractional CMO?
-2. icp_relevanz (0-10): Wuerde Agency Founder / SaaS CEO / B2B Manufacturer diesen Inhalt wollen?
+2. icp_relevanz (0-10): Wuerde ein Founder, CEO, CRO, CSO, VP Sales oder Head of Sales in einem B2B SaaS/Tech-Unternehmen in DACH diesen Inhalt wollen?
 3. recyclierbarkeit (0-10): Kann man daraus einen DACH-deutschen Thought-Leadership-Post machen? (starke These, konkretes Insight)
 4. einzigartigkeit (0-10): Frisches Insight oder austauschbarer Allgemeinplatz?
 5. themen_diversitaet (0-10): Wie unterschiedlich ist dieses Thema von den kuerzlich geposteten Inhalten? (10 = voellig anderes Thema, 0 = fast identisches Thema wurde kuerzlich gepostet). Falls keine Recent Posts vorhanden: 8 vergeben.
@@ -72,17 +70,23 @@ ORIGINAL POST:
 
 TEIL 1 - LINKEDIN POST (auf Deutsch):
 
-Zielgruppe: CEOs und Founder von B2B SaaS, Agenturen, produzierenden Unternehmen im DACH-Raum.
+Zielgruppe: Founder, CEOs, CROs, CSOs, VP Sales und Heads of Sales in B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum.
 
 Tonalitaet:
-- Schreibe fuer CEOs, nicht fuer Marketer
+- Schreibe fuer Revenue-Entscheider (Founder, CEO, CRO, CSO, VP/Head of Sales), nicht fuer Marketer
 - Keine Fachbegriffe ohne Erklaerung. Wenn ein Begriff noetig ist (z.B. ICP = Idealer Zielkunde), erklaere ihn beim ersten Mal kurz
 - Natuerlich und fluessig schreiben. Variiere Satzlaengen: kurze Saetze fuer Wirkung, laengere fuer Erklaerungen und Zusammenhaenge. Kein Stakkato-Stil mit nur abgehackten Einzelsaetzen. Der Text soll sich lesen wie ein kluger Mensch, der redet, nicht wie eine Bulletpoint-Liste
-- Fokus auf CEO-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit
+- Fokus auf Revenue-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit
 - Keine Buzzwords, kein Marketing-Sprech
 - Ich-Form (du bist der Fractional CMO aus der Praxis). Den Leser NICHT direkt ansprechen ("Du"), sondern allgemein formulieren
-- Auf DACH-Marktbedingungen ummuentzen: lokale Marktdynamik, DACH-Unternehmensstrukturen
+- Auf den Kontext moderner B2B-SaaS/Tech-Teams in DACH uebertragen, ohne den Raum explizit zu betonen
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
+
+Sprach-Verbote (hart):
+- Begriff "Mittelstand" niemals verwenden (klingt altbacken, passt nicht zum ICP)
+- Das Wort "DACH" maximal EINMAL im gesamten Post - nie als Label wie "DACH-Mittelstand", "DACH-Raum", "DACH-Unternehmen"
+- Kein "produzierende Unternehmen", "Industrie-", "traditionelle Firmen"
+- Statt Geo-Tags: den Leser durch Problem-Sprache adressieren (Pipeline, Outbound, RevOps), nicht durch Regional-Sprache
 
 Inhaltliche Regeln:
 - Den Original-Content erkennbar nutzen, aber als eigenstaendige Praxis-Einordnung - keine freie Neuinterpretation
@@ -109,7 +113,7 @@ Qualitaetspruefung (E3):
 - Executable: Sofort umsetzbar ohne grosses Marketing-Team?
 - Exclusive: Mind. 1 Gedanke den man so nicht ueberall findet?
 
-Am Ende des Posts: 4-6 relevante Hashtags (#B2BSaaS, #GTM, #RevOps, #Vertrieb, #DACH, #SaaS oder aehnlich)
+Am Ende des Posts: 4-6 relevante Hashtags (#B2BSaaS, #GTM, #RevOps, #Vertrieb, #SaaS, #Outbound, #Pipeline oder aehnlich). #DACH nur verwenden wenn thematisch zwingend.
 
 ---
 
