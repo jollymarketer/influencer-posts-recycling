@@ -1,5 +1,5 @@
 """
-kie.ai Bildgenerierung — Nano Banana 2 Model
+kie.ai Bildgenerierung — gpt-image-2-text-to-image
 API: https://api.kie.ai
 Polling alle 10 Sekunden bis Bild fertig oder Timeout (15 Min).
 """
@@ -89,14 +89,13 @@ def _upload_to_github(image_bytes: bytes, filename: str) -> str:
     return raw_url
 
 
-def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1") -> str:
+def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
     """
-    Generiert ein Bild via kie.ai Nano Banana Pro Model.
+    Generiert ein Bild via kie.ai gpt-image-2-text-to-image.
 
     Args:
-        prompt: Bildgenerierungs-Prompt (Infografik-Beschreibung)
-        resolution: "1K", "2K" oder "4K" (Standard: 1K)
-        aspect_ratio: "1:1", "16:9" etc. (Standard: 1:1 für LinkedIn)
+        prompt: Bildgenerierungs-Prompt
+        aspect_ratio: z.B. "3:2" (LinkedIn-Feed), "1:1", "16:9" (Standard: 3:2)
 
     Returns:
         URL des fertigen Bildes
@@ -112,13 +111,11 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
     # Schritt 1: Job starten
     print("  kie.ai: Starte Bildgenerierung ...", flush=True)
     create_payload = {
-        "model": "nano-banana-2",
+        "model": "gpt-image-2-text-to-image",
         "input": {
             "prompt": prompt,
-            "image_input": [],
             "aspect_ratio": aspect_ratio,
-            "resolution": resolution,
-            "output_format": "png",
+            "nsfw_checker": False,
         },
     }
 
@@ -225,14 +222,14 @@ def generate_image(prompt: str, resolution: str = "1K", aspect_ratio: str = "1:1
 if __name__ == "__main__":
     # Standalone-Test
     test_prompt = (
-        "Modern B2B SaaS infographic about RevOps pipeline efficiency. "
-        "Clean dark background, data visualization, funnel chart, "
-        "professional design, blue and white color scheme."
+        "Premium editorial LinkedIn featured image about RevOps. "
+        "Headline 'WAHRHEIT SCHLAEGT KOMFORT'. Deep Navy + Bright Orange accent on white. "
+        "Minimum 20% negative space in the lower-right quadrant for logo overlay."
     )
     print("Teste kie.ai Bildgenerierung ...")
     try:
         url = generate_image(test_prompt)
-        print(f"✓ Bild-URL: {url}")
+        print(f"OK Bild-URL: {url}")
     except Exception as e:
-        print(f"✗ Fehler: {e}", file=sys.stderr)
+        print(f"FEHLER: {e}", file=sys.stderr)
         sys.exit(1)
