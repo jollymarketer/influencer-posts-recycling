@@ -61,13 +61,23 @@ Visualize the core message as one strong, editorial image — premium click-bait
 Instantly understandable on mobile, provocative enough to stop a CEO from scrolling.
 
 Brand — Jolly Marketer:
-- Background: white (#FFFFFF) or Deep Navy (#1E2A3A)
-- Accent: Bright Orange (#FF6B35), used sparingly
-- Typography: Montserrat-style ultra-bold sans-serif. Deep Navy on light, white on dark.
+- Palette: Deep Navy (#1E2A3A), Bright Orange (#FF6B35) as accent, white as supporting tone
+- Typography: Montserrat-style ultra-bold sans-serif. Deep Navy on light surfaces, white on dark.
 - Max 6 words headline, integrated into the composition
-- Premium editorial feel — no stock imagery, no clutter, no gradients
+- Premium editorial feel — no stock photography clichés, no clutter
 
-Minimum 20% negative space in the lower-right quadrant — reserved for logo overlay, must be clean and empty.
+Visual variety — IMPORTANT:
+- Do NOT default to a plain white background. Make the image visually interesting and scroll-stopping.
+- Vary the visual treatment across posts: editorial photography, abstract 3D renders, isometric scenes, conceptual illustrations, tactile textures (paper, concrete, glass), cinematic lighting, dark editorial moods, bold graphic compositions, metaphorical objects, environmental scenes.
+- Subtle gradients, vignettes, depth of field, and atmospheric backgrounds are allowed and encouraged when they support the message.
+- The image should feel like an editorial cover, not a slide template.
+
+Logo rule — CRITICAL (zero tolerance):
+- Do NOT render, draw, invent, suggest, or include ANY logo, wordmark, brand mark, monogram, company name, jester icon, funnel icon, signature, watermark, or signature graphic anywhere in the image — not even a small one, not even stylized, not even abstract.
+- The real Jolly Marketer logo is added in post-production into the lower-right safe-zone. The AI-generated image itself must be 100% logo-free so we never end up with two logos in the final deliverable.
+- The lower-right quadrant must contain no characters, shapes, marks, icons, or graphics of any kind. Leave it visually empty.
+
+Minimum 20% negative space in the lower-right quadrant — reserved for the post-production logo overlay. Must be completely clean and empty (no text, no objects, no subtle graphics).
 
 Image language: {language_of_post}
 ```

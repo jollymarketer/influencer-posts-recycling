@@ -28,7 +28,7 @@ GITHUB_IMAGES_PATH = "images"
 
 LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "Resources", "Jolly Marketer_logo_horizontal.png")
 LOGO_PADDING = 28       # Abstand vom Rand in px
-LOGO_MAX_WIDTH_RATIO = 0.22  # Logo nimmt max. 22% der Bildbreite ein
+LOGO_MAX_WIDTH_RATIO = 0.11  # Logo nimmt max. 11% der Bildbreite ein (50% kleiner als zuvor)
 
 
 def _overlay_logo(image_bytes: bytes) -> bytes:
