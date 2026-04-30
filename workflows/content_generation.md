@@ -51,35 +51,30 @@ Original Post:
 
 **Prompt-Template:**
 ```
-Create a LinkedIn featured image (3:2) for a post targeted at CEOs of tech companies.
+Create an editorial 3:2 cover visual for a tech-business audience. Treat this as a magazine cover photograph or conceptual editorial still — not advertising, not marketing collateral, not branded ad creative.
 
-LinkedIn Post:
+LinkedIn Post (the message we are visualizing):
 {linkedin_post_text}
 
 Goal:
-Visualize the core message as one strong, editorial image — premium click-bait.
-Instantly understandable on mobile, provocative enough to stop a CEO from scrolling.
+Translate the core message into one strong, editorial image — premium, scroll-stopping, instantly understandable on mobile, provocative enough to make a CEO of a tech company stop scrolling.
 
-Brand — Jolly Marketer:
+Visual style:
 - Palette: Deep Navy (#1E2A3A), Bright Orange (#FF6B35) as accent, white as supporting tone
 - Typography: Montserrat-style ultra-bold sans-serif. Deep Navy on light surfaces, white on dark.
-- Max 6 words headline, integrated into the composition
-- Premium editorial feel — no stock photography clichés, no clutter
+- Max 6 words headline, integrated into the composition. Image language: {language_of_post}
+- Premium editorial feel — magazine-cover or art-direction quality, not stock imagery, not slide layout
 
 Visual variety — IMPORTANT:
 - Do NOT default to a plain white background. Make the image visually interesting and scroll-stopping.
 - Vary the visual treatment across posts: editorial photography, abstract 3D renders, isometric scenes, conceptual illustrations, tactile textures (paper, concrete, glass), cinematic lighting, dark editorial moods, bold graphic compositions, metaphorical objects, environmental scenes.
-- Subtle gradients, vignettes, depth of field, and atmospheric backgrounds are allowed and encouraged when they support the message.
+- Subtle gradients, vignettes, depth of field, and atmospheric backgrounds are encouraged when they support the message.
 - The image should feel like an editorial cover, not a slide template.
 
-Logo rule — CRITICAL (zero tolerance):
-- Do NOT render, draw, invent, suggest, or include ANY logo, wordmark, brand mark, monogram, company name, jester icon, funnel icon, signature, watermark, or signature graphic anywhere in the image — not even a small one, not even stylized, not even abstract.
-- The real Jolly Marketer logo is added in post-production into the lower-right safe-zone. The AI-generated image itself must be 100% logo-free so we never end up with two logos in the final deliverable.
-- The lower-right quadrant must contain no characters, shapes, marks, icons, or graphics of any kind. Leave it visually empty.
+Composition rule for the lower-right quadrant:
+- The lower-right ~20% of the image must contain only clean, calm background — atmospheric texture, soft blur, plain surface, sky, or pure negative space. No subjects, no objects, no figures, no text, no graphic elements of any kind in this region.
 
-Minimum 20% negative space in the lower-right quadrant — reserved for the post-production logo overlay. Must be completely clean and empty (no text, no objects, no subtle graphics).
-
-Image language: {language_of_post}
+The headline is the only text or graphic element in the image apart from the depicted scene itself. The image is unbranded — no commercial signatures, monograms, or imprinted marks of any kind.
 ```
 
 ### Schritt 4: Bild generieren
