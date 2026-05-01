@@ -11,9 +11,10 @@ import os
 import sys
 import time
 
+import anthropic
 import requests
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, ImageFilter
 
 load_dotenv()
 
@@ -29,6 +30,188 @@ GITHUB_IMAGES_PATH = "images"
 LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "Resources", "Jolly Marketer_logo_horizontal.png")
 LOGO_PADDING = 28       # Abstand vom Rand in px
 LOGO_MAX_WIDTH_RATIO = 0.11  # Logo nimmt max. 11% der Bildbreite ein (50% kleiner als zuvor)
+
+# Anti-Halluzinations-Pipeline: T2I-Modelle setzen reflexartig ein Marken-Mark
+# in die Gegenecke der Safe-Zone. Wir wipen das deterministisch.
+VISION_MODEL = "claude-sonnet-4-6"
+BOTTOM_LEFT_WIPE_W_RATIO = 0.22
+BOTTOM_LEFT_WIPE_H_RATIO = 0.18
+VISION_MIN_CONFIDENCE = 0.85
+VISION_MAX_BOX_W = 0.25   # Boxen größer als das sind vermutlich die Headline → ignorieren
+VISION_MAX_BOX_H = 0.30
+
+VISION_DETECT_PROMPT = """Analyze this image and detect any commercial brand marks that should not be there.
+
+REPORT (these are NOT allowed in this image):
+- Logos, wordmarks, monograms
+- Company names rendered as a branded mark
+- Jester / mascot icons
+- Funnel icons, signatures, watermarks, imprinted brand graphics
+
+DO NOT REPORT:
+- The main editorial headline (large display typography that conveys the post's message)
+- Text or signage that is part of the depicted scene (street signs, product labels in a still life, etc.)
+- The photographic subject itself
+
+Return STRICT JSON only — no prose, no markdown fences:
+{"marks": [{"x": <0-1>, "y": <0-1>, "w": <0-1>, "h": <0-1>, "confidence": <0-1>, "description": "<short>"}]}
+
+Coordinates are normalized: (0,0) = top-left, (1,1) = bottom-right. Each box is the tight bounding box around the mark.
+
+If no brand marks are present, return: {"marks": []}"""
+
+
+def _sample_clean_background_color(image: Image.Image) -> tuple:
+    """Mittelwert eines vermutlich sauberen Bereichs am oberen Bildrand."""
+    w, h = image.size
+    sample_h = max(2, int(h * 0.08))
+    sample = image.crop((int(w * 0.35), 0, int(w * 0.65), sample_h))
+    sample = sample.resize((1, 1), Image.LANCZOS).convert("RGBA")
+    return sample.getpixel((0, 0))
+
+
+def _wipe_region(
+    image: Image.Image,
+    box: tuple,
+    fill_rgba: tuple,
+    feather_px: int = 22,
+) -> Image.Image:
+    """Überdeckt eine Rechteckregion mit fill_rgba und weichen Kanten."""
+    base = image.convert("RGBA").copy()
+    left, top, right, bottom = box
+    width = max(1, right - left)
+    height = max(1, bottom - top)
+
+    fill = Image.new("RGBA", (width, height), fill_rgba)
+    mask = Image.new("L", (width, height), 255).filter(ImageFilter.GaussianBlur(feather_px))
+
+    overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    overlay.paste(fill, (left, top), mask)
+    return Image.alpha_composite(base, overlay)
+
+
+def _wipe_bottom_left_zone(image_bytes: bytes) -> bytes:
+    """Stufe 1: empirischer Hotspot für halluzinierte Logos. Hard-Wipe der unteren linken Ecke."""
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+    w, h = img.size
+
+    bg = _sample_clean_background_color(img)
+    wipe_w = int(w * BOTTOM_LEFT_WIPE_W_RATIO)
+    wipe_h = int(h * BOTTOM_LEFT_WIPE_H_RATIO)
+    box = (0, h - wipe_h, wipe_w, h)
+
+    out = _wipe_region(img, box, bg, feather_px=24)
+    print(f"  Stufe 1: Bottom-Left-Wipe ({wipe_w}x{wipe_h}px, BG={bg})", flush=True)
+
+    buf = io.BytesIO()
+    out.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _detect_brand_marks(image_bytes: bytes) -> list:
+    """Stufe 2: Claude Vision prüft das Bild auf verbleibende Marken-Marks und gibt Boxen zurück."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("  Stufe 2 übersprungen: ANTHROPIC_API_KEY fehlt", flush=True)
+        return []
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+
+        resp = client.messages.create(
+            model=VISION_MODEL,
+            max_tokens=1024,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": b64,
+                            },
+                        },
+                        {"type": "text", "text": VISION_DETECT_PROMPT},
+                    ],
+                }
+            ],
+        )
+
+        text = resp.content[0].text.strip()
+        if text.startswith("```"):
+            inner = text.strip("`")
+            if inner.lower().startswith("json"):
+                inner = inner[4:]
+            text = inner.strip()
+
+        parsed = json.loads(text)
+        marks = parsed.get("marks", []) if isinstance(parsed, dict) else []
+        print(f"  Stufe 2: Vision meldet {len(marks)} Mark(s)", flush=True)
+        return marks
+    except Exception as e:
+        print(f"  Stufe 2 Fehler ({e}) — fahre ohne Vision-Wipe fort", flush=True)
+        return []
+
+
+def _wipe_detected_marks(image_bytes: bytes, marks: list) -> bytes:
+    """Stufe 2 anwenden: jede valide Box mit Hintergrundfarbe überdecken."""
+    if not marks:
+        return image_bytes
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+    w, h = img.size
+    bg = _sample_clean_background_color(img)
+
+    pad_x = int(w * 0.025)
+    pad_y = int(h * 0.025)
+
+    wiped = 0
+    for m in marks:
+        try:
+            confidence = float(m.get("confidence", 0))
+            mx = float(m["x"])
+            my = float(m["y"])
+            mw = float(m["w"])
+            mh = float(m["h"])
+        except (KeyError, TypeError, ValueError):
+            continue
+
+        if confidence < VISION_MIN_CONFIDENCE:
+            continue
+        if mw > VISION_MAX_BOX_W or mh > VISION_MAX_BOX_H:
+            # Zu groß → vermutlich die echte Headline, nicht überdecken
+            continue
+
+        left = max(0, int(mx * w) - pad_x)
+        top = max(0, int(my * h) - pad_y)
+        right = min(w, int((mx + mw) * w) + pad_x)
+        bottom = min(h, int((my + mh) * h) + pad_y)
+        if right <= left or bottom <= top:
+            continue
+
+        img = _wipe_region(img, (left, top, right, bottom), bg, feather_px=20)
+        wiped += 1
+        print(
+            f"    → wipe box=({left},{top},{right},{bottom}) conf={confidence:.2f} desc={m.get('description', '')[:60]}",
+            flush=True,
+        )
+
+    if wiped == 0:
+        print("  Stufe 2: keine Box hat die Filter passiert (zu groß / zu schwach)", flush=True)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _strip_hallucinated_brand_marks(image_bytes: bytes) -> bytes:
+    """Defense in depth: Stufe 1 (deterministischer Wipe) + Stufe 2 (Vision-gestützt)."""
+    after_stage_1 = _wipe_bottom_left_zone(image_bytes)
+    marks = _detect_brand_marks(after_stage_1)
+    return _wipe_detected_marks(after_stage_1, marks)
 
 
 def _overlay_logo(image_bytes: bytes) -> bytes:
@@ -163,11 +346,12 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
             image_url = urls[0]
             print(f"  kie.ai: FERTIG -> {image_url}", flush=True)
 
-            # Logo einblenden
+            # Logo einblenden — vorher halluzinierte Marks entfernen
             final_bytes = None
             try:
                 img_bytes = requests.get(image_url, timeout=30).content
-                final_bytes = _overlay_logo(img_bytes)
+                cleaned_bytes = _strip_hallucinated_brand_marks(img_bytes)
+                final_bytes = _overlay_logo(cleaned_bytes)
                 os.makedirs(".tmp", exist_ok=True)
                 local_path = f".tmp/generated_{task_id[:8]}.png"
                 with open(local_path, "wb") as f:
