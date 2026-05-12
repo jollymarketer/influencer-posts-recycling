@@ -16,13 +16,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Windows-Default cp1252 kann viele Influencer-Namen (Alić, Trümpi, Nordström, ...)
+# nicht encoden — beim print() crasht das Skript. UTF-8 erzwingen.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 APIFY_API_KEY = os.getenv("APIFY_API_KEY")
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "..", "influencers.csv")
 
-# Posts muessen mindestens 1 Tag alt sein (Engagement hat Zeit akkumuliert)
-# und maximal 5 Tage alt (noch relevant)
-MIN_AGE_HOURS = 24
-MAX_AGE_HOURS = 120  # 5 Tage
+# Daily-Cron-Setup: scrapt nur die letzten 24h, jeder Run liefert max 3 Posts pro Profil.
+# Mindest-Alter 6h (sonst werden frische Donnerstag-Nachmittag-Posts am Freitag-Morgen-Run
+# gefiltert, bevor Engagement reifen konnte).
+MIN_AGE_HOURS = 6
+MAX_AGE_HOURS = 36
 
 
 def load_influencers():
@@ -37,11 +44,11 @@ def load_influencers():
     return influencers
 
 
-def scrape_posts_for_profile(client, profile_url, max_posts=10):
+def scrape_posts_for_profile(client, profile_url, max_posts=3):
     run_input = {
         "targetUrls": [profile_url],
         "maxPosts": max_posts,
-        "postedLimit": "week",
+        "postedLimit": "24h",
         "includeQuotePosts": True,
         "includeReposts": False,
         "scrapeReactions": False,

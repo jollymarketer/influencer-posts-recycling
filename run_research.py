@@ -1,6 +1,7 @@
 """
 Influencer Posts Recycling — Vollautomatischer Daily Pipeline
-Railway Cron: Mo-Fr 07:00 UTC
+Railway Cron: Di-Fr 07:00 UTC (Mo skip — Sonntag-Posts sind GTM-mäßig schwach.
+Fr-Cron-Output sitzt das Wochenende in Notion und wird Mo publiziert.)
 
 Flow:
 1. Bestehende Post-URLs aus Notion laden (Duplikat-Filter)
@@ -19,6 +20,11 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
+
+# UTF-8 stdout — Windows cp1252 kann Sonderzeichen in Influencer-Namen nicht encoden.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from tools.notion_db import (
     get_existing_post_urls,
