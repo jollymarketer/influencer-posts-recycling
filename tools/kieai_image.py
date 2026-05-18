@@ -21,7 +21,20 @@ load_dotenv()
 KIEAI_API_KEY = os.getenv("KIEAI_API_KEY", "19445902ad562e4343e93799081400b9")
 KIEAI_BASE_URL = "https://api.kie.ai/api/v1"
 POLL_INTERVAL_SECONDS = 10
-MAX_POLL_ATTEMPTS = 90  # 90 × 10s = 15 Minuten
+# 2026-05-18: kie.ai gpt-image-2 hat einen Tag mit ~16 Min Generierungszeit erlebt.
+# 25 Min Headroom verhindert Single-Run-Timeouts ohne den Cron unverhaeltnismaessig
+# zu blockieren (Railway-Cron-Job laeuft sowieso bis Fertigstellung).
+MAX_POLL_ATTEMPTS = 150  # 150 × 10s = 25 Minuten
+
+# Top-level retry: full kie.ai job is re-attempted from createTask if it raises.
+# Catches transient 5xx, network blips, single content-policy false-positives.
+JOB_MAX_ATTEMPTS = 2
+JOB_RETRY_BACKOFF_SECONDS = 15
+
+# HTTP-level retry: individual createTask / recordInfo calls are retried on
+# transient network errors and 5xx before bubbling up.
+HTTP_MAX_ATTEMPTS = 3
+HTTP_RETRY_BACKOFF_SECONDS = 4
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = "jollymarketer/influencer-posts-recycling"
@@ -272,20 +285,39 @@ def _upload_to_github(image_bytes: bytes, filename: str) -> str:
     return raw_url
 
 
-def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
-    """
-    Generiert ein Bild via kie.ai gpt-image-2-text-to-image.
+def _kie_request_with_retry(method: str, url: str, **kwargs) -> requests.Response:
+    """HTTP wrapper with retry on RequestException and 5xx for kie.ai calls."""
+    last_exc = None
+    for attempt in range(1, HTTP_MAX_ATTEMPTS + 1):
+        try:
+            resp = requests.request(method, url, **kwargs)
+            if resp.status_code >= 500:
+                print(
+                    f"  kie.ai HTTP {resp.status_code} (Versuch {attempt}/{HTTP_MAX_ATTEMPTS}): {resp.text[:200]}",
+                    flush=True,
+                )
+                if attempt < HTTP_MAX_ATTEMPTS:
+                    time.sleep(HTTP_RETRY_BACKOFF_SECONDS * attempt)
+                    continue
+            resp.raise_for_status()
+            return resp
+        except requests.RequestException as e:
+            last_exc = e
+            print(
+                f"  kie.ai Request-Fehler (Versuch {attempt}/{HTTP_MAX_ATTEMPTS}): {e}",
+                flush=True,
+            )
+            if attempt < HTTP_MAX_ATTEMPTS:
+                time.sleep(HTTP_RETRY_BACKOFF_SECONDS * attempt)
+                continue
+            raise
+    if last_exc:
+        raise last_exc
+    raise RuntimeError("kie.ai Request fehlgeschlagen nach Retries")
 
-    Args:
-        prompt: Bildgenerierungs-Prompt
-        aspect_ratio: z.B. "3:2" (LinkedIn-Feed), "1:1", "16:9" (Standard: 3:2)
 
-    Returns:
-        URL des fertigen Bildes
-
-    Raises:
-        RuntimeError: Wenn Generierung fehlschlägt oder Timeout erreicht
-    """
+def _run_kie_job(prompt: str, aspect_ratio: str) -> str:
+    """Eine vollstaendige kie.ai-Generierung: createTask + Polling + Upload. Raises RuntimeError bei Fehler."""
     headers = {
         "Authorization": f"Bearer {KIEAI_API_KEY}",
         "Content-Type": "application/json",
@@ -302,13 +334,13 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
         },
     }
 
-    resp = requests.post(
+    resp = _kie_request_with_retry(
+        "POST",
         f"{KIEAI_BASE_URL}/jobs/createTask",
         headers=headers,
         json=create_payload,
         timeout=30,
     )
-    resp.raise_for_status()
     data = resp.json()
 
     if data.get("code") != 200:
@@ -322,13 +354,13 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
         time.sleep(POLL_INTERVAL_SECONDS)
         print(f"  kie.ai: Polling #{attempt} ...", flush=True)
 
-        poll_resp = requests.get(
+        poll_resp = _kie_request_with_retry(
+            "GET",
             f"{KIEAI_BASE_URL}/jobs/recordInfo",
             headers=headers,
             params={"taskId": task_id},
             timeout=30,
         )
-        poll_resp.raise_for_status()
         poll_data = poll_resp.json()
 
         if poll_data.get("code") != 200:
@@ -401,6 +433,42 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
         # Bei waiting / queuing / generating → weiter pollen
 
     raise RuntimeError(f"kie.ai Timeout nach {MAX_POLL_ATTEMPTS * POLL_INTERVAL_SECONDS}s")
+
+
+def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
+    """
+    Generiert ein Bild via kie.ai gpt-image-2-text-to-image mit Top-Level-Retry.
+
+    Args:
+        prompt: Bildgenerierungs-Prompt
+        aspect_ratio: z.B. "3:2" (LinkedIn-Feed), "1:1", "16:9" (Standard: 3:2)
+
+    Returns:
+        URL des fertigen Bildes
+
+    Raises:
+        RuntimeError: Wenn nach allen Versuchen keine Generierung gelingt.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(1, JOB_MAX_ATTEMPTS + 1):
+        try:
+            return _run_kie_job(prompt, aspect_ratio)
+        except Exception as e:
+            last_exc = e
+            print(
+                f"  kie.ai Job-Fehler (Versuch {attempt}/{JOB_MAX_ATTEMPTS}): {e}",
+                flush=True,
+            )
+            if attempt < JOB_MAX_ATTEMPTS:
+                print(
+                    f"  Warte {JOB_RETRY_BACKOFF_SECONDS}s vor neuem Versuch ...",
+                    flush=True,
+                )
+                time.sleep(JOB_RETRY_BACKOFF_SECONDS)
+    assert last_exc is not None
+    raise RuntimeError(
+        f"kie.ai endgueltig fehlgeschlagen nach {JOB_MAX_ATTEMPTS} Versuchen: {last_exc}"
+    ) from last_exc
 
 
 if __name__ == "__main__":

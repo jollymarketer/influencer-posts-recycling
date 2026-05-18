@@ -174,27 +174,34 @@ def update_with_draft(
     image_url: str,
     title: str = "",
     influencer: str = "",
+    image_failed: bool = False,
+    image_error: str = "",
 ):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
-    Setzt Status auf 'Ready to Review' und feuert den Make-Webhook fuer die E-Mail-Benachrichtigung.
+    Setzt Status auf 'Ready to Review' (oder 'Image Failed' falls Bildgenerierung
+    fehlgeschlagen ist) und feuert den Make-Webhook fuer die E-Mail-Benachrichtigung.
     Raises ValueError wenn linkedin_draft leer ist.
     """
     if not linkedin_draft:
         raise ValueError(f"update_with_draft: linkedin_draft ist leer fuer page_id={page_id}")
 
+    status_name = "Image Failed" if image_failed else "Ready to Review"
     properties = {
-        "Status": {
-            "select": {"name": "Ready to Review"}
-        },
+        "Status": {"select": {"name": status_name}},
     }
     if linkedin_draft:
         properties["LinkedIn Draft"] = {
             "rich_text": [{"text": {"content": linkedin_draft[:2000]}}]
         }
     if image_prompt:
+        # Bei Image-Failure haengen wir die letzte Fehlermeldung an, damit
+        # Richard im Notion-Page sofort sieht WARUM (statt nur in Railway-Logs).
+        prompt_payload = image_prompt
+        if image_failed and image_error:
+            prompt_payload = f"[IMAGE FAILED] {image_error[:400]}\n\n{image_prompt}"
         properties["Image Prompt"] = {
-            "rich_text": [{"text": {"content": image_prompt[:2000]}}]
+            "rich_text": [{"text": {"content": prompt_payload[:2000]}}]
         }
     if image_url:
         properties["Image"] = {
@@ -211,16 +218,20 @@ def update_with_draft(
     resp.raise_for_status()
     result = resp.json()
 
-    # Make-Webhook feuern → E-Mail-Alert an Richard
+    # Make-Webhook feuern → E-Mail-Alert an Richard.
+    # image_failed-Flag steht im Payload, damit die Make-Scenario spaeter
+    # einen anderen Subject-Prefix setzen kann (z.B. "[Bild fehlt]").
     try:
         notion_url = f"{NOTION_PAGE_BASE_URL}{page_id.replace('-', '')}"
         webhook_payload = {
             "title": title or page_id,
             "influencer": influencer,
             "notion_url": notion_url,
+            "image_failed": image_failed,
+            "status": status_name,
         }
         requests.post(MAKE_REVIEW_WEBHOOK, json=webhook_payload, timeout=10)
-        print(f"  Make-Webhook gefeuert: Ready to Review Alert", flush=True)
+        print(f"  Make-Webhook gefeuert: {status_name} Alert", flush=True)
     except Exception as e:
         print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
 

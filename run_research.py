@@ -115,18 +115,23 @@ def main():
 
     # Schritt 6: Bild generieren
     image_url = ""
+    image_failed = False
+    image_error = ""
     if image_prompt:
         print("\nSchritt 6: Generiere Bild (kie.ai) ...")
         try:
             image_url = generate_image(image_prompt)
             print(f"  Bild-URL: {image_url}")
         except Exception as e:
-            print(f"  Bildgenerierung fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+            image_failed = True
+            image_error = str(e)
+            print(f"  Bildgenerierung fehlgeschlagen (Notion-Status='Image Failed'): {e}", file=sys.stderr)
     else:
         print("\nSchritt 6: Kein Bild-Prompt — ueberspringe Bildgenerierung.")
 
     # Schritt 7: NUR Winner in Notion speichern (fertig mit Draft + Bild)
-    print("\nSchritt 7: Winner in Notion speichern (Ready to Review) ...")
+    target_status = "Image Failed" if image_failed else "Ready to Review"
+    print(f"\nSchritt 7: Winner in Notion speichern ({target_status}) ...")
     try:
         page_id = create_post_entry(
             influencer=winner["influencer"],
@@ -142,8 +147,10 @@ def main():
             image_url=image_url,
             title=winner.get("post_excerpt", "")[:60],
             influencer=winner["influencer"],
+            image_failed=image_failed,
+            image_error=image_error,
         )
-        print(f"  Done: {winner['influencer']} -> Ready to Review")
+        print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:
         print(f"  FEHLER beim Notion-Speichern: {e}", file=sys.stderr)
         sys.exit(1)
