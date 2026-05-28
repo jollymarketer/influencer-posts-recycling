@@ -34,7 +34,7 @@ from tools.notion_db import (
 )
 from tools.linkedin_scraper import scrape_new_posts
 from tools.substack_scraper import scrape_substack_posts
-from tools.post_scorer import score_posts, generate_post_and_image_prompt
+from tools.post_scorer import score_posts, generate_post_and_image_prompt, build_infographic_prompt
 from tools.kieai_image import generate_image
 
 MIN_SCORE = 25
@@ -114,14 +114,22 @@ def main():
     print(f"  Bild-Prompt: {'OK' if image_prompt else 'leer'}")
     print(f"  Infografik-Skelett: {'OK' if infographic_skeleton else 'leer'}")
 
-    # Schritt 6: Bild generieren
+    # Schritt 6: Bild generieren — Infografik aus dem Skelett (Pierre-Rubel-Playbook:
+    # Infografik treibt Saves, nicht der Editorial-Poster). Faellt auf den
+    # Editorial-Poster zurueck, falls kein Infografik-Skelett vorhanden ist.
+    infographic_prompt = build_infographic_prompt(infographic_skeleton)
+    if infographic_prompt:
+        gen_prompt, gen_ratio, gen_strip, gen_label = infographic_prompt, "1:1", False, "Infografik"
+    else:
+        gen_prompt, gen_ratio, gen_strip, gen_label = image_prompt, "3:2", True, "Editorial-Poster"
+
     image_url = ""
     image_failed = False
     image_error = ""
-    if image_prompt:
-        print("\nSchritt 6: Generiere Bild (kie.ai) ...")
+    if gen_prompt:
+        print(f"\nSchritt 6: Generiere Bild (kie.ai, {gen_label}, {gen_ratio}) ...")
         try:
-            image_url = generate_image(image_prompt)
+            image_url = generate_image(gen_prompt, aspect_ratio=gen_ratio, strip_marks=gen_strip)
             print(f"  Bild-URL: {image_url}")
         except Exception as e:
             image_failed = True
@@ -144,7 +152,7 @@ def main():
         update_with_draft(
             page_id=page_id,
             linkedin_draft=linkedin_draft,
-            image_prompt=image_prompt,
+            image_prompt=gen_prompt,
             image_url=image_url,
             title=winner.get("post_excerpt", "")[:60],
             influencer=winner["influencer"],

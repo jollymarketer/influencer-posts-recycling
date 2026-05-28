@@ -315,7 +315,7 @@ def _kie_request_with_retry(method: str, url: str, **kwargs) -> requests.Respons
     raise RuntimeError("kie.ai Request fehlgeschlagen nach Retries")
 
 
-def _run_kie_job(prompt: str, aspect_ratio: str) -> str:
+def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True) -> str:
     """Eine vollstaendige kie.ai-Generierung: createTask + Polling + Upload. Raises RuntimeError bei Fehler."""
     headers = {
         "Authorization": f"Bearer {KIEAI_API_KEY}",
@@ -377,11 +377,13 @@ def _run_kie_job(prompt: str, aspect_ratio: str) -> str:
             image_url = urls[0]
             print(f"  kie.ai: FERTIG -> {image_url}", flush=True)
 
-            # Logo einblenden — vorher halluzinierte Marks entfernen
+            # Logo einblenden — vorher halluzinierte Marks entfernen.
+            # Bei Infografiken (strip_marks=False) bleibt der Wipe aus: er wuerde
+            # gewollte Tool-Logos und untere Infografik-Ebenen wegradieren.
             final_bytes = None
             try:
                 img_bytes = requests.get(image_url, timeout=30).content
-                cleaned_bytes = _strip_hallucinated_brand_marks(img_bytes)
+                cleaned_bytes = _strip_hallucinated_brand_marks(img_bytes) if strip_marks else img_bytes
                 final_bytes = _overlay_logo(cleaned_bytes)
                 os.makedirs(".tmp", exist_ok=True)
                 local_path = f".tmp/generated_{task_id[:8]}.png"
@@ -434,13 +436,16 @@ def _run_kie_job(prompt: str, aspect_ratio: str) -> str:
     raise RuntimeError(f"kie.ai Timeout nach {MAX_POLL_ATTEMPTS * POLL_INTERVAL_SECONDS}s")
 
 
-def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
+def generate_image(prompt: str, aspect_ratio: str = "3:2", strip_marks: bool = True) -> str:
     """
     Generiert ein Bild via kie.ai gpt-image-2-text-to-image mit Top-Level-Retry.
 
     Args:
         prompt: Bildgenerierungs-Prompt
         aspect_ratio: z.B. "3:2" (LinkedIn-Feed), "1:1", "16:9" (Standard: 3:2)
+        strip_marks: Wenn True (Editorial-Poster), werden halluzinierte Marken-Marks
+            via Bottom-Left-Wipe + Vision-Detect entfernt. Bei Infografiken auf False
+            setzen — sonst werden gewollte Tool-Logos und untere Ebenen zerstoert.
 
     Returns:
         URL des fertigen Bildes
@@ -451,7 +456,7 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2") -> str:
     last_exc: Exception | None = None
     for attempt in range(1, JOB_MAX_ATTEMPTS + 1):
         try:
-            return _run_kie_job(prompt, aspect_ratio)
+            return _run_kie_job(prompt, aspect_ratio, strip_marks=strip_marks)
         except Exception as e:
             last_exc = e
             print(

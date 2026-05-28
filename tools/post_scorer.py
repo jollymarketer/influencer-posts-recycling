@@ -285,6 +285,95 @@ Output:
 A premium LinkedIn featured image that expresses one clear strategic idea fast, cleanly, and memorably."""
 
 
+INFOGRAPHIC_PROMPT_TEMPLATE = """Create a premium, clean LinkedIn infographic (vertical 4:5 or square) for Jolly Marketer that renders the layers below as a single, instantly readable visual.
+
+Layout style: {layout}
+{metaphor_line}
+ONLY the following layers and their keywords may appear as visible text. Render them EXACTLY as written in {language}, no translation, no extra words, no title, no type name, no meta labels:
+
+{layers}
+
+Objective:
+A save-worthy LinkedIn infographic. The reader should grasp the structure in 2 to 3 seconds and want to save it as a reference. Structure over decoration.
+
+Layout logic:
+- Eisberg: one large iceberg with a clear waterline; the first layer sits above water, the deeper layers stack below in descending depth. Most important hidden layer at the bottom.
+- Funnel/Pyramide: stacked horizontal bands narrowing top-to-bottom (or bottom-to-top), one layer per band.
+- Vergleichstabelle: two clean columns, one header per column, aligned rows.
+- Framework/Kreise: concentric or nested circles, one layer per ring.
+- Horizontaler Vergleich: equal-weight blocks side by side.
+
+Each layer shows its label as a short bold heading plus its keywords as a tight list. Keywords stay keywords, never full sentences.
+
+Jolly Marketer brand rules:
+- Background: always white (#FFFFFF). No dark or colored backgrounds, no gradients.
+- Headings/labels: Deep Navy (#1E2A3A), bold.
+- Accents (lines, the waterline, key shapes): Electric Blue (#0066FF) or Bright Orange (#FF6B35), used sparingly.
+- Neutrals: Light Grey #F4F6F8 / #EEF1F5, Mid Grey #8892A4.
+- Maximum 3 prominent colors. Montserrat-style bold sans-serif typography, compact and highly legible.
+
+Hard rules:
+- No brand, tool, or company logos anywhere in the image. No logo row, no tool chips.
+- No title text, no infographic-type name (like "Eisberg" or "Funnel"), no metaphor word rendered as a label.
+
+Composition:
+- One clear vertical reading flow, strong hierarchy, generous whitespace between layers.
+- Reserve clean empty space in the bottom-right corner for a logo overlay (no text or graphic there).
+- It must still read clearly at LinkedIn thumbnail size.
+
+Avoid: clutter, decorative icons that add no meaning, busy backgrounds, more than 3 colors, full sentences, tiny unreadable text, chaotic layouts.
+
+Final check: Is the structure instantly clear? Are all German labels spelled correctly? Are there zero logos and zero title/type text? Is the bottom-right corner clear for the logo?"""
+
+
+def build_infographic_prompt(skeleton: str, language: str = "German") -> str:
+    """
+    Baut aus dem strukturierten Infografik-Skelett (TYP/METAPHER/EBENEN/TOOL-LOGOS,
+    erzeugt von generate_post_and_image_prompt) einen kie.ai-Bild-Prompt fuer eine
+    echte gerenderte Infografik. Gibt "" zurueck wenn kein Skelett vorhanden ist.
+
+    Nur die EBENEN werden als sichtbarer Text gerendert. TYP steuert das Layout,
+    METAPHER nur die visuelle Richtung. Keine Tool-Logos, kein Titel/Typ-Name im Bild.
+    """
+    skeleton = (skeleton or "").strip()
+    if not skeleton:
+        return ""
+
+    layout = ""
+    metaphor = ""
+    layers: list[str] = []
+    in_ebenen = False
+    for line in skeleton.splitlines():
+        stripped = line.strip()
+        upper = stripped.upper()
+        if upper.startswith("TYP:"):
+            layout = stripped.split(":", 1)[1].strip()
+            in_ebenen = False
+        elif upper.startswith("METAPHER:"):
+            metaphor = stripped.split(":", 1)[1].strip()
+            in_ebenen = False
+        elif upper.startswith("KOMPLEMENTARIT") or upper.startswith("TOOL-LOGOS:"):
+            in_ebenen = False
+        elif upper.startswith("EBENEN:"):
+            in_ebenen = True
+        elif in_ebenen and stripped:
+            layers.append(stripped)
+
+    # Ohne Ebenen kein verlaesslicher Bild-Aufbau.
+    if not layers:
+        return ""
+
+    metaphor_line = (
+        f"Visual direction (do NOT render this word as text): {metaphor}" if metaphor else ""
+    )
+    return INFOGRAPHIC_PROMPT_TEMPLATE.format(
+        layout=layout or "structured stacked layers",
+        metaphor_line=metaphor_line,
+        language=language,
+        layers="\n".join(layers),
+    )
+
+
 def calculate_virality_score(engagement: dict) -> int:
     """
     Berechnet einen Viralitaets-Score (0-10) basierend auf Engagement-Metriken.
