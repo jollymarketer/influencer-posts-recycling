@@ -45,9 +45,24 @@ Original Post:
 {post_text}
 ```
 
-### Schritt 3: Bild-Prompt generieren
+### Schritt 3: Bild-Prompt + Infografik-Skelett generieren
 
-**Ziel:** Ein LinkedIn Featured Image (3:2), das die Kernaussage des neu generierten Posts (Schritt 2) bildhaft, sofort verständlich und scroll-stoppend für CEOs von Tech-Unternehmen darstellt. Sprache im Bild = Sprache des Posts (DE → DE, EN → EN).
+Der gleiche Claude-Call (Schritt 2) produziert jetzt zwei Outputs:
+
+**3a — Bild-Prompt** (Editorial Image, automatisch an kie.ai übergeben):
+Ziel: Ein LinkedIn Featured Image (3:2), das die Kernaussage bildhaft, sofort verständlich und scroll-stoppend für CEOs von Tech-Unternehmen darstellt. Sprache im Bild = Sprache des Posts (DE → DE, EN → EN).
+
+**3b — Infografik-Skelett** (Canva-Ready, manueller Schritt):
+Enthält:
+- `TYP`: Vergleichstabelle / Funnel/Pyramide / Eisberg / Framework/Kreise / Horizontaler Vergleich
+- `METAPHER`: Visuelle Metapher wenn sinnvoll (z.B. Eisberg, Rubik's Cube)
+- `KOMPLEMENTARITAET`: Infografik zeigt X → Post-Text erklärt Y
+- `EBENEN`: Keywords pro Ebene/Spalte (max. 3-4 Keywords, keine Sätze)
+- `TOOL-LOGOS`: ICP-relevante Tools für erhöhte Saves (HubSpot, Smartlead, Clay etc.)
+
+Das Skelett wird automatisch als Block "Infografik-Skelett (Canva)" in die Notion-Seite geschrieben.
+
+**Warum Infografik-First:** Laut Pierre Rubel (Content Path) sind 95% der Post-Performance auf die Infografik zurückzuführen — nicht auf den Text. Das Skelett gibt die Canva-Vorlage direkt vor, ohne dass man erst ein Konzept entwickeln muss.
 
 **Prompt-Template:**
 ```

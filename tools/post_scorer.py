@@ -97,7 +97,7 @@ Post-Struktur (ohne explizite Benennung):
 1. Hook (1-2 Saetze): Kontraintuitiver Befund, provokante These oder ueberraschende Zahl. Entscheidet ob jemand weiterliest.
 2. Problem: Klares Spannungsfeld das die Zielgruppe kennt. Konkret, nicht abstrakt.
 3. Proof/Praxis: Belege aus Beobachtung oder Mustern. Max 3-5 Schritte. Eigener Thought-Leader-Gedanke.
-4. CTA: Frage in die Runde oder Einladung zur Diskussion.
+4. Abschluss: Entweder Principle-Loop (loop zurueck zu einer groesseren universellen Wahrheit — etwas das schon bekannt ist aber es wieder wert ist zu sagen) ODER eine Frage — nur wenn sie genuines nicht-offensichtliches Interesse weckt. Kein "Was denkst du?"-Filler. Kein DM-CTA. Actionable content erzeugt Kommentare automatisch.
 
 Formatierung:
 - Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, nicht nach jedem Satz
@@ -134,6 +134,24 @@ Fuer wen ist die Aussage besonders relevant? 1-2 Woerter Zielgruppe, z.B. "CEOs,
 
 ---
 
+TEIL 4 - INFOGRAFIK-SKELETT:
+
+Basierend auf dem generierten Post: Empfehle den staerksten Infografik-Typ und liefere die Keywords fuer den Canva-Aufbau.
+
+INFOGRAFIK-TYPEN (nur einen waehlen):
+- Vergleichstabelle: Zwei Spalten (z.B. "Was Leute denken" vs. "Was es wirklich ist")
+- Funnel/Pyramide: 3-5 Ebenen mit Hierarchie (oben = Wichtigstes oder Ausgangspunkt)
+- Eisberg: Sichtbares vs. verborgene Tiefe
+- Framework/Kreise: Konzentrische oder verschachtelte Ebenen
+- Horizontaler Vergleich: Nebeneinander, gleichwertig
+
+Regeln:
+- Keywords nicht Saetze (max. 3-4 Keywords pro Ebene/Spalte)
+- 3-7 Elemente total, nicht mehr
+- Komplementaritaet: Wenn Infografik das Problem zeigt beschreibt der Post-Text die Loesung; wenn Infografik die Struktur zeigt erklaert der Post-Text das Warum
+- Tool-Logos empfehlen wenn ICP-relevante Tools im Post vorkommen (HubSpot, Smartlead, Clay, Make.com, Apollo etc.)
+- Visuelle Metapher empfehlen wenn eine den Kerngedanken verstaerkt (z.B. Eisberg fuer versteckte Komplexitaet, Rubik's Cube fuer Vielschichtigkeit)
+
 OUTPUT-FORMAT (exakt einhalten):
 
 ===POST===
@@ -145,7 +163,17 @@ OUTPUT-FORMAT (exakt einhalten):
 [Sound Byte — ein Satz, max. 12 Woerter]
 
 ===KONTEXT===
-[Zielgruppe/Kontext oder leer]"""
+[Zielgruppe/Kontext oder leer]
+
+===INFOGRAFIK===
+TYP: [Typ-Name]
+METAPHER: [Visuelle Metapher oder "keine"]
+KOMPLEMENTARITAET: [Infografik zeigt X → Post-Text erklaert Y]
+EBENEN:
+[Label 1]: [Keyword 1], [Keyword 2], [Keyword 3]
+[Label 2]: [Keyword 1], [Keyword 2], [Keyword 3]
+[Label 3]: [Keyword 1], [Keyword 2], [Keyword 3]
+TOOL-LOGOS: [Tool-Namen oder "keine"]"""
 
 
 IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for Jolly Marketer that communicates the core idea of the post through one clear, strategically strong visual concept.
@@ -364,10 +392,11 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
     )
     raw = response.content[0].text.strip()
 
-    # Parsen: ===POST===, ===SOUNDBYTE===, ===KONTEXT===
+    # Parsen: ===POST===, ===SOUNDBYTE===, ===KONTEXT===, ===INFOGRAFIK===
     linkedin_draft = ""
     sound_byte = ""
     kontext = ""
+    infographic_skeleton = ""
 
     if "===POST===" in raw:
         post_part = raw.split("===POST===")[1]
@@ -386,7 +415,14 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
             sound_byte = soundbyte_part.strip()
 
     if "===KONTEXT===" in raw:
-        kontext = raw.split("===KONTEXT===")[1].strip()
+        kontext_part = raw.split("===KONTEXT===")[1]
+        if "===INFOGRAFIK===" in kontext_part:
+            kontext = kontext_part.split("===INFOGRAFIK===")[0].strip()
+        else:
+            kontext = kontext_part.strip()
+
+    if "===INFOGRAFIK===" in raw:
+        infographic_skeleton = raw.split("===INFOGRAFIK===")[1].strip()
 
     # Sprache des Posts erkennen (deutsch, da DACH-Post)
     language = "German"
@@ -400,4 +436,4 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
             language=language,
         )
 
-    return linkedin_draft, image_prompt
+    return linkedin_draft, image_prompt, infographic_skeleton

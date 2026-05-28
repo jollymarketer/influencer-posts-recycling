@@ -221,10 +221,9 @@ def _wipe_detected_marks(image_bytes: bytes, marks: list) -> bytes:
 
 
 def _strip_hallucinated_brand_marks(image_bytes: bytes) -> bytes:
-    """Defense in depth: Stufe 1 (deterministischer Wipe) + Stufe 2 (Vision-gestützt)."""
-    after_stage_1 = _wipe_bottom_left_zone(image_bytes)
-    marks = _detect_brand_marks(after_stage_1)
-    return _wipe_detected_marks(after_stage_1, marks)
+    """Vision-gestützter Wipe: Claude erkennt nur echte Marken-Marks, nicht Editorial-Text."""
+    marks = _detect_brand_marks(image_bytes)
+    return _wipe_detected_marks(image_bytes, marks)
 
 
 def _overlay_logo(image_bytes: bytes) -> bytes:

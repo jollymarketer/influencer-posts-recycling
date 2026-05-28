@@ -55,7 +55,9 @@ def scrape_posts_for_profile(client, profile_url, max_posts=3):
         "scrapeComments": False,
     }
     run = client.actor("harvestapi/linkedin-profile-posts").call(run_input=run_input)
-    items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+    if run is None:
+        return []
+    items = list(client.dataset(run.default_dataset_id).iterate_items())
     return items
 
 

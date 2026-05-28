@@ -157,6 +157,28 @@ MAKE_REVIEW_WEBHOOK = "https://hook.eu2.make.com/wbqkg1cmho8n1qmvdg9hv621nqniuxk
 NOTION_PAGE_BASE_URL = "https://www.notion.so/"
 
 
+def _append_infographic_block(page_id: str, skeleton: str) -> None:
+    """Haengt das Infografik-Skelett als neuen Block an die Notion-Seite an."""
+    skeleton = _sanitize(skeleton)
+    chunks = [skeleton[i:i+1900] for i in range(0, len(skeleton), 1900)]
+    children = [
+        {"object": "block", "type": "divider", "divider": {}},
+        {"object": "block", "type": "heading_2",
+         "heading_2": {"rich_text": [{"type": "text", "text": {"content": "Infografik-Skelett (Canva)"}}]}},
+    ]
+    for chunk in chunks:
+        children.append({
+            "object": "block", "type": "paragraph",
+            "paragraph": {"rich_text": [{"type": "text", "text": {"content": chunk}}]},
+        })
+    resp = requests.patch(
+        f"{NOTION_API}/blocks/{page_id}/children",
+        headers=_headers(),
+        json={"children": children},
+    )
+    resp.raise_for_status()
+
+
 def set_post_status(page_id: str, status: str) -> None:
     """Setzt den Status eines Notion-Eintrags (z.B. 'Skipped', 'New')."""
     resp = requests.patch(
@@ -176,6 +198,7 @@ def update_with_draft(
     influencer: str = "",
     image_failed: bool = False,
     image_error: str = "",
+    infographic_skeleton: str = "",
 ):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
@@ -234,6 +257,13 @@ def update_with_draft(
         print(f"  Make-Webhook gefeuert: {status_name} Alert", flush=True)
     except Exception as e:
         print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    if infographic_skeleton:
+        try:
+            _append_infographic_block(page_id, infographic_skeleton)
+            print("  Infografik-Skelett in Notion geschrieben.", flush=True)
+        except Exception as e:
+            print(f"  Infografik-Block fehlgeschlagen (nicht kritisch): {e}", flush=True)
 
     return result
 

@@ -101,7 +101,7 @@ def main():
     # Schritt 5: LinkedIn-Draft + Bild-Prompt generieren
     print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
-        linkedin_draft, image_prompt = generate_post_and_image_prompt(winner)
+        linkedin_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(winner)
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
         sys.exit(1)
@@ -112,6 +112,7 @@ def main():
 
     print(f"  Draft: {len(linkedin_draft)} Zeichen")
     print(f"  Bild-Prompt: {'OK' if image_prompt else 'leer'}")
+    print(f"  Infografik-Skelett: {'OK' if infographic_skeleton else 'leer'}")
 
     # Schritt 6: Bild generieren
     image_url = ""
@@ -149,6 +150,7 @@ def main():
             influencer=winner["influencer"],
             image_failed=image_failed,
             image_error=image_error,
+            infographic_skeleton=infographic_skeleton,
         )
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:
