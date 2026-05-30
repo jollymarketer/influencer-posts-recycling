@@ -437,7 +437,7 @@ Composition:
 
 Avoid: clutter, decorative icons that add no meaning, busy backgrounds, more than 3 colors, full sentences, tiny unreadable text, chaotic layouts.
 
-Final check: Is the structure instantly clear? Are all German labels spelled correctly? Are there zero logos and zero title/type text? Is the bottom-right corner clear for the logo?"""
+Final check: Is the structure instantly clear? Are all {language} labels spelled correctly? Are there zero logos and zero title/type text? Is the bottom-right corner clear for the logo?"""
 
 
 def build_infographic_prompt(skeleton: str, language: str = "German") -> str:
@@ -581,7 +581,8 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
 def _parse_generation_response(raw: str) -> dict:
     """Zerlegt eine LLM-Antwort an den ===MARKER=== in ihre Teile.
     Gibt dict mit keys post, soundbyte, kontext, infografik zurueck.
-    Fehlt ===POST===, gilt der ganze Text als post (Fallback)."""
+    Fehlt ===POST===, gilt der ganze Text als post (Fallback).
+    Erwartet bereits gestrippten Input (Callsites strippen die LLM-Antwort)."""
     parts = {"post": "", "soundbyte": "", "kontext": "", "infografik": ""}
 
     if "===POST===" in raw:
@@ -618,39 +619,48 @@ def _parse_generation_response(raw: str) -> dict:
     return parts
 
 
-def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
+def generate_post_and_image_prompt(post: dict) -> tuple[str, str, str, str]:
+    """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
+    Das Bild wird aus den EN-Teilen (Soundbyte + Infografik) gebaut.
+    Gibt (de_draft, en_draft, image_prompt, infographic_skeleton) zurueck.
     """
-    Generiert DACH-deutschen LinkedIn-Post + Sound Byte, baut dann den Bild-Prompt.
-    Gibt (linkedin_post_text, image_prompt) zurueck.
-    """
-    prompt = DACH_POST_PROMPT.format(
+    # --- Call 1: DE-Post (DACH-Prompt). Nur der Post-Text wird genutzt. ---
+    de_prompt = DACH_POST_PROMPT.format(
         context=JOLLY_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
     )
-    response = client.messages.create(
+    de_resp = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2048,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": de_prompt}],
     )
-    raw = response.content[0].text.strip()
+    de_draft = _parse_generation_response(de_resp.content[0].text.strip())["post"]
 
-    parts = _parse_generation_response(raw)
-    linkedin_draft = parts["post"]
-    sound_byte = parts["soundbyte"]
-    kontext = parts["kontext"]
-    infographic_skeleton = parts["infografik"]
+    # --- Call 2: EN-Post (nativ). Liefert Soundbyte + Infografik fuers Bild. ---
+    en_prompt = EN_POST_PROMPT.format(
+        context=JOLLY_CONTEXT,
+        influencer=post["influencer"],
+        post_text=post["post_text"][:3000],
+    )
+    en_resp = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=2048,
+        messages=[{"role": "user", "content": en_prompt}],
+    )
+    en_parts = _parse_generation_response(en_resp.content[0].text.strip())
+    en_draft = en_parts["post"]
+    sound_byte = en_parts["soundbyte"]
+    kontext = en_parts["kontext"]
+    infographic_skeleton = en_parts["infografik"]
 
-    # Sprache des Posts erkennen (deutsch, da DACH-Post)
-    language = "German"
-
-    # Bild-Prompt aus Template befuellen
+    # Bild-Prompt aus dem EN-Soundbyte (englischer Bildtext, fuer beide Posts).
     image_prompt = ""
     if sound_byte:
         image_prompt = IMAGE_PROMPT_TEMPLATE.format(
             core_message=sound_byte,
-            context=kontext or "B2B CEOs und Founder im DACH-Raum",
-            language=language,
+            context=kontext or "B2B CEOs and founders",
+            language="English",
         )
 
-    return linkedin_draft, image_prompt, infographic_skeleton
+    return de_draft, en_draft, image_prompt, infographic_skeleton
