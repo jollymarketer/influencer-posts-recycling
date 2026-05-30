@@ -101,23 +101,28 @@ def main():
     # Schritt 5: LinkedIn-Draft + Bild-Prompt generieren
     print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
-        linkedin_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(winner)
+        linkedin_draft, en_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(winner)
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
         sys.exit(1)
 
     if not linkedin_draft:
-        print("  FEHLER: Leerer LinkedIn-Draft. Kein Notion-Update.", file=sys.stderr)
+        print("  FEHLER: Leerer DE-Draft. Kein Notion-Update.", file=sys.stderr)
         sys.exit(1)
 
-    print(f"  Draft: {len(linkedin_draft)} Zeichen")
+    if not en_draft:
+        en_draft = "[EN-Generierung fehlgeschlagen - manuell nachziehen]"
+        print("  WARNUNG: Leerer EN-Draft. Platzhalter gesetzt, DE wird gespeichert.", file=sys.stderr)
+
+    print(f"  DE-Draft: {len(linkedin_draft)} Zeichen")
+    print(f"  EN-Draft: {len(en_draft)} Zeichen")
     print(f"  Bild-Prompt: {'OK' if image_prompt else 'leer'}")
     print(f"  Infografik-Skelett: {'OK' if infographic_skeleton else 'leer'}")
 
     # Schritt 6: Bild generieren — Infografik aus dem Skelett (Pierre-Rubel-Playbook:
     # Infografik treibt Saves, nicht der Editorial-Poster). Faellt auf den
     # Editorial-Poster zurueck, falls kein Infografik-Skelett vorhanden ist.
-    infographic_prompt = build_infographic_prompt(infographic_skeleton)
+    infographic_prompt = build_infographic_prompt(infographic_skeleton, language="English")
     if infographic_prompt:
         gen_prompt, gen_ratio, gen_strip, gen_label = infographic_prompt, "1:1", False, "Infografik"
     else:
@@ -152,6 +157,7 @@ def main():
         update_with_draft(
             page_id=page_id,
             linkedin_draft=linkedin_draft,
+            en_draft=en_draft,
             image_prompt=gen_prompt,
             image_url=image_url,
             title=winner.get("post_excerpt", "")[:60],
