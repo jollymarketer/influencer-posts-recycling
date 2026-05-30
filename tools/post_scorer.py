@@ -464,6 +464,46 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
     return sorted(scored, key=lambda x: x["score"], reverse=True)
 
 
+def _parse_generation_response(raw: str) -> dict:
+    """Zerlegt eine LLM-Antwort an den ===MARKER=== in ihre Teile.
+    Gibt dict mit keys post, soundbyte, kontext, infografik zurueck.
+    Fehlt ===POST===, gilt der ganze Text als post (Fallback)."""
+    parts = {"post": "", "soundbyte": "", "kontext": "", "infografik": ""}
+
+    if "===POST===" in raw:
+        post_part = raw.split("===POST===")[1]
+        parts["post"] = (
+            post_part.split("===SOUNDBYTE===")[0].strip()
+            if "===SOUNDBYTE===" in post_part
+            else post_part.strip()
+        )
+    else:
+        parts["post"] = raw.strip()
+
+    if "===SOUNDBYTE===" in raw:
+        sb = raw.split("===SOUNDBYTE===")[1]
+        parts["soundbyte"] = (
+            sb.split("===KONTEXT===")[0].strip()
+            if "===KONTEXT===" in sb
+            else sb.split("===INFOGRAFIK===")[0].strip()
+            if "===INFOGRAFIK===" in sb
+            else sb.strip()
+        )
+
+    if "===KONTEXT===" in raw:
+        kp = raw.split("===KONTEXT===")[1]
+        parts["kontext"] = (
+            kp.split("===INFOGRAFIK===")[0].strip()
+            if "===INFOGRAFIK===" in kp
+            else kp.strip()
+        )
+
+    if "===INFOGRAFIK===" in raw:
+        parts["infografik"] = raw.split("===INFOGRAFIK===")[1].strip()
+
+    return parts
+
+
 def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
     """
     Generiert DACH-deutschen LinkedIn-Post + Sound Byte, baut dann den Bild-Prompt.
@@ -481,37 +521,11 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str]:
     )
     raw = response.content[0].text.strip()
 
-    # Parsen: ===POST===, ===SOUNDBYTE===, ===KONTEXT===, ===INFOGRAFIK===
-    linkedin_draft = ""
-    sound_byte = ""
-    kontext = ""
-    infographic_skeleton = ""
-
-    if "===POST===" in raw:
-        post_part = raw.split("===POST===")[1]
-        if "===SOUNDBYTE===" in post_part:
-            linkedin_draft = post_part.split("===SOUNDBYTE===")[0].strip()
-        else:
-            linkedin_draft = post_part.strip()
-    else:
-        linkedin_draft = raw
-
-    if "===SOUNDBYTE===" in raw:
-        soundbyte_part = raw.split("===SOUNDBYTE===")[1]
-        if "===KONTEXT===" in soundbyte_part:
-            sound_byte = soundbyte_part.split("===KONTEXT===")[0].strip()
-        else:
-            sound_byte = soundbyte_part.strip()
-
-    if "===KONTEXT===" in raw:
-        kontext_part = raw.split("===KONTEXT===")[1]
-        if "===INFOGRAFIK===" in kontext_part:
-            kontext = kontext_part.split("===INFOGRAFIK===")[0].strip()
-        else:
-            kontext = kontext_part.strip()
-
-    if "===INFOGRAFIK===" in raw:
-        infographic_skeleton = raw.split("===INFOGRAFIK===")[1].strip()
+    parts = _parse_generation_response(raw)
+    linkedin_draft = parts["post"]
+    sound_byte = parts["soundbyte"]
+    kontext = parts["kontext"]
+    infographic_skeleton = parts["infografik"]
 
     # Sprache des Posts erkennen (deutsch, da DACH-Post)
     language = "German"
