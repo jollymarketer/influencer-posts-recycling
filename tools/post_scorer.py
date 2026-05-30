@@ -411,11 +411,11 @@ Objective:
 A save-worthy LinkedIn infographic. The reader should grasp the structure in 2 to 3 seconds and want to save it as a reference. Structure over decoration.
 
 Layout logic:
-- Eisberg: one large iceberg with a clear waterline; the first layer sits above water, the deeper layers stack below in descending depth. Most important hidden layer at the bottom.
-- Funnel/Pyramide: stacked horizontal bands narrowing top-to-bottom (or bottom-to-top), one layer per band.
-- Vergleichstabelle: two clean columns, one header per column, aligned rows.
-- Framework/Kreise: concentric or nested circles, one layer per ring.
-- Horizontaler Vergleich: equal-weight blocks side by side.
+- Iceberg: one large iceberg with a clear waterline; the first layer sits above water, the deeper layers stack below in descending depth. Most important hidden layer at the bottom.
+- Funnel/pyramid: stacked horizontal bands narrowing top-to-bottom (or bottom-to-top), one layer per band.
+- Comparison table: two clean columns, one header per column, aligned rows.
+- Framework/circles: concentric or nested circles, one layer per ring.
+- Horizontal comparison: equal-weight blocks side by side.
 
 Each layer shows its label as a short bold heading plus its keywords as a tight list. Keywords stay keywords, never full sentences.
 
