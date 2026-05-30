@@ -179,6 +179,36 @@ def _append_infographic_block(page_id: str, skeleton: str) -> None:
     resp.raise_for_status()
 
 
+def _append_draft_blocks(page_id: str, de_draft: str, en_draft: str) -> None:
+    """Haengt DE- und EN-Draft als Body-Bloecke mit Slot-Headings an die Seite."""
+    def text_blocks(text):
+        text = _sanitize(text)
+        chunks = [text[i:i+1900] for i in range(0, len(text), 1900)] or [""]
+        return [
+            {"object": "block", "type": "paragraph",
+             "paragraph": {"rich_text": [{"type": "text", "text": {"content": c}}]}}
+            for c in chunks
+        ]
+
+    children = [{"object": "block", "type": "divider", "divider": {}},
+                {"object": "block", "type": "heading_2",
+                 "heading_2": {"rich_text": [{"type": "text",
+                  "text": {"content": "LinkedIn Draft DE (Slot: Vormittag)"}}]}}]
+    children += text_blocks(de_draft)
+    children += [{"object": "block", "type": "divider", "divider": {}},
+                 {"object": "block", "type": "heading_2",
+                  "heading_2": {"rich_text": [{"type": "text",
+                   "text": {"content": "LinkedIn Draft EN (Slot: Nachmittag)"}}]}}]
+    children += text_blocks(en_draft)
+
+    resp = requests.patch(
+        f"{NOTION_API}/blocks/{page_id}/children",
+        headers=_headers(),
+        json={"children": children},
+    )
+    resp.raise_for_status()
+
+
 def set_post_status(page_id: str, status: str) -> None:
     """Setzt den Status eines Notion-Eintrags (z.B. 'Skipped', 'New')."""
     resp = requests.patch(
@@ -194,6 +224,7 @@ def update_with_draft(
     linkedin_draft: str,
     image_prompt: str,
     image_url: str,
+    en_draft: str = "",
     title: str = "",
     influencer: str = "",
     image_failed: bool = False,
@@ -257,6 +288,12 @@ def update_with_draft(
         print(f"  Make-Webhook gefeuert: {status_name} Alert", flush=True)
     except Exception as e:
         print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    try:
+        _append_draft_blocks(page_id, linkedin_draft, en_draft)
+        print("  DE+EN Draft-Bloecke mit Slot-Headings geschrieben.", flush=True)
+    except Exception as e:
+        print(f"  Draft-Bloecke fehlgeschlagen (nicht kritisch): {e}", flush=True)
 
     if infographic_skeleton:
         try:
