@@ -266,6 +266,8 @@ Rules:
 
 OUTPUT FORMAT (follow exactly):
 
+IMPORTANT: Reproduce the section headers (===POST===, ===SOUNDBYTE===, ===KONTEXT===, ===INFOGRAFIK===) and the field labels (TYP, METAPHER, KOMPLEMENTARITAET, EBENEN, TOOL-LOGOS) EXACTLY as written below, character for character. Do NOT translate or rename them, even though some are German — an automated parser depends on these exact strings. Only the content you fill in is in English.
+
 ===POST===
 [LinkedIn post text in English]
 
