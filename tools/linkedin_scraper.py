@@ -25,9 +25,12 @@ if hasattr(sys.stdout, "reconfigure"):
 APIFY_API_KEY = os.getenv("APIFY_API_KEY")
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "..", "influencers.csv")
 
-# Daily-Cron-Setup: scrapt nur die letzten 24h, jeder Run liefert max 3 Posts pro Profil.
+# Daily-Cron-Setup: jeder Run liefert max 3 Posts pro Profil.
 # Mindest-Alter 6h (sonst werden frische Donnerstag-Nachmittag-Posts am Freitag-Morgen-Run
-# gefiltert, bevor Engagement reifen konnte).
+# gefiltert, bevor Engagement reifen konnte), Hoechst-Alter 36h.
+# Das Apify-Fetch-Fenster (postedLimit, s.u.) MUSS >= MAX_AGE_HOURS sein, sonst faellt
+# ein Post, der am Vortag <6h alt (also gefiltert) war, beim naechsten 24h-Run aus dem
+# Fetch-Fenster und wird nie gesehen. postedLimit-Enum kennt kein "36h" → "week".
 MIN_AGE_HOURS = 6
 MAX_AGE_HOURS = 36
 
@@ -48,7 +51,7 @@ def scrape_posts_for_profile(client, profile_url, max_posts=3):
     run_input = {
         "targetUrls": [profile_url],
         "maxPosts": max_posts,
-        "postedLimit": "24h",
+        "postedLimit": "week",
         "includeQuotePosts": True,
         "includeReposts": False,
         "scrapeReactions": False,

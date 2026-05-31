@@ -5,6 +5,7 @@ Direkte Notion API (kein MCP) — für Python-Scripts und Railway.
 """
 
 import os
+import time
 from datetime import datetime, timezone
 
 import requests
@@ -17,6 +18,11 @@ NOTION_DB_ID = os.getenv("NOTION_DB_ID", "778bd719db9147ff994ddbf8a4ecac34")
 NOTION_API = "https://api.notion.com/v1"
 NOTION_VERSION = "2022-06-28"
 
+# Without a timeout a stalled connection blocks the Railway cron indefinitely.
+NOTION_TIMEOUT = 30
+NOTION_HTTP_MAX_ATTEMPTS = 2
+NOTION_HTTP_BACKOFF_SECONDS = 3
+
 
 def _headers():
     return {
@@ -24,6 +30,29 @@ def _headers():
         "Content-Type": "application/json",
         "Notion-Version": NOTION_VERSION,
     }
+
+
+def _notion_request(method: str, url: str, **kwargs) -> requests.Response:
+    """Notion HTTP call with a default timeout and one retry on network errors / 5xx.
+
+    Does not call raise_for_status — callers keep their own .ok / .json handling.
+    """
+    kwargs.setdefault("timeout", NOTION_TIMEOUT)
+    last_exc = None
+    for attempt in range(1, NOTION_HTTP_MAX_ATTEMPTS + 1):
+        try:
+            resp = requests.request(method, url, **kwargs)
+            if resp.status_code >= 500 and attempt < NOTION_HTTP_MAX_ATTEMPTS:
+                time.sleep(NOTION_HTTP_BACKOFF_SECONDS * attempt)
+                continue
+            return resp
+        except requests.RequestException as e:
+            last_exc = e
+            if attempt < NOTION_HTTP_MAX_ATTEMPTS:
+                time.sleep(NOTION_HTTP_BACKOFF_SECONDS * attempt)
+                continue
+            raise
+    raise last_exc  # type: ignore[misc]
 
 
 def get_existing_post_urls() -> set:
@@ -37,7 +66,8 @@ def get_existing_post_urls() -> set:
         if start_cursor:
             payload["start_cursor"] = start_cursor
 
-        resp = requests.post(
+        resp = _notion_request(
+            "POST",
             f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
             headers=_headers(),
             json=payload,
@@ -47,6 +77,12 @@ def get_existing_post_urls() -> set:
 
         for page in data.get("results", []):
             props = page.get("properties", {})
+            # "New" = page created but update_with_draft never completed (partial write).
+            # Skip it for dedup so the post is re-picked and finished on a later run,
+            # instead of being suppressed forever as a bare URL-only entry.
+            status = (props.get("Status", {}).get("select") or {}).get("name")
+            if status == "New":
+                continue
             url_prop = props.get("LinkedIn Post URL", {})
             url = url_prop.get("url")
             if url:
@@ -141,7 +177,8 @@ def create_post_entry(
     # Leere Properties entfernen
     payload["properties"] = {k: v for k, v in payload["properties"].items() if v}
 
-    resp = requests.post(
+    resp = _notion_request(
+        "POST",
         f"{NOTION_API}/pages",
         headers=_headers(),
         json=payload,
@@ -153,7 +190,7 @@ def create_post_entry(
     return page_id
 
 
-MAKE_REVIEW_WEBHOOK = "https://hook.eu2.make.com/wbqkg1cmho8n1qmvdg9hv621nqniuxkg"
+MAKE_REVIEW_WEBHOOK = os.getenv("MAKE_REVIEW_WEBHOOK", "")
 NOTION_PAGE_BASE_URL = "https://www.notion.so/"
 
 
@@ -171,7 +208,8 @@ def _append_infographic_block(page_id: str, skeleton: str) -> None:
             "object": "block", "type": "paragraph",
             "paragraph": {"rich_text": [{"type": "text", "text": {"content": chunk}}]},
         })
-    resp = requests.patch(
+    resp = _notion_request(
+        "PATCH",
         f"{NOTION_API}/blocks/{page_id}/children",
         headers=_headers(),
         json={"children": children},
@@ -201,7 +239,8 @@ def _append_draft_blocks(page_id: str, de_draft: str, en_draft: str) -> None:
                    "text": {"content": "LinkedIn Draft EN (Slot: Nachmittag)"}}]}}]
     children += text_blocks(en_draft)
 
-    resp = requests.patch(
+    resp = _notion_request(
+        "PATCH",
         f"{NOTION_API}/blocks/{page_id}/children",
         headers=_headers(),
         json={"children": children},
@@ -211,7 +250,8 @@ def _append_draft_blocks(page_id: str, de_draft: str, en_draft: str) -> None:
 
 def set_post_status(page_id: str, status: str) -> None:
     """Setzt den Status eines Notion-Eintrags (z.B. 'Skipped', 'New')."""
-    resp = requests.patch(
+    resp = _notion_request(
+        "PATCH",
         f"{NOTION_API}/pages/{page_id}",
         headers=_headers(),
         json={"properties": {"Status": {"select": {"name": status}}}},
@@ -264,7 +304,8 @@ def update_with_draft(
 
     payload = {"properties": properties}
 
-    resp = requests.patch(
+    resp = _notion_request(
+        "PATCH",
         f"{NOTION_API}/pages/{page_id}",
         headers=_headers(),
         json=payload,
@@ -275,19 +316,22 @@ def update_with_draft(
     # Make-Webhook feuern → E-Mail-Alert an Richard.
     # image_failed-Flag steht im Payload, damit die Make-Scenario spaeter
     # einen anderen Subject-Prefix setzen kann (z.B. "[Bild fehlt]").
-    try:
-        notion_url = f"{NOTION_PAGE_BASE_URL}{page_id.replace('-', '')}"
-        webhook_payload = {
-            "title": title or page_id,
-            "influencer": influencer,
-            "notion_url": notion_url,
-            "image_failed": image_failed,
-            "status": status_name,
-        }
-        requests.post(MAKE_REVIEW_WEBHOOK, json=webhook_payload, timeout=10)
-        print(f"  Make-Webhook gefeuert: {status_name} Alert", flush=True)
-    except Exception as e:
-        print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
+    if not MAKE_REVIEW_WEBHOOK:
+        print("  Make-Webhook uebersprungen: MAKE_REVIEW_WEBHOOK nicht gesetzt", flush=True)
+    else:
+        try:
+            notion_url = f"{NOTION_PAGE_BASE_URL}{page_id.replace('-', '')}"
+            webhook_payload = {
+                "title": title or page_id,
+                "influencer": influencer,
+                "notion_url": notion_url,
+                "image_failed": image_failed,
+                "status": status_name,
+            }
+            requests.post(MAKE_REVIEW_WEBHOOK, json=webhook_payload, timeout=10)
+            print(f"  Make-Webhook gefeuert: {status_name} Alert", flush=True)
+        except Exception as e:
+            print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
 
     try:
         _append_draft_blocks(page_id, linkedin_draft, en_draft)
@@ -321,7 +365,8 @@ def get_recent_linkedin_drafts(limit: int = 7) -> list[str]:
         "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
         "page_size": limit,
     }
-    resp = requests.post(
+    resp = _notion_request(
+        "POST",
         f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
         headers=_headers(),
         json=payload,
@@ -348,7 +393,8 @@ def get_entry_by_url(post_url: str) -> dict | None:
             "url": {"equals": post_url}
         }
     }
-    resp = requests.post(
+    resp = _notion_request(
+        "POST",
         f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
         headers=_headers(),
         json=payload,
@@ -360,7 +406,8 @@ def get_entry_by_url(post_url: str) -> dict | None:
 
 def get_entry_by_page_id(page_id: str) -> dict:
     """Gibt einen Notion-Eintrag anhand seiner Page ID zurück."""
-    resp = requests.get(
+    resp = _notion_request(
+        "GET",
         f"{NOTION_API}/pages/{page_id}",
         headers=_headers(),
     )

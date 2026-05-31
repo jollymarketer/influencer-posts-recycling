@@ -18,7 +18,7 @@ from PIL import Image, ImageFilter
 
 load_dotenv()
 
-KIEAI_API_KEY = os.getenv("KIEAI_API_KEY", "19445902ad562e4343e93799081400b9")
+KIEAI_API_KEY = os.getenv("KIEAI_API_KEY")
 KIEAI_BASE_URL = "https://api.kie.ai/api/v1"
 POLL_INTERVAL_SECONDS = 10
 # 2026-05-18: kie.ai gpt-image-2 hat einen Tag mit ~16 Min Generierungszeit erlebt.
