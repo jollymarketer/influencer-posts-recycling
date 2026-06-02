@@ -36,8 +36,22 @@ from tools.linkedin_scraper import scrape_new_posts
 from tools.substack_scraper import scrape_substack_posts
 from tools.post_scorer import score_posts, generate_post_and_image_prompt, build_infographic_prompt
 from tools.kieai_image import generate_image
+from tools.supabase_db import upsert_posts
 
 MIN_SCORE = 25
+
+
+def persist_scraped_posts(linkedin_posts: list, substack_posts: list) -> None:
+    """Upsert ALL scraped posts (winners + losers) to Supabase. Non-fatal:
+    a failure here must never block the daily winner/draft flow."""
+    for posts, source in ((linkedin_posts, "linkedin"), (substack_posts, "substack")):
+        if not posts:
+            continue
+        try:
+            n = upsert_posts(posts, source=source)
+            print(f"  Supabase: {n} {source}-Posts persistiert.")
+        except Exception as e:
+            print(f"  Supabase-Persist {source} fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
 
 
 def main():
@@ -58,6 +72,8 @@ def main():
     # Schritt 2: Neue Posts scrapen (LinkedIn + Substack)
     print("\nSchritt 2: Scrape neue Posts (LinkedIn + Substack) ...")
     new_posts = []
+    linkedin_posts = []
+    substack_posts = []
     try:
         linkedin_posts = scrape_new_posts(existing_urls=existing_urls)
         print(f"  LinkedIn: {len(linkedin_posts)} neue Posts")
@@ -71,6 +87,9 @@ def main():
         new_posts.extend(substack_posts)
     except Exception as e:
         print(f"  FEHLER - Substack-Scraping: {e}", file=sys.stderr)
+
+    # Persist ALL scraped posts (winners + losers) for weekly blog-topic mining.
+    persist_scraped_posts(linkedin_posts, substack_posts)
 
     if not new_posts:
         print("  Keine neuen Posts gefunden. Run beendet.")
