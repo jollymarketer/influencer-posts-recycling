@@ -1,6 +1,7 @@
 """Tests for the Supabase PostgREST wrapper. Pure, requests mocked."""
 import os
 import sys
+from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -44,6 +45,7 @@ def test_upsert_posts_skips_rows_without_url(monkeypatch):
         count = supabase_db.upsert_posts([_post(), {"influencer": "NoUrl"}], source="linkedin")
     assert count == 1
     assert len(mock_post.call_args.kwargs["json"]) == 1
+    assert mock_post.call_args.kwargs["json"][0]["influencer"] == "Alice"
 
 
 def test_upsert_posts_empty_is_noop(monkeypatch):
@@ -66,13 +68,22 @@ def test_get_posts_since_builds_gte_filter(monkeypatch):
     assert out == rows
     params = mock_get.call_args.kwargs["params"]
     assert params["select"] == "*"
-    assert params["post_date"].startswith("gte.")
+    expected = (date.today() - timedelta(days=7)).isoformat()
+    assert params["post_date"] == f"gte.{expected}"
     assert mock_get.call_args.kwargs["headers"]["Accept-Profile"] == "blog_content_mining"
 
 
 def test_missing_key_raises(monkeypatch):
     monkeypatch.delenv("SUPABASE_SERVICE_KEY", raising=False)
     monkeypatch.setenv("SUPABASE_URL", "https://db.example.co")
+    import pytest
+    with pytest.raises(RuntimeError):
+        supabase_db.upsert_posts([_post()], source="linkedin")
+
+
+def test_missing_url_raises(monkeypatch):
+    monkeypatch.setenv("SUPABASE_SERVICE_KEY", "key")
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
     import pytest
     with pytest.raises(RuntimeError):
         supabase_db.upsert_posts([_post()], source="linkedin")

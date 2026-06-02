@@ -18,7 +18,10 @@ TIMEOUT = 30
 
 
 def _base_url() -> str:
-    return os.environ.get("SUPABASE_URL", "").rstrip("/")
+    url = os.environ.get("SUPABASE_URL", "")
+    if not url:
+        raise RuntimeError("SUPABASE_URL is not set. Add it to .env.")
+    return url.rstrip("/")
 
 
 def _key() -> str:
@@ -53,6 +56,7 @@ def _to_row(post: dict, source: str) -> dict | None:
     if not url:
         return None
     eng = post.get("engagement", {}) or {}
+    # Contract: post["date"] is ISO-8601 or absent (scrapers guarantee this).
     date_raw = post.get("date", "")
     post_date = date_raw[:10] if date_raw else None  # ISO -> YYYY-MM-DD
     return {
