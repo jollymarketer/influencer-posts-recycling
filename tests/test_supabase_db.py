@@ -1,7 +1,7 @@
 """Tests for the Supabase PostgREST wrapper. Pure, requests mocked."""
 import os
 import sys
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -68,7 +68,7 @@ def test_get_posts_since_builds_gte_filter(monkeypatch):
     assert out == rows
     params = mock_get.call_args.kwargs["params"]
     assert params["select"] == "*"
-    expected = (date.today() - timedelta(days=7)).isoformat()
+    expected = (datetime.now(timezone.utc) - timedelta(days=7)).date().isoformat()
     assert params["post_date"] == f"gte.{expected}"
     assert mock_get.call_args.kwargs["headers"]["Accept-Profile"] == "blog_content_mining"
 

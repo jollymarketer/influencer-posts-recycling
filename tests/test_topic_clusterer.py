@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from tools import topic_clusterer
-from tools.topic_clusterer import ThemeCandidate, _parse_clusters, filter_candidates
+from tools.topic_clusterer import ThemeCandidate, _build_user_prompt, _parse_clusters, filter_candidates
 
 
 def _raw(themes):
@@ -127,3 +127,12 @@ def test_cluster_topics_calls_claude_and_parses():
     assert mock_client.messages.create.called
     assert mock_client.messages.create.call_args.kwargs["model"] == "claude-sonnet-4-6"
     assert len(out) == 2
+
+
+def test_build_user_prompt_reads_flat_supabase_row_engagement():
+    # Supabase rows are FLAT (no nested "engagement"); the prompt must still read metrics.
+    flat = [{"influencer": "A", "post_url": "https://x/1", "post_text": "body",
+             "likes": 42, "comments": 7, "shares": 3}]
+    prompt = _build_user_prompt(flat, recent_titles=[])
+    assert "likes=42" in prompt
+    assert "comments=7" in prompt
