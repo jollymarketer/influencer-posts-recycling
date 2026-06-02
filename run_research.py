@@ -37,6 +37,7 @@ from tools.substack_scraper import scrape_substack_posts
 from tools.post_scorer import score_posts, generate_post_and_image_prompt, build_infographic_prompt
 from tools.kieai_image import generate_image
 from tools.supabase_db import upsert_posts
+from run_topic_mining import run_topic_mining
 
 MIN_SCORE = 25
 
@@ -54,7 +55,7 @@ def persist_scraped_posts(linkedin_posts: list, substack_posts: list) -> None:
             print(f"  Supabase-Persist {source} fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
 
 
-def main():
+def run_daily():
     start_time = datetime.now(timezone.utc)
     print(f"=== Influencer Posts Recycling - Daily Run ===")
     print(f"Start: {start_time.strftime('%Y-%m-%d %H:%M UTC')}")
@@ -194,6 +195,16 @@ def main():
     print(f"\n=== DONE ===")
     print(f"Winner: {winner['influencer']} (Score: {winner['score']}/60)")
     print(f"Dauer: {duration}s")
+
+
+def main():
+    run_daily()
+    if datetime.now(timezone.utc).weekday() == 4:  # Friday, UTC
+        print("\n=== Freitag: starte Blog-Topic-Mining ===")
+        try:
+            run_topic_mining()
+        except Exception as e:
+            print(f"  Topic-Mining fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

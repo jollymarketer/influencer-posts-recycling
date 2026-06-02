@@ -54,3 +54,40 @@ def test_mining_filters_and_writes_top5():
     written = mock_write.call_args.args[0]
     labels = [c.theme_label for c in written]
     assert labels == ["A", "C"]
+
+
+from datetime import datetime, timezone
+
+
+class _FixedDate(datetime):
+    _wd = 0
+    @classmethod
+    def now(cls, tz=None):
+        # 2026-06-05 is a Friday (weekday 4); 2026-06-03 is Wednesday (2)
+        return datetime(2026, 6, 5 if cls._wd == 4 else 3, tzinfo=tz or timezone.utc)
+
+
+def test_main_runs_mining_on_friday(monkeypatch):
+    monkeypatch.setattr(run_research, "run_daily", MagicMock())
+    monkeypatch.setattr(run_research, "run_topic_mining", MagicMock())
+    _FixedDate._wd = 4
+    monkeypatch.setattr(run_research, "datetime", _FixedDate)
+    run_research.main()
+    run_research.run_topic_mining.assert_called_once()
+
+
+def test_main_skips_mining_on_non_friday(monkeypatch):
+    monkeypatch.setattr(run_research, "run_daily", MagicMock())
+    monkeypatch.setattr(run_research, "run_topic_mining", MagicMock())
+    _FixedDate._wd = 2
+    monkeypatch.setattr(run_research, "datetime", _FixedDate)
+    run_research.main()
+    run_research.run_topic_mining.assert_not_called()
+
+
+def test_main_mining_failure_is_nonfatal(monkeypatch):
+    monkeypatch.setattr(run_research, "run_daily", MagicMock())
+    monkeypatch.setattr(run_research, "run_topic_mining", MagicMock(side_effect=RuntimeError("boom")))
+    _FixedDate._wd = 4
+    monkeypatch.setattr(run_research, "datetime", _FixedDate)
+    run_research.main()  # must not raise
