@@ -15,7 +15,8 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 4096
-MIN_POSTS = 2
+MIN_POSTS = 2  # Bare minimum to attempt clustering, not a quality bar; caller filters further.
+MIN_MATCH_LEN = 12
 EXCERPT_LEN = 500
 
 
@@ -46,6 +47,7 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
         eng = p.get("engagement") or {}
         likes = eng.get("likes", p.get("likes", 0))
         comments = eng.get("comments", p.get("comments", 0))
+        shares = eng.get("shares", p.get("shares", 0))
         text = (p.get("post_text") or "")[:EXCERPT_LEN]
         url = p.get("post_url", "")
         lines.append(
@@ -117,9 +119,11 @@ def filter_candidates(
 
     def is_dupe(c: ThemeCandidate) -> bool:
         for cand_text in (_norm(c.theme_label), _norm(c.suggested_title_en), _norm(c.suggested_title_de)):
-            if not cand_text:
+            if len(cand_text) < MIN_MATCH_LEN:
                 continue
             for r in recent_norm:
+                if len(r) < MIN_MATCH_LEN:
+                    continue
                 if cand_text in r or r in cand_text:
                     return True
         return False

@@ -90,6 +90,28 @@ def test_filter_candidates_topn_caps_after_sort():
     assert out[0].blog_score == 79
 
 
+def test_filter_candidates_short_label_does_not_false_dedup():
+    # A distinct theme whose short label ("Cold email") is a substring of an
+    # unrelated long recent title must NOT be dropped.
+    t = {
+        "theme_label": "Cold email",
+        "support_count": 3,
+        "sample_influencers": ["X"],
+        "blog_score": 80,
+        "suggested_title_en": "Cold Email Copywriting Tactics That Convert",
+        "suggested_title_de": "Cold-Email-Copywriting das konvertiert",
+        "keyword_en": "cold email copywriting",
+        "keyword_de": "cold email copywriting",
+        "supporting_post_urls": ["https://x/9"],
+    }
+    cands = _parse_clusters(_raw([t]))
+    out = filter_candidates(
+        cands, threshold=50, top_n=5,
+        recent_titles=["Cold email deliverability best practices in 2026"],
+    )
+    assert len(out) == 1  # distinct theme kept, not false-deduped
+
+
 def test_cluster_topics_returns_empty_for_too_few_posts():
     out = topic_clusterer.cluster_topics([{"post_text": "x"}], recent_titles=[])
     assert out == []
