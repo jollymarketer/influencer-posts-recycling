@@ -14,7 +14,7 @@ load_dotenv()
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 MODEL = "claude-sonnet-4-6"
-MAX_TOKENS = 4096
+MAX_TOKENS = 8192
 MIN_POSTS = 2  # Bare minimum to attempt clustering, not a quality bar; caller filters further.
 MIN_MATCH_LEN = 12
 EXCERPT_LEN = 500
@@ -49,10 +49,9 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
         comments = eng.get("comments", p.get("comments", 0))
         shares = eng.get("shares", p.get("shares", 0))
         text = (p.get("post_text") or "")[:EXCERPT_LEN]
-        url = p.get("post_url", "")
         lines.append(
             f"- influencer={p.get('influencer','')} likes={likes} comments={comments} "
-            f"url={url}\n  {text}"
+            f"shares={shares}\n  {text}"
         )
     posts_block = "\n".join(lines)
     avoid = "; ".join(recent_titles) if recent_titles else "(none)"
@@ -65,8 +64,8 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
         "sample_influencers (array of strings), blog_score (int 0-100 weighing "
         "SEO/search intent, evergreen potential, cluster support depth, and fit "
         "to Jolly B2B-DACH ICP), suggested_title_en, suggested_title_de, "
-        "keyword_en, keyword_de, supporting_post_urls (array of the source URLs).\n\n"
-        "Return ONLY a JSON array of these objects. No prose, no code fence."
+        "keyword_en, keyword_de.\n\n"
+        "Do NOT echo post URLs. Return ONLY a JSON array of these objects. No prose, no code fence."
     )
 
 

@@ -136,3 +136,14 @@ def test_build_user_prompt_reads_flat_supabase_row_engagement():
     prompt = _build_user_prompt(flat, recent_titles=[])
     assert "likes=42" in prompt
     assert "comments=7" in prompt
+
+
+def test_build_user_prompt_does_not_request_or_echo_urls():
+    # Output-token blow-up bug: echoing long percent-encoded LinkedIn URLs truncated
+    # the JSON at max_tokens. Prompt must NOT include input URLs nor ask for them back.
+    posts = [{"influencer": "A", "post_url": "https://x/very/long/url", "post_text": "body",
+              "likes": 1, "comments": 0, "shares": 0}]
+    prompt = _build_user_prompt(posts, recent_titles=[])
+    assert "https://x/very/long/url" not in prompt
+    assert "supporting_post_urls" not in prompt
+    assert "Do NOT echo post URLs" in prompt
