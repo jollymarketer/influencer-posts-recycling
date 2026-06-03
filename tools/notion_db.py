@@ -286,7 +286,11 @@ def update_with_draft(
     }
     if linkedin_draft:
         properties["LinkedIn Draft"] = {
-            "rich_text": [{"text": {"content": linkedin_draft[:2000]}}]
+            "rich_text": [{"text": {"content": linkedin_draft[:3000]}}]
+        }
+    if en_draft:
+        properties["LinkedIn Draft EN"] = {
+            "rich_text": [{"text": {"content": en_draft[:3000]}}]
         }
     if image_prompt:
         # Bei Image-Failure haengen wir die letzte Fehlermeldung an, damit
