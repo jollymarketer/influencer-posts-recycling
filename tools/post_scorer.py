@@ -93,11 +93,7 @@ Inhaltliche Regeln:
 - Einen eigenen, originellen Gedanken einfuegen, der im Original nicht vorkommt
 - Haltung eines erfahrenen Praktikers: operative Details, Schrittfolgen, typische Stolpersteine, KPIs
 
-Post-Struktur (ohne explizite Benennung):
-1. Hook (1-2 Saetze): Kontraintuitiver Befund, provokante These oder ueberraschende Zahl. Entscheidet ob jemand weiterliest.
-2. Problem: Klares Spannungsfeld das die Zielgruppe kennt. Konkret, nicht abstrakt.
-3. Proof/Praxis: Belege aus Beobachtung oder Mustern. Max 3-5 Schritte. Eigener Thought-Leader-Gedanke.
-4. Abschluss: Entweder Principle-Loop (loop zurueck zu einer groesseren universellen Wahrheit — etwas das schon bekannt ist aber es wieder wert ist zu sagen) ODER eine Frage — nur wenn sie genuines nicht-offensichtliches Interesse weckt. Kein "Was denkst du?"-Filler. Kein DM-CTA. Actionable content erzeugt Kommentare automatisch.
+{structure_block}
 
 Formatierung:
 - Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, nicht nach jedem Satz
@@ -205,11 +201,7 @@ Content rules:
 - Add one original thought that does not appear in the original.
 - Stance of an experienced operator: operational detail, sequencing, common pitfalls, KPIs.
 
-Post structure (without labeling it):
-1. Hook (1-2 sentences): counterintuitive finding, provocative thesis, or surprising number. Decides whether anyone reads on.
-2. Problem: a clear tension the audience knows. Concrete, not abstract.
-3. Proof/practice: evidence from observation or patterns. Max 3-5 steps. Your own thought-leader point.
-4. Close: either a principle loop (back to a larger universal truth worth restating) OR a question — only if it sparks genuine, non-obvious interest. No "What do you think?" filler. No DM CTA. Actionable content earns comments by itself.
+{structure_block}
 
 Formatting:
 - Paragraphs may be 2-4 sentences. Not every sentence is its own paragraph. Blank lines only between thematic blocks.
@@ -288,6 +280,67 @@ EBENEN:
 [Label 2]: [keyword 1], [keyword 2], [keyword 3]
 [Label 3]: [keyword 1], [keyword 2], [keyword 3]
 TOOL-LOGOS: [tool names or "none"]"""
+
+
+FORMAT_STRUCTURES = {
+    "Opinion": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Eine kontroverse These oder ein Gegen-Befund zu einer gaengigen Praxis. Entscheidet ob jemand weiterliest.
+2. Spannung: Was die meisten Teams glauben oder tun - und warum das in der Praxis nicht traegt. Konkret, nicht abstrakt.
+3. Position: Deine Gegenposition als erfahrener Praktiker, begruendet aus Beobachtung. Max 3-5 Belege oder Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
+4. Abschluss: Principle-Loop zurueck zu einer groesseren Wahrheit. Kein "Was denkst du?"-Filler, kein DM-CTA.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): a contrarian thesis or counter-finding against a common practice. Decides whether anyone reads on.
+2. Tension: what most teams believe or do - and why it does not hold up in practice. Concrete, not abstract.
+3. Position: your contrarian take as an experienced operator, reasoned from observation. Max 3-5 proofs or steps. One original thought not in the source.
+4. Close: principle loop back to a larger truth. No "What do you think?" filler, no DM CTA.""",
+    },
+    "POV": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Benenne eine Denk-Linse oder ein Reframe das die Zielgruppe so noch nicht hatte. Entscheidet ob jemand weiterliest.
+2. Framework: 2-4 benannte Bestandteile eines Modells, mit dem man das Problem klarer sieht. Konkret, nicht abstrakt.
+3. Anwendung: Wie man die Linse in der Praxis nutzt. Max 3-5 Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
+4. Abschluss: Principle-Loop zurueck zu einer groesseren Wahrheit. Kein "Was denkst du?"-Filler, kein DM-CTA.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): name a lens or reframe the audience did not have yet. Decides whether anyone reads on.
+2. Framework: 2-4 named parts of a model that makes the problem clearer. Concrete, not abstract.
+3. Application: how to use the lens in practice. Max 3-5 steps. One original thought not in the source.
+4. Close: principle loop back to a larger truth. No "What do you think?" filler, no DM CTA.""",
+    },
+    "Signature": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): "Was Founder/Sales-Teams glauben:" - die verbreitete Annahme, zugespitzt. Entscheidet ob jemand weiterliest.
+2. Realitaet: Was tatsaechlich das Ergebnis treibt - im Kontrast zur Annahme. Konkret, nicht abstrakt.
+3. Kontraste: 2-4 Glaube-gegen-Realitaet-Paare, je knapp. Ein eigener Gedanke der im Original nicht vorkommt.
+4. Abschluss: Das Operating-Principle das aus den Kontrasten folgt. Kein "Was denkst du?"-Filler, kein DM-CTA.
+Hinweis fuer die Infografik weiter unten: Bevorzuge die Vergleichstabelle (Glaube vs. Realitaet).""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): "What founders/sales teams believe:" - the common assumption, sharpened. Decides whether anyone reads on.
+2. Reality: what actually drives the outcome, in contrast to the assumption. Concrete, not abstract.
+3. Contrasts: 2-4 belief-vs-reality pairs, each tight. One original thought not in the source.
+4. Close: the operating principle that follows from the contrasts. No "What do you think?" filler, no DM CTA.
+Note for the infographic section below: prefer the comparison table (belief vs. reality).""",
+    },
+}
+
+
+def _format_prompts(post: dict, post_format: str = "Opinion") -> tuple[str, str]:
+    """Pure builder: returns (de_prompt, en_prompt) with the format structure
+    injected. Unknown format keys fall back to Opinion. No API calls."""
+    structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
+    de = DACH_POST_PROMPT.format(
+        context=JOLLY_CONTEXT,
+        influencer=post["influencer"],
+        post_text=post["post_text"][:3000],
+        structure_block=structures["de"],
+    )
+    en = EN_POST_PROMPT.format(
+        context=JOLLY_CONTEXT,
+        influencer=post["influencer"],
+        post_text=post["post_text"][:3000],
+        structure_block=structures["en"],
+    )
+    return de, en
 
 
 IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for Jolly Marketer that communicates the core idea of the post through one clear, strategically strong visual concept.
