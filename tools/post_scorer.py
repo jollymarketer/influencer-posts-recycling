@@ -366,6 +366,7 @@ Regeln:
 def pick_format(post: dict, recent_formats: list[str]) -> str:
     """Waehlt Opinion/POV/Signature: bester Topic-Fit, aber nie das zuletzt
     genutzte Format. Faellt deterministisch zurueck und wirft nie."""
+    recent_formats = [f for f in recent_formats if f]  # None/leere Werte droppen
     most_recent = recent_formats[0] if recent_formats else None
 
     if recent_formats:
