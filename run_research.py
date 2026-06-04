@@ -29,12 +29,13 @@ if hasattr(sys.stdout, "reconfigure"):
 from tools.notion_db import (
     get_existing_post_urls,
     get_recent_linkedin_drafts,
+    get_recent_formats,
     create_post_entry,
     update_with_draft,
 )
 from tools.linkedin_scraper import scrape_new_posts
 from tools.substack_scraper import scrape_substack_posts
-from tools.post_scorer import score_posts, generate_post_and_image_prompt, build_infographic_prompt
+from tools.post_scorer import score_posts, generate_post_and_image_prompt, build_infographic_prompt, pick_format
 from tools.kieai_image import generate_image
 from tools.supabase_db import upsert_posts
 from run_topic_mining import run_topic_mining
@@ -118,10 +119,19 @@ def run_daily():
 
     print(f"\nSchritt 4: Winner = {winner['influencer']} (Score: {winner['score']}/60)")
 
+    # Schritt 4.5: Format waehlen (best-fit + anti-repeat, Pierre-Herubel Format-Varietaet)
+    try:
+        recent_formats = get_recent_formats()
+    except Exception as e:
+        print(f"  Recent-Formate laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+        recent_formats = []
+    post_format = pick_format(winner, recent_formats)
+    print(f"  Format gewaehlt: {post_format} (zuletzt: {recent_formats[:3]})")
+
     # Schritt 5: LinkedIn-Draft + Bild-Prompt generieren
     print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
-        linkedin_draft, en_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(winner)
+        linkedin_draft, en_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(winner, post_format)
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
         sys.exit(1)
@@ -185,6 +195,7 @@ def run_daily():
             image_failed=image_failed,
             image_error=image_error,
             infographic_skeleton=infographic_skeleton,
+            post_format=post_format,
         )
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:

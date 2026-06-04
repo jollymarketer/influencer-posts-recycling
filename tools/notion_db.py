@@ -270,6 +270,7 @@ def update_with_draft(
     image_failed: bool = False,
     image_error: str = "",
     infographic_skeleton: str = "",
+    post_format: str = "",
 ):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
@@ -316,6 +317,21 @@ def update_with_draft(
     )
     resp.raise_for_status()
     result = resp.json()
+
+    # Format-Property separat + non-fatal schreiben: existiert die Property in
+    # Notion (noch) nicht, darf das den kritischen Status-PATCH oben nicht killen.
+    if post_format:
+        try:
+            fr = _notion_request(
+                "PATCH",
+                f"{NOTION_API}/pages/{page_id}",
+                headers=_headers(),
+                json={"properties": {"Format": {"select": {"name": post_format}}}},
+            )
+            fr.raise_for_status()
+            print(f"  Format-Property gesetzt: {post_format}", flush=True)
+        except Exception as e:
+            print(f"  Format-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
 
     # Make-Webhook feuern → E-Mail-Alert an Richard.
     # image_failed-Flag steht im Payload, damit die Make-Scenario spaeter
@@ -387,6 +403,39 @@ def get_recent_linkedin_drafts(limit: int = 7) -> list[str]:
         if text:
             drafts.append(text[:500])  # nur Anfang fuer Token-Effizienz
     return drafts
+
+
+def get_recent_formats(limit: int = 3) -> list[str]:
+    """Gibt die Format-Werte der letzten N Eintraege zurueck (fuer den
+    Anti-Repeat-Check im Format-Router). Tolerant: fehlende Property -> []."""
+    payload = {
+        "filter": {
+            "or": [
+                {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Approved"}},
+                {"property": "Status", "select": {"equals": "Ready to Review"}},
+            ]
+        },
+        "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
+        "page_size": limit,
+    }
+    resp = _notion_request(
+        "POST",
+        f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    results = resp.json().get("results", [])
+
+    formats = []
+    for page in results:
+        props = page.get("properties", {})
+        sel = props.get("Format", {}).get("select") or {}
+        name = sel.get("name")
+        if name:
+            formats.append(name)
+    return formats
 
 
 def get_entry_by_url(post_url: str) -> dict | None:
