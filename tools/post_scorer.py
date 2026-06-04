@@ -343,6 +343,63 @@ def _format_prompts(post: dict, post_format: str = "Opinion") -> tuple[str, str]
     return de, en
 
 
+VALID_FORMATS = ("Opinion", "POV", "Signature")
+
+PICK_FORMAT_PROMPT = """Du waehlst das Post-Format fuer einen Recycling-Post.
+
+Verfuegbare Formate:
+- Opinion: kontroverse These gegen eine gaengige Praxis.
+- POV: eine strukturierte Denk-Linse / ein Framework.
+- Signature: "Glaube vs. Realitaet" - verbreitete Annahme gegen das was wirklich zaehlt.
+
+QUELL-POST:
+{post_text}
+
+{recent_section}
+
+Regeln:
+- Waehle das Format das am besten zum Thema des Quell-Posts passt.
+- Das zuletzt genutzte Format ist verboten (nie zweimal hintereinander).
+- Antworte mit EINEM Wort: Opinion, POV oder Signature. Nichts sonst."""
+
+
+def pick_format(post: dict, recent_formats: list[str]) -> str:
+    """Waehlt Opinion/POV/Signature: bester Topic-Fit, aber nie das zuletzt
+    genutzte Format. Faellt deterministisch zurueck und wirft nie."""
+    most_recent = recent_formats[0] if recent_formats else None
+
+    if recent_formats:
+        recent_section = (
+            f"Zuletzt genutzte Formate (neuestes zuerst): {', '.join(recent_formats)}. "
+            f"VERBOTEN ist: {most_recent}."
+        )
+    else:
+        recent_section = "Zuletzt genutzte Formate: keine."
+
+    try:
+        prompt = PICK_FORMAT_PROMPT.format(
+            post_text=post["post_text"][:3000],
+            recent_section=recent_section,
+        )
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=10,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        choice = response.content[0].text.strip()
+        for f in VALID_FORMATS:
+            if f.lower() in choice.lower() and f != most_recent:
+                return f
+    except Exception as e:
+        print(f"  Format-Pick fehlgeschlagen, Fallback: {e}")
+
+    # Deterministic fallback: first valid format that is not the most recent.
+    for f in VALID_FORMATS:
+        if f != most_recent:
+            return f
+    return "Opinion"
+
+
 IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for Jolly Marketer that communicates the core idea of the post through one clear, strategically strong visual concept.
 
 Core message:
