@@ -672,17 +672,14 @@ def _parse_generation_response(raw: str) -> dict:
     return parts
 
 
-def generate_post_and_image_prompt(post: dict) -> tuple[str, str, str, str]:
+def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion") -> tuple[str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Das Bild wird aus den EN-Teilen (Soundbyte + Infografik) gebaut.
+    post_format waehlt den Struktur-Block (Opinion/POV/Signature).
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton) zurueck.
     """
-    # --- Call 1: DE-Post (DACH-Prompt). Nur der Post-Text wird genutzt. ---
-    de_prompt = DACH_POST_PROMPT.format(
-        context=JOLLY_CONTEXT,
-        influencer=post["influencer"],
-        post_text=post["post_text"][:3000],
-    )
+    de_prompt, en_prompt = _format_prompts(post, post_format)
+
     de_resp = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2048,
@@ -690,12 +687,6 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str, str, str]:
     )
     de_draft = _parse_generation_response(de_resp.content[0].text.strip())["post"]
 
-    # --- Call 2: EN-Post (nativ). Liefert Soundbyte + Infografik fuers Bild. ---
-    en_prompt = EN_POST_PROMPT.format(
-        context=JOLLY_CONTEXT,
-        influencer=post["influencer"],
-        post_text=post["post_text"][:3000],
-    )
     en_resp = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2048,
@@ -707,7 +698,6 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str, str, str]:
     kontext = en_parts["kontext"]
     infographic_skeleton = en_parts["infografik"]
 
-    # Bild-Prompt aus dem EN-Soundbyte (englischer Bildtext, fuer beide Posts).
     image_prompt = ""
     if sound_byte:
         image_prompt = IMAGE_PROMPT_TEMPLATE.format(

@@ -45,3 +45,24 @@ def test_post_text_and_influencer_present_in_prompt():
     de, en = _format_prompts(POST, "POV")
     assert "Jane Doe" in de and "Jane Doe" in en
     assert "Some source post" in de and "Some source post" in en
+
+
+from unittest.mock import MagicMock, patch
+
+
+def test_generate_threads_format_into_de_prompt():
+    captured = []
+
+    def fake_create(**kw):
+        captured.append(kw["messages"][0]["content"])
+        resp = MagicMock()
+        resp.content = [MagicMock(text="===POST===\nBody.\n===SOUNDBYTE===\nByte.")]
+        return resp
+
+    with patch("tools.post_scorer.client") as c:
+        c.messages.create.side_effect = fake_create
+        from tools.post_scorer import generate_post_and_image_prompt
+        generate_post_and_image_prompt(POST, "Signature")
+
+    # First call is the DE prompt; it must carry the Signature structure.
+    assert "Vergleichstabelle" in captured[0]
