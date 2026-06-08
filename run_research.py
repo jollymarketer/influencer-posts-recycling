@@ -39,6 +39,7 @@ from tools.post_scorer import score_posts, generate_post_and_image_prompt, build
 from tools.kieai_image import generate_image
 from tools.supabase_db import upsert_posts
 from run_topic_mining import run_topic_mining
+from run_keyword_scrape import scrape_and_persist
 
 MIN_SCORE = 25
 
@@ -208,9 +209,16 @@ def run_daily():
     print(f"Dauer: {duration}s")
 
 
-def main():
+def main(now=None):
     run_daily()
-    if datetime.now(timezone.utc).weekday() == 4:  # Friday, UTC
+    weekday = (now or datetime.now(timezone.utc)).weekday()
+    if weekday == 3:  # Thursday, UTC: keyword scrape feeds Friday's 7-day clustering window
+        print("\n=== Donnerstag: starte Keyword-Scrape ===")
+        try:
+            scrape_and_persist(max_posts=15, posted_limit="week", min_virality=4)
+        except Exception as e:
+            print(f"  Keyword-Scrape fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    if weekday == 4:  # Friday, UTC
         print("\n=== Freitag: starte Blog-Topic-Mining ===")
         try:
             run_topic_mining()

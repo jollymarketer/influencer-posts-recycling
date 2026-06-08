@@ -51,6 +51,19 @@ KEYWORDS = [
 AUTHOR_KEYWORDS = ""
 
 
+def scrape_and_persist(keywords=None, max_posts=20, posted_limit="month",
+                       min_virality=5, author_keywords=AUTHOR_KEYWORDS) -> int:
+    """Scrape the keyword set and upsert to Supabase (source=linkedin_search). Returns rows written.
+    Reused by the CLI and by run_research's weekly cadence branch."""
+    posts = scrape_keyword_posts(
+        keywords or KEYWORDS, max_posts=max_posts, posted_limit=posted_limit,
+        min_virality=min_virality, author_keywords=author_keywords,
+    )
+    n = upsert_posts(posts, source="linkedin_search")
+    print(f"  keyword-scrape: {len(posts)} posts, {n} persisted (source=linkedin_search).")
+    return n
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-posts", type=int, default=20, help="max posts per keyword query")
