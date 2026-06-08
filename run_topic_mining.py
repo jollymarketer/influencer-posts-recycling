@@ -20,23 +20,31 @@ SCORE_THRESHOLD = 70
 TOP_N = 5
 
 
-def run_topic_mining() -> None:
+def run_topic_mining(window_days: int = WINDOW_DAYS, top_n: int = TOP_N) -> None:
     print("=== Blog Topic Mining ===")
-    posts = get_posts_since(WINDOW_DAYS)
-    print(f"  {len(posts)} Posts im {WINDOW_DAYS}-Tage-Fenster.")
+    posts = get_posts_since(window_days)
+    print(f"  {len(posts)} Posts im {window_days}-Tage-Fenster.")
     if len(posts) < 2:
         print("  Zu wenige Posts (<2). Skip.")
         return
     recent_titles = get_recent_idea_titles(limit=30)
     candidates = cluster_topics(posts, recent_titles=recent_titles)
-    print(f"  Claude lieferte {len(candidates)} Roh-Themen.")
+    print(f"  Claude lieferte {len(candidates)} Long-Tail-Kandidaten.")
     top = filter_candidates(
-        candidates, threshold=SCORE_THRESHOLD, top_n=TOP_N, recent_titles=recent_titles
+        candidates, threshold=SCORE_THRESHOLD, top_n=top_n, recent_titles=recent_titles
     )
-    print(f"  {len(top)} Themen nach Filter (>= {SCORE_THRESHOLD}, Top-{TOP_N}).")
+    print(f"  {len(top)} nach Filter (>= {SCORE_THRESHOLD}, Top-{top_n}).")
     n = write_candidates(top)
     print(f"  {n} Themen-Kandidaten in Notion geschrieben.")
 
 
 if __name__ == "__main__":
-    run_topic_mining()
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--days", type=int, default=WINDOW_DAYS,
+                    help=f"clustering window in days (default {WINDOW_DAYS}; use wider for a seed run)")
+    ap.add_argument("--top-n", type=int, default=TOP_N,
+                    help=f"max candidates written (default {TOP_N}; raise for a long-tail seed)")
+    args = ap.parse_args()
+    run_topic_mining(window_days=args.days, top_n=args.top_n)
