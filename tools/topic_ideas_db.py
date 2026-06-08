@@ -58,7 +58,8 @@ def write_candidates(candidates: list[ThemeCandidate]) -> int:
             "Cluster Size": {"number": c.support_count},
             "Source Influencers": _rt(", ".join(c.sample_influencers)),
             "Supporting Posts": _rt("\n".join(c.supporting_post_urls)),
-            "Status": {"select": {"name": "New"}},
+            "Status": {"select": {"name": "Hub needed"}},
+            "Type": {"select": {"name": "Spoke"}},
             "Language DE": {"checkbox": True},
             "Language EN": {"checkbox": True},
         }
