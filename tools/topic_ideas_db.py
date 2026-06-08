@@ -59,6 +59,8 @@ def write_candidates(candidates: list[ThemeCandidate]) -> int:
             "Source Influencers": _rt(", ".join(c.sample_influencers)),
             "Supporting Posts": _rt("\n".join(c.supporting_post_urls)),
             "Status": {"select": {"name": "New"}},
+            "Language DE": {"checkbox": True},
+            "Language EN": {"checkbox": True},
         }
         payload = {"parent": {"database_id": _db_id()}, "properties": props}
         resp = requests.post(f"{NOTION_API}/pages", headers=_headers(), json=payload, timeout=TIMEOUT)
