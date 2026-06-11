@@ -1,7 +1,7 @@
 """
 Influencer Posts Recycling — Vollautomatischer Daily Pipeline
-Railway Cron: Di-Fr 07:00 UTC (Mo skip — Sonntag-Posts sind GTM-mäßig schwach.
-Fr-Cron-Output sitzt das Wochenende in Notion und wird Mo publiziert.)
+Railway Cron: Mo-Fr 07:00 UTC (täglich ein Winner, postet am selben Tag.
+Mo-Pool = neue Posts von Fr-Nachmittag bis So; Score-Gate filtert Schwaches.)
 
 Flow:
 1. Bestehende Post-URLs aus Notion laden (Duplikat-Filter)

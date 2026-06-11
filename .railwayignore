@@ -1,0 +1,8 @@
+# railway up Upload-Bundle klein halten (Cloudflare 413 bei ~30MB+).
+# images/ = lokale Artefakte; Runtime nutzt nur den GitHub-Repo-Pfad "images".
+.git/
+images/
+.tmp/
+__pycache__/
+.pytest_cache/
+.vscode/
