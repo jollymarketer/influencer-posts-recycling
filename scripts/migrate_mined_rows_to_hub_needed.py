@@ -1,4 +1,4 @@
-"""One-off: migrate mined rows from Status=New to Type=Spoke + Status='Hub needed'.
+"""One-off: migrate mined rows from Status=New to Type=Spoke + Status='Freigabe offen'.
 
 Idempotent — only touches rows currently Status=New. Run once after the Phase 1
 guardrail ships. Safe to re-run (matches nothing on a second pass).
@@ -47,7 +47,7 @@ def main() -> int:
             headers=h,
             json={"properties": {
                 "Type": {"select": {"name": "Spoke"}},
-                "Status": {"select": {"name": "Hub needed"}},
+                "Status": {"select": {"name": "Freigabe offen"}},
             }},
             timeout=TIMEOUT,
         )
