@@ -42,6 +42,7 @@ def test_write_candidates_maps_properties(monkeypatch):
     assert props["Type"]["select"]["name"] == "Spoke"
     assert props["Language DE"]["checkbox"] is True
     assert props["Language EN"]["checkbox"] is True
+    assert props["Deep Research"]["checkbox"] is True
     assert "https://x/1" in props["Supporting Posts"]["rich_text"][0]["text"]["content"]
 
 
