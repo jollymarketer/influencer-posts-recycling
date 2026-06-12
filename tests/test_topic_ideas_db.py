@@ -38,7 +38,7 @@ def test_write_candidates_maps_properties(monkeypatch):
     assert props["Suggested Title EN"]["rich_text"][0]["text"]["content"] == "Why AI SDRs Fail Without RevOps"
     assert props["Blog Score"]["number"] == 82
     assert props["Cluster Size"]["number"] == 4
-    assert props["Status"]["select"]["name"] == "Freigabe offen"
+    assert props["Status"]["select"]["name"] == "Hub needed"
     assert props["Type"]["select"]["name"] == "Spoke"
     assert props["Language DE"]["checkbox"] is True
     assert props["Language EN"]["checkbox"] is True
