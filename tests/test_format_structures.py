@@ -9,11 +9,17 @@ from tools.post_scorer import FORMAT_STRUCTURES, _format_prompts
 POST = {"influencer": "Jane Doe", "post_text": "Some source post about pipeline."}
 
 
-def test_three_formats_defined_with_de_and_en():
-    assert set(FORMAT_STRUCTURES) == {"Opinion", "POV", "Signature"}
+def test_formats_defined_with_de_and_en():
+    assert set(FORMAT_STRUCTURES) == {"Opinion", "POV", "Signature", "Story"}
     for key in FORMAT_STRUCTURES:
         assert FORMAT_STRUCTURES[key]["de"].strip()
         assert FORMAT_STRUCTURES[key]["en"].strip()
+
+
+def test_story_injects_narrative_structure():
+    de, en = _format_prompts(POST, "Story")
+    assert "Szene" in de
+    assert "narrative" in en.lower()
 
 
 def test_opinion_injects_contrarian_structure():

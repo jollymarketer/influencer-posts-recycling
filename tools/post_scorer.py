@@ -78,7 +78,7 @@ Tonalitaet:
 - Natuerlich und fluessig schreiben. Variiere Satzlaengen: kurze Saetze fuer Wirkung, laengere fuer Erklaerungen und Zusammenhaenge. Kein Stakkato-Stil mit nur abgehackten Einzelsaetzen. Der Text soll sich lesen wie ein kluger Mensch, der redet, nicht wie eine Bulletpoint-Liste
 - Fokus auf Revenue-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit
 - Keine Buzzwords, kein Marketing-Sprech
-- Ich-Form (du bist der Fractional CMO aus der Praxis). Den Leser NICHT direkt ansprechen ("Du"), sondern allgemein formulieren
+- Ich-Form (du bist der Fractional CMO aus der Praxis). Leichte, sparsame Direktansprache des Lesers ("du"/"ihr") ist erlaubt und erwuenscht, wo sie den Sog erhoeht
 - Auf den Kontext moderner B2B-SaaS/Tech-Teams in DACH uebertragen, ohne den Raum explizit zu betonen
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
 
@@ -87,21 +87,26 @@ Sprach-Verbote (hart):
 - Das Wort "DACH" maximal EINMAL im gesamten Post - nie als Label wie "DACH-Mittelstand", "DACH-Raum", "DACH-Unternehmen"
 - Kein "produzierende Unternehmen", "Industrie-", "traditionelle Firmen"
 - Statt Geo-Tags: den Leser durch Problem-Sprache adressieren (Pipeline, Outbound, RevOps), nicht durch Regional-Sprache
+- Nie die eigene Konstruktion offenlegen: verweise nie auf "das Original", "der Quell-Post", "der eigene Gedanke", "was im Original fehlt", "ich ergaenze". Den zusaetzlichen Gedanken einbauen, nie ankuendigen
+- Keine erfundenen Belege: keine erfundenen Kundennamen, Umsatzzahlen, Fallstudien oder konkrete Einzelfall-Statistiken. Muster-Beobachtungen ("ich sehe oft, dass...") sind ok, erfundene Spezifika nicht
 
 Inhaltliche Regeln:
-- Den Original-Content erkennbar nutzen, aber als eigenstaendige Praxis-Einordnung - keine freie Neuinterpretation
-- Einen eigenen, originellen Gedanken einfuegen, der im Original nicht vorkommt
+- Den Quell-Content erkennbar nutzen, aber als eigenstaendige Praxis-Einordnung - keine freie Neuinterpretation
+- Einen eigenen, originellen Gedanken einbauen, den der Quell-Post nicht hat - ohne ihn als solchen zu benennen
 - Haltung eines erfahrenen Praktikers: operative Details, Schrittfolgen, typische Stolpersteine, KPIs
+- Genau EIN wiederverwendbares Artefakt liefern, das man speichern will: eine Zahl, ein benanntes Framework mit Schritten, oder eine kurze Checkliste/Selbsttest
+- Eine falsche Praxis oder ein Feindbild explizit und hart benennen. Brave Ausgewogenheit ("X ist nicht Y, sondern Z") allein reicht nicht - es braucht eine klare Gegenposition, gegen die jemand argumentieren kann
 
 {structure_block}
 
 Formatierung:
 - Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, nicht nach jedem Satz
-- Genau EIN Formatierungselement auswaehlen:
+- Hoechstens EIN Formatierungselement auswaehlen (Story-Format: keines):
   * Emoji-Liste (mind. 3 gleichwertige Punkte): z.B. 📍 fuer Befunde, 👉 fuer Empfehlungen
   * Nummerierte Liste mit Unicode: ➊ ➋ ➌
   * GROSSBUCHSTABEN-Label fuer einen zentralen Abschnitt
   * ASCII-Box fuer einen Merksatz: ┌─────┐ │ Merksatz │ └─────┘
+- Eine zugespitzte, eigenstaendige Zitat-Zeile auf eine eigene Zeile setzen (Screenshot- und Repost-faehig)
 - Laenge: ca. 200 Woerter, max. 3.000 Zeichen
 
 Qualitaetspruefung (E3):
@@ -197,19 +202,24 @@ Tone:
 - The post should feel helpful and human, not AI-generated.
 
 Content rules:
-- Use the original content recognizably, but as your own practitioner's framing — not a free reinterpretation.
-- Add one original thought that does not appear in the original.
+- Use the source content recognizably, but as your own practitioner's framing — not a free reinterpretation.
+- Add one original thought the source post does not have — without flagging it as such.
+- Never expose your own construction: never reference "the original", "the source post", "my own added thought", "what's missing". Build the thought in, never announce it.
+- No fabricated proof: no invented client names, revenue numbers, case studies or specific single-case statistics. Pattern observations ("I often see...") are fine, invented specifics are not.
 - Stance of an experienced operator: operational detail, sequencing, common pitfalls, KPIs.
+- Deliver exactly ONE save-worthy artifact: a number, a named framework with steps, or a short checklist/self-test.
+- Name one wrong practice or enemy explicitly and hard. A balanced "X is not Y, it's Z" alone is not enough — there must be a clear counter-position someone can argue against.
 
 {structure_block}
 
 Formatting:
 - Paragraphs may be 2-4 sentences. Not every sentence is its own paragraph. Blank lines only between thematic blocks.
-- Pick exactly ONE formatting element:
+- Pick at most ONE formatting element (Story format: none):
   * Emoji list (at least 3 equal items): e.g. 📍 for findings, 👉 for recommendations
   * Numbered list with Unicode: ➊ ➋ ➌
   * ALL-CAPS label for one central section
   * ASCII box for a key takeaway: ┌─────┐ │ takeaway │ └─────┘
+- Put one sharp, standalone quote line on its own line (screenshot- and repost-friendly).
 - Length: ~200 words, max 3,000 characters.
 
 Quality check (E3):
@@ -288,38 +298,52 @@ FORMAT_STRUCTURES = {
 1. Hook (1-2 Saetze): Eine kontroverse These oder ein Gegen-Befund zu einer gaengigen Praxis. Entscheidet ob jemand weiterliest.
 2. Spannung: Was die meisten Teams glauben oder tun - und warum das in der Praxis nicht traegt. Konkret, nicht abstrakt.
 3. Position: Deine Gegenposition als erfahrener Praktiker, begruendet aus Beobachtung. Max 3-5 Belege oder Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
-4. Abschluss: Principle-Loop zurueck zu einer groesseren Wahrheit. Kein "Was denkst du?"-Filler, kein DM-CTA.""",
+4. Abschluss: Offene Schleife statt sauberem Punkt. Entweder eine spezifische, streitbare Frage zur Kern-These, oder eine Flag-Plant-Zeile, gegen die jemand Position beziehen kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): a contrarian thesis or counter-finding against a common practice. Decides whether anyone reads on.
 2. Tension: what most teams believe or do - and why it does not hold up in practice. Concrete, not abstract.
 3. Position: your contrarian take as an experienced operator, reasoned from observation. Max 3-5 proofs or steps. One original thought not in the source.
-4. Close: principle loop back to a larger truth. No "What do you think?" filler, no DM CTA.""",
+4. Close: an open loop, not a clean full stop. Either a specific, arguable question on the core thesis, or a flag-plant line someone can take a stand against. Only the generic "What do you think?" is banned. No DM CTA.""",
     },
     "POV": {
         "de": """Post-Struktur (ohne explizite Benennung):
 1. Hook (1-2 Saetze): Benenne eine Denk-Linse oder ein Reframe das die Zielgruppe so noch nicht hatte. Entscheidet ob jemand weiterliest.
 2. Framework: 2-4 benannte Bestandteile eines Modells, mit dem man das Problem klarer sieht. Konkret, nicht abstrakt.
 3. Anwendung: Wie man die Linse in der Praxis nutzt. Max 3-5 Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
-4. Abschluss: Principle-Loop zurueck zu einer groesseren Wahrheit. Kein "Was denkst du?"-Filler, kein DM-CTA.""",
+4. Abschluss: Offene Schleife statt sauberem Punkt. Entweder eine spezifische, streitbare Frage zur Kern-These, oder eine Flag-Plant-Zeile, gegen die jemand Position beziehen kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): name a lens or reframe the audience did not have yet. Decides whether anyone reads on.
 2. Framework: 2-4 named parts of a model that makes the problem clearer. Concrete, not abstract.
 3. Application: how to use the lens in practice. Max 3-5 steps. One original thought not in the source.
-4. Close: principle loop back to a larger truth. No "What do you think?" filler, no DM CTA.""",
+4. Close: an open loop, not a clean full stop. Either a specific, arguable question on the core thesis, or a flag-plant line someone can take a stand against. Only the generic "What do you think?" is banned. No DM CTA.""",
     },
     "Signature": {
         "de": """Post-Struktur (ohne explizite Benennung):
 1. Hook (1-2 Saetze): "Was Founder/Sales-Teams glauben:" - die verbreitete Annahme, zugespitzt. Entscheidet ob jemand weiterliest.
 2. Realitaet: Was tatsaechlich das Ergebnis treibt - im Kontrast zur Annahme. Konkret, nicht abstrakt.
 3. Kontraste: 2-4 Glaube-gegen-Realitaet-Paare, je knapp. Ein eigener Gedanke der im Original nicht vorkommt.
-4. Abschluss: Das Operating-Principle das aus den Kontrasten folgt. Kein "Was denkst du?"-Filler, kein DM-CTA.
+4. Abschluss: Offene Schleife. Eine spezifische, streitbare Frage oder eine Flag-Plant-Zeile, die das Operating-Principle zuspitzt und gegen die jemand argumentieren kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
 Hinweis fuer die Infografik weiter unten: Bevorzuge die Vergleichstabelle (Glaube vs. Realitaet).""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): "What founders/sales teams believe:" - the common assumption, sharpened. Decides whether anyone reads on.
 2. Reality: what actually drives the outcome, in contrast to the assumption. Concrete, not abstract.
 3. Contrasts: 2-4 belief-vs-reality pairs, each tight. One original thought not in the source.
-4. Close: the operating principle that follows from the contrasts. No "What do you think?" filler, no DM CTA.
+4. Close: an open loop. A specific, arguable question or a flag-plant line that sharpens the operating principle and that someone can argue against. Only the generic "What do you think?" is banned. No DM CTA.
 Note for the infographic section below: prefer the comparison table (belief vs. reality).""",
+    },
+    "Story": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Steig mitten in eine konkrete Szene ein - ein Satz, den ein Founder oder Sales-Leader sinngemaess sagt, oder ein Moment aus der Praxis. Entscheidet ob jemand weiterliest.
+2. Spannung: Wie die Szene sich entwickelt und wo der eigentliche Konflikt sitzt. Erzaehlend, keine Bullet-Liste, keine Box.
+3. Wendung: Die Erkenntnis aus der Szene, die das Muster sichtbar macht. Ein eigener Gedanke, den der Quell-Post nicht hat.
+4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
+Erfinde dabei keine konkreten Namen, Umsatzzahlen oder Fallstudien. Eine generische, plausible Szene ohne erfundene Spezifika - oder ein erkennbares Muster ("ich sehe das oft") statt eines erfundenen Einzelfalls. Dieses Format nutzt KEINE Emoji-Liste und KEINE ASCII-Box.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): drop into a concrete scene - a line a founder or sales leader would say, or a moment from practice. Decides whether anyone reads on.
+2. Tension: how the scene unfolds and where the real conflict sits. Narrative, no bullet list, no box.
+3. Turn: the realization from the scene that exposes the pattern. One original thought the source post does not have.
+4. Close: an open loop - a specific, arguable question or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.
+Do not invent specific names, revenue figures or case studies. A generic, plausible scene without fabricated specifics - or a recognizable pattern ("I see this often") instead of an invented single case. This format uses NO emoji list and NO ASCII box.""",
     },
 }
 
@@ -343,7 +367,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion") -> tuple[str, str]
     return de, en
 
 
-VALID_FORMATS = ("Opinion", "POV", "Signature")
+VALID_FORMATS = ("Opinion", "POV", "Signature", "Story")
 
 PICK_FORMAT_PROMPT = """Du waehlst das Post-Format fuer einen Recycling-Post.
 
@@ -351,6 +375,7 @@ Verfuegbare Formate:
 - Opinion: kontroverse These gegen eine gaengige Praxis.
 - POV: eine strukturierte Denk-Linse / ein Framework.
 - Signature: "Glaube vs. Realitaet" - verbreitete Annahme gegen das was wirklich zaehlt.
+- Story: eine konkrete Szene oder Anekdote aus der Praxis, erzaehlend statt Liste.
 
 QUELL-POST:
 {post_text}
