@@ -58,7 +58,7 @@ Enthält:
 - `METAPHER`: Visuelle Metapher wenn sinnvoll (z.B. Eisberg, Rubik's Cube)
 - `KOMPLEMENTARITAET`: Infografik zeigt X → Post-Text erklärt Y
 - `EBENEN`: Keywords pro Ebene/Spalte (max. 3-4 Keywords, keine Sätze)
-- `TOOL-LOGOS`: ICP-relevante Tools für erhöhte Saves (HubSpot, Smartlead, Clay etc.)
+- `TOOL-LOGOS`: immer "keine" — das Bild bleibt logofrei (AI-Render verzerrt Marken-Logos)
 
 Das Skelett wird automatisch als Block "Infografik-Skelett (Canva)" in die Notion-Seite geschrieben.
 

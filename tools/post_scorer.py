@@ -150,7 +150,7 @@ Regeln:
 - Keywords nicht Saetze (max. 3-4 Keywords pro Ebene/Spalte)
 - 3-7 Elemente total, nicht mehr
 - Komplementaritaet: Wenn Infografik das Problem zeigt beschreibt der Post-Text die Loesung; wenn Infografik die Struktur zeigt erklaert der Post-Text das Warum
-- Tool-Logos empfehlen wenn ICP-relevante Tools im Post vorkommen (HubSpot, Smartlead, Clay, Make.com, Apollo etc.)
+- Keine Tool-Logos: das Bild bleibt logofrei (AI-Render verzerrt Marken). TOOL-LOGOS immer "keine"
 - Visuelle Metapher empfehlen wenn eine den Kerngedanken verstaerkt (z.B. Eisberg fuer versteckte Komplexitaet, Rubik's Cube fuer Vielschichtigkeit)
 
 OUTPUT-FORMAT (exakt einhalten):
@@ -174,7 +174,7 @@ EBENEN:
 [Label 1]: [Keyword 1], [Keyword 2], [Keyword 3]
 [Label 2]: [Keyword 1], [Keyword 2], [Keyword 3]
 [Label 3]: [Keyword 1], [Keyword 2], [Keyword 3]
-TOOL-LOGOS: [Tool-Namen oder "keine"]"""
+TOOL-LOGOS: keine"""
 
 EN_POST_PROMPT = """You are Richard from Jolly Marketer (Fractional CMO / GTM as a Service for B2B).
 
@@ -263,7 +263,7 @@ Rules:
 - Keywords not sentences (max 3-4 keywords per level/column)
 - 3-7 elements total, no more
 - Complementarity: if the infographic shows the problem, the post text describes the solution; if the infographic shows the structure, the post text explains the why
-- Recommend tool logos when ICP-relevant tools appear in the post (HubSpot, Smartlead, Clay, Make.com, Apollo etc.)
+- No tool logos: the image stays logo-free (the AI render distorts brands). TOOL-LOGOS is always "none"
 - Recommend a visual metaphor when one reinforces the core idea (e.g. iceberg for hidden complexity, Rubik's cube for many-layeredness)
 
 OUTPUT FORMAT (follow exactly):
@@ -289,7 +289,7 @@ EBENEN:
 [Label 1]: [keyword 1], [keyword 2], [keyword 3]
 [Label 2]: [keyword 1], [keyword 2], [keyword 3]
 [Label 3]: [keyword 1], [keyword 2], [keyword 3]
-TOOL-LOGOS: [tool names or "none"]"""
+TOOL-LOGOS: none"""
 
 
 FORMAT_STRUCTURES = {
