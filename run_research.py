@@ -30,12 +30,20 @@ from tools.notion_db import (
     get_existing_post_urls,
     get_recent_linkedin_drafts,
     get_recent_formats,
+    get_recent_infographic_types,
     create_post_entry,
     update_with_draft,
 )
 from tools.linkedin_scraper import scrape_new_posts
 from tools.substack_scraper import scrape_substack_posts
-from tools.post_scorer import score_posts, generate_post_and_image_prompt, build_infographic_prompt, pick_format
+from tools.post_scorer import (
+    score_posts,
+    generate_post_and_image_prompt,
+    build_infographic_prompt,
+    pick_format,
+    parse_infographic_type,
+    normalize_infographic_type,
+)
 from tools.kieai_image import generate_image
 from tools.supabase_db import upsert_posts
 from run_topic_mining import run_topic_mining
@@ -129,10 +137,22 @@ def run_daily():
     post_format = pick_format(winner, recent_formats)
     print(f"  Format gewaehlt: {post_format} (zuletzt: {recent_formats[:3]})")
 
+    # Schritt 4.6: Zuletzt genutzte Infografik-Typen laden (Anti-Repeat gegen die
+    # Eisberg-Monotonie). Non-fatal: fehlt die Property, laeuft der Run ohne Hinweis.
+    try:
+        recent_infographic_types = get_recent_infographic_types()
+    except Exception as e:
+        print(f"  Recent-Infografik-Typen laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+        recent_infographic_types = []
+    if recent_infographic_types:
+        print(f"  Zuletzt genutzte Infografik-Typen: {recent_infographic_types}")
+
     # Schritt 5: LinkedIn-Draft + Bild-Prompt generieren
     print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
-        linkedin_draft, en_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(winner, post_format)
+        linkedin_draft, en_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(
+            winner, post_format, recent_infographic_types=recent_infographic_types
+        )
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
         sys.exit(1)
@@ -149,6 +169,10 @@ def run_daily():
     print(f"  EN-Draft: {len(en_draft)} Zeichen")
     print(f"  Bild-Prompt: {'OK' if image_prompt else 'leer'}")
     print(f"  Infografik-Skelett: {'OK' if infographic_skeleton else 'leer'}")
+
+    # Gewaehlten Infografik-Typ extrahieren + kanonisieren (fuer Anti-Repeat im naechsten Run)
+    infographic_type = normalize_infographic_type(parse_infographic_type(infographic_skeleton))
+    print(f"  Infografik-Typ: {infographic_type or 'unbekannt'}")
 
     # Schritt 6: Bild generieren — Infografik aus dem Skelett (Pierre-Rubel-Playbook:
     # Infografik treibt Saves, nicht der Editorial-Poster). Faellt auf den
@@ -197,6 +221,7 @@ def run_daily():
             image_error=image_error,
             infographic_skeleton=infographic_skeleton,
             post_format=post_format,
+            infographic_type=infographic_type,
         )
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:

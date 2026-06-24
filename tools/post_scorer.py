@@ -140,19 +140,30 @@ TEIL 4 - INFOGRAFIK-SKELETT:
 
 Basierend auf dem generierten Post: Empfehle den staerksten Infografik-Typ und liefere die Keywords fuer den Canva-Aufbau.
 
-INFOGRAFIK-TYPEN (nur einen waehlen):
+INFOGRAFIK-TYPEN (waehle den EINEN der zur Logik des Posts am besten passt):
 - Vergleichstabelle: Zwei Spalten (z.B. "Was Leute denken" vs. "Was es wirklich ist")
 - Funnel/Pyramide: 3-5 Ebenen mit Hierarchie (oben = Wichtigstes oder Ausgangspunkt)
-- Eisberg: Sichtbares vs. verborgene Tiefe
+- Eisberg: Sichtbare Spitze vs. verborgene Tiefe darunter
 - Framework/Kreise: Konzentrische oder verschachtelte Ebenen
 - Horizontaler Vergleich: Nebeneinander, gleichwertig
+- Timeline/Sequenz: geordnete Schritte oder Phasen
+- 2x2-Matrix: vier Quadranten aus zwei Achsen (z.B. Aufwand vs. Wirkung)
+- Flywheel/Kreislauf: ein Zyklus, in dem jede Stufe die naechste speist
+- Waage/Hebel: zwei Seiten gegeneinander abgewogen (Trade-off oder Ungleichgewicht)
+- Vorher/Nachher-Split: ein Zustand vs. der veraenderte Zustand, nebeneinander
+- Baum/Verzweigung: eine Wurzel, die sich in Aeste oder Ergebnisse teilt
+
+Typ-Wahl-Regeln (Output ist aktuell viel zu monoton — das beheben):
+- Typ an die echte Logik des Posts koppeln: Trade-off -> Waage, Prozess -> Funnel oder Timeline, zwei Denkweisen -> Vergleichstabelle, Zyklus -> Flywheel, zwei Achsen -> 2x2-Matrix.
+- Eisberg ist stark ueberstrapaziert. Nur waehlen wenn es im Post wirklich um eine sichtbare Oberflaeche geht, die eine tiefere Realitaet verbirgt, und nichts anderes besser passt.
+{recent_types_line}
 
 Regeln:
 - Keywords nicht Saetze (max. 3-4 Keywords pro Ebene/Spalte)
 - 3-7 Elemente total, nicht mehr
 - Komplementaritaet: Wenn Infografik das Problem zeigt beschreibt der Post-Text die Loesung; wenn Infografik die Struktur zeigt erklaert der Post-Text das Warum
 - Keine Tool-Logos: das Bild bleibt logofrei (AI-Render verzerrt Marken). TOOL-LOGOS immer "keine"
-- Visuelle Metapher empfehlen wenn eine den Kerngedanken verstaerkt (z.B. Eisberg fuer versteckte Komplexitaet, Rubik's Cube fuer Vielschichtigkeit)
+- Visuelle Metapher nur empfehlen wenn sie den Kerngedanken wirklich verstaerkt (z.B. Bruecke fuer das Verbinden zweier Seiten, Domino-Kette fuer Kaskaden-Effekte, Hebel fuer ueberproportionale Wirkung). Nicht erzwingen.
 
 OUTPUT-FORMAT (exakt einhalten):
 
@@ -254,19 +265,30 @@ PART 4 - INFOGRAPHIC SKELETON:
 
 Based on the generated post: recommend the strongest infographic type and provide the keywords for the Canva build.
 
-INFOGRAPHIC TYPES (choose only one):
+INFOGRAPHIC TYPES (pick the ONE that matches the post's logic best):
 - Comparison table: two columns (e.g. "What people think" vs. "What it really is")
 - Funnel/pyramid: 3-5 levels with hierarchy (top = most important or starting point)
-- Iceberg: visible vs. hidden depth
+- Iceberg: visible tip vs. hidden depth below the surface
 - Framework/circles: concentric or nested levels
 - Horizontal comparison: side by side, equal weight
+- Timeline/sequence: ordered steps or stages
+- 2x2 matrix: four quadrants from two axes (e.g. effort vs. impact)
+- Flywheel/loop: a cycle where each stage feeds the next
+- Scale/seesaw: two sides weighed against each other (a trade-off or imbalance)
+- Before/after split: one state vs. the changed state, side by side
+- Tree/branching: one root splitting into branches or outcomes
+
+Type-selection rules (the output is currently far too monotone — fix that):
+- Match the type to the post's real logic: a trade-off -> scale, a process -> funnel or timeline, two mindsets -> comparison table, a cycle -> flywheel, two axes -> 2x2 matrix.
+- Iceberg is heavily overused. Choose it ONLY when the post is genuinely about a visible surface hiding a deeper reality, and nothing else fits better.
+{recent_types_line}
 
 Rules:
 - Keywords not sentences (max 3-4 keywords per level/column)
 - 3-7 elements total, no more
 - Complementarity: if the infographic shows the problem, the post text describes the solution; if the infographic shows the structure, the post text explains the why
 - No tool logos: the image stays logo-free (the AI render distorts brands). TOOL-LOGOS is always "none"
-- Recommend a visual metaphor when one reinforces the core idea (e.g. iceberg for hidden complexity, Rubik's cube for many-layeredness)
+- Recommend a visual metaphor only when it genuinely reinforces the core idea (e.g. a bridge for connecting two sides, a domino chain for cascading effects, a lever for outsized impact). Do not force one.
 
 OUTPUT FORMAT (follow exactly):
 
@@ -350,23 +372,79 @@ Do not invent specific names, revenue figures or case studies. A generic, plausi
 }
 
 
-def _format_prompts(post: dict, post_format: str = "Opinion") -> tuple[str, str]:
-    """Pure builder: returns (de_prompt, en_prompt) with the format structure
-    injected. Unknown format keys fall back to Opinion. No API calls."""
+def _recent_types_lines(recent_infographic_types) -> tuple[str, str]:
+    """Baut die DE/EN Anti-Repeat-Zeile fuer den Infografik-Typ. Leere Liste -> ("", "")."""
+    recent = [t for t in (recent_infographic_types or []) if t]
+    if not recent:
+        return "", ""
+    joined = ", ".join(recent)
+    de = (f"- Zuletzt genutzte Typen (neuestes zuerst): {joined}. "
+          f"Vermeide jeden Typ aus den letzten 3 Runs, ausser er passt klar am besten.")
+    en = (f"- Types used in recent posts (newest first): {joined}. "
+          f"Avoid any type from the last 3 runs unless it is clearly the best fit.")
+    return de, en
+
+
+def _format_prompts(post: dict, post_format: str = "Opinion",
+                    recent_infographic_types=None) -> tuple[str, str]:
+    """Pure builder: returns (de_prompt, en_prompt) with the format structure and
+    the infographic-type anti-repeat line injected. Unknown format keys fall back
+    to Opinion. No API calls."""
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
+    de_recent, en_recent = _recent_types_lines(recent_infographic_types)
     de = DACH_POST_PROMPT.format(
         context=JOLLY_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
         structure_block=structures["de"],
+        recent_types_line=de_recent,
     )
     en = EN_POST_PROMPT.format(
         context=JOLLY_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
         structure_block=structures["en"],
+        recent_types_line=en_recent,
     )
     return de, en
+
+
+# Kanonische Infografik-Typen — fuer ein sauberes Notion-Select + verlaessliches
+# Anti-Repeat. Roh-TYP des LLM wird per Keyword-Match auf einen Kanon abgebildet.
+INFOGRAPHIC_TYPE_CANON = [
+    ("Comparison table", ("comparison", "vergleichstabelle", "table", "tabelle")),
+    ("Funnel/pyramid", ("funnel", "pyramid", "pyramide", "trichter")),
+    ("Iceberg", ("iceberg", "eisberg")),
+    ("Framework/circles", ("framework", "circle", "kreis")),
+    ("Horizontal comparison", ("horizontal",)),
+    ("Timeline", ("timeline", "sequence", "sequenz", "zeitstrahl")),
+    ("2x2 matrix", ("matrix", "quadrant", "2x2")),
+    ("Flywheel/loop", ("flywheel", "loop", "cycle", "kreislauf", "zyklus")),
+    ("Scale/seesaw", ("scale", "seesaw", "waage", "hebel", "balance")),
+    ("Before/after", ("before", "after", "vorher", "nachher")),
+    ("Tree/branching", ("tree", "branch", "baum", "verzweig")),
+]
+
+
+def parse_infographic_type(skeleton: str) -> str:
+    """Liest den rohen TYP-Wert aus einem Infografik-Skelett (TYP: ...). '' wenn keiner."""
+    for line in (skeleton or "").splitlines():
+        s = line.strip()
+        if s.upper().startswith("TYP:"):
+            return s.split(":", 1)[1].strip()
+    return ""
+
+
+def normalize_infographic_type(raw: str) -> str:
+    """Bildet einen rohen TYP-String per Keyword-Match auf einen kanonischen Typ ab.
+    Kein Match -> der gestrippte Roh-Wert (gekappt), damit Anti-Repeat trotzdem greift."""
+    r = (raw or "").strip().lower()
+    if not r:
+        return ""
+    for canon, keywords in INFOGRAPHIC_TYPE_CANON:
+        if any(k in r for k in keywords):
+            return canon
+    return (raw or "").strip()[:40]
 
 
 VALID_FORMATS = ("Opinion", "POV", "Signature", "Story")
@@ -554,6 +632,12 @@ Layout logic:
 - Comparison table: two clean columns, one header per column, aligned rows.
 - Framework/circles: concentric or nested circles, one layer per ring.
 - Horizontal comparison: equal-weight blocks side by side.
+- Timeline/sequence: ordered nodes connected along a single line, each node one layer, clear direction.
+- 2x2 matrix: four quadrants formed by one horizontal and one vertical axis, one layer per quadrant, axis ends lightly implied.
+- Flywheel/loop: layers arranged around a circle with arrows showing the cycle direction.
+- Scale/seesaw: a balance beam with the contrasted layers placed on each side.
+- Before/after split: the canvas divided in two, the prior state on one side and the changed state on the other.
+- Tree/branching: a root at the top or left branching out into the deeper layers.
 
 Each layer shows its label as a short bold heading plus its keywords as a tight list. Keywords stay keywords, never full sentences.
 
@@ -757,13 +841,15 @@ def _parse_generation_response(raw: str) -> dict:
     return parts
 
 
-def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion") -> tuple[str, str, str, str]:
+def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
+                                   recent_infographic_types=None) -> tuple[str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Das Bild wird aus den EN-Teilen (Soundbyte + Infografik) gebaut.
     post_format waehlt den Struktur-Block (Opinion/POV/Signature).
+    recent_infographic_types steuert das Anti-Repeat des Infografik-Typs.
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton) zurueck.
     """
-    de_prompt, en_prompt = _format_prompts(post, post_format)
+    de_prompt, en_prompt = _format_prompts(post, post_format, recent_infographic_types)
 
     de_resp = client.messages.create(
         model="claude-sonnet-4-6",

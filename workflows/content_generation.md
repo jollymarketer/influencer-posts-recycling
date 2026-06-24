@@ -54,7 +54,7 @@ Ziel: Ein LinkedIn Featured Image (3:2), das die Kernaussage bildhaft, sofort ve
 
 **3b — Infografik-Skelett** (Canva-Ready, manueller Schritt):
 Enthält:
-- `TYP`: Vergleichstabelle / Funnel/Pyramide / Eisberg / Framework/Kreise / Horizontaler Vergleich
+- `TYP`: Vergleichstabelle / Funnel/Pyramide / Eisberg / Framework/Kreise / Horizontaler Vergleich / Timeline / 2x2-Matrix / Flywheel / Waage-Hebel / Vorher-Nachher / Baum-Verzweigung (Typ wird per Logik-Match gewaehlt + Anti-Repeat gegen die letzten 3 Runs; Eisberg nur wenn klar am besten)
 - `METAPHER`: Visuelle Metapher wenn sinnvoll (z.B. Eisberg, Rubik's Cube)
 - `KOMPLEMENTARITAET`: Infografik zeigt X → Post-Text erklärt Y
 - `EBENEN`: Keywords pro Ebene/Spalte (max. 3-4 Keywords, keine Sätze)
@@ -142,3 +142,10 @@ update_with_draft(
 - Recovery einer einzelnen Seite ohne Re-Run der ganzen Pipeline (kein Make-Webhook-Refire):
   `python .tmp/regenerate_failed_image.py <PAGE_ID> [MODEL]` — strippt den `[IMAGE FAILED]`-Prefix, erkennt Infografik (1:1, kein Mark-Strip) vs Editorial-Poster (3:2, Mark-Strip), patcht Image + bereinigten Prompt + Status=`Ready to Review`.
 - Achtung bei Infografik-Fallback: `strip_marks=False`, daher kann das Modell ein zweites (halluziniertes) Jolly-Logo unten links setzen. Deterministisch entfernbar via `_wipe_bottom_left_zone` auf dem fertigen PNG, dann neu hochladen + Image patchen.
+
+### 2026-06-24 — Infografik-Typ-Diversitaet (weg von ~80% Eisberg)
+
+- Problem: ~80% der Bilder waren Eisberge. Drei Biases: (1) Eisberg war das einzige Metaphern-Beispiel im Prompt (Anker), (2) kein Anti-Repeat auf den TYP (nur das Post-Format hatte eins), (3) "sichtbar vs. verborgen" passt scheinbar auf jeden Post.
+- Fix (Kombi 1+2+3): Prompt entgiftet (Eisberg-Anker raus, Metaphern-Beispiele neutral, "Eisberg ist ueberstrapaziert"-Regel) + Typ-Menue von 5 auf 11 erweitert (Timeline, 2x2-Matrix, Flywheel, Waage/Hebel, Vorher/Nachher, Baum) + deterministisches Anti-Repeat: `get_recent_infographic_types()` -> `recent_types_line` im Prompt ("vermeide Typ aus den letzten 3 Runs").
+- Persistenz: neue Notion-Select-Property **Infografik-Typ** (Seed via `scripts/add_infographic_type_property.py`). `update_with_draft` schreibt sie non-fatal; `parse_infographic_type` + `normalize_infographic_type` (Keyword-Match auf 11 Kanons) liefern den gespeicherten Wert.
+- Verifiziert: Trade-off-Post + recent=[Iceberg] -> LLM waehlt Scale/seesaw, nicht Eisberg.
