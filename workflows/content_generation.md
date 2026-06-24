@@ -131,3 +131,14 @@ update_with_draft(
 1. LinkedIn Draft in Notion reviewen und ggf. anpassen
 2. Bild über `Image URL` herunterladen (URL verfällt nach 24h!)
 3. Post auf LinkedIn veröffentlichen (manuell oder via Buffer)
+
+## Self-Improvement Log
+
+### 2026-06-24 — kie.ai gpt-image-2 Server-Ausfall + Nano-Banana-Fallback
+
+- Symptom: Status `Image Failed`, Image Prompt trägt `[IMAGE FAILED] kie.ai ... {'code': 500, 'msg': 'Server exception ...'}`.
+- Ursache: kie.ai liefert bei serverseitiger Modell-Stoerung HTTP 200 **mit Body-Code 500**. Nicht unser Code, nicht Prompt/Auth/Credits. Unbekannte Modelle geben sauber 422 ("not supported") zurueck — ein **500 heisst: Modell existiert, Backend ist down**. Betrifft nur `gpt-image-2-text-to-image`; `google/nano-banana` und der createTask-Endpoint liefen normal weiter.
+- Code-Fix: `_kie_request_with_retry` wiederholt jetzt auch Body-Code >= 500 (nicht nur HTTP-5xx). `generate_image(..., model=...)` erlaubt einen Per-Call-Modellwechsel; Pipeline-Default bleibt `gpt-image-2-text-to-image`.
+- Recovery einer einzelnen Seite ohne Re-Run der ganzen Pipeline (kein Make-Webhook-Refire):
+  `python .tmp/regenerate_failed_image.py <PAGE_ID> [MODEL]` — strippt den `[IMAGE FAILED]`-Prefix, erkennt Infografik (1:1, kein Mark-Strip) vs Editorial-Poster (3:2, Mark-Strip), patcht Image + bereinigten Prompt + Status=`Ready to Review`.
+- Achtung bei Infografik-Fallback: `strip_marks=False`, daher kann das Modell ein zweites (halluziniertes) Jolly-Logo unten links setzen. Deterministisch entfernbar via `_wipe_bottom_left_zone` auf dem fertigen PNG, dann neu hochladen + Image patchen.
