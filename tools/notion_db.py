@@ -272,6 +272,7 @@ def update_with_draft(
     infographic_skeleton: str = "",
     post_format: str = "",
     infographic_type: str = "",
+    archetype: str = "",
 ):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
@@ -349,6 +350,21 @@ def update_with_draft(
             print(f"  Infografik-Typ-Property gesetzt: {infographic_type}", flush=True)
         except Exception as e:
             print(f"  Infografik-Typ-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    # Bild-Variante separat + non-fatal (wie Format/Infografik-Typ): treibt das
+    # Anti-Repeat des Bild-Archetyps im naechsten Run via get_recent_archetypes.
+    if archetype:
+        try:
+            ar = _notion_request(
+                "PATCH",
+                f"{NOTION_API}/pages/{page_id}",
+                headers=_headers(),
+                json={"properties": {"Bild-Variante": {"select": {"name": archetype}}}},
+            )
+            ar.raise_for_status()
+            print(f"  Bild-Variante-Property gesetzt: {archetype}", flush=True)
+        except Exception as e:
+            print(f"  Bild-Variante-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
 
     # Make-Webhook feuern → E-Mail-Alert an Richard.
     # image_failed-Flag steht im Payload, damit die Make-Scenario spaeter
@@ -487,6 +503,40 @@ def get_recent_infographic_types(limit: int = 4) -> list[str]:
         if name:
             types.append(name)
     return types
+
+
+def get_recent_archetypes(limit: int = 3) -> list[str]:
+    """Gibt die Bild-Varianten (Bild-Archetyp) der letzten N Eintraege zurueck
+    (neuestes zuerst), fuer das Anti-Repeat des Bild-Archetyps im Selektor.
+    Tolerant: fehlende Property -> []."""
+    payload = {
+        "filter": {
+            "or": [
+                {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Approved"}},
+                {"property": "Status", "select": {"equals": "Ready to Review"}},
+            ]
+        },
+        "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
+        "page_size": limit,
+    }
+    resp = _notion_request(
+        "POST",
+        f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    results = resp.json().get("results", [])
+
+    archetypes = []
+    for page in results:
+        props = page.get("properties", {})
+        sel = props.get("Bild-Variante", {}).get("select") or {}
+        name = sel.get("name")
+        if name:
+            archetypes.append(name)
+    return archetypes
 
 
 def get_entry_by_url(post_url: str) -> dict | None:

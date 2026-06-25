@@ -31,6 +31,7 @@ from tools.notion_db import (
     get_recent_linkedin_drafts,
     get_recent_formats,
     get_recent_infographic_types,
+    get_recent_archetypes,
     create_post_entry,
     update_with_draft,
 )
@@ -39,10 +40,15 @@ from tools.substack_scraper import scrape_substack_posts
 from tools.post_scorer import (
     score_posts,
     generate_post_and_image_prompt,
-    build_infographic_prompt,
     pick_format,
     parse_infographic_type,
     normalize_infographic_type,
+)
+from tools.image_archetypes import (
+    select_archetype,
+    build_archetype_prompt,
+    skeleton_signals,
+    ARCHETYPES,
 )
 from tools.kieai_image import generate_image
 from tools.supabase_db import upsert_posts
@@ -147,10 +153,20 @@ def run_daily():
     if recent_infographic_types:
         print(f"  Zuletzt genutzte Infografik-Typen: {recent_infographic_types}")
 
+    # Zuletzt genutzte Bild-Archetypen laden (Anti-Repeat des Bild-Routers).
+    # Non-fatal: fehlt die Property, laeuft der Run ohne Anti-Repeat weiter.
+    try:
+        recent_archetypes = get_recent_archetypes()
+    except Exception as e:
+        print(f"  Recent-Bild-Archetypen laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+        recent_archetypes = []
+    if recent_archetypes:
+        print(f"  Zuletzt genutzte Bild-Archetypen: {recent_archetypes}")
+
     # Schritt 5: LinkedIn-Draft + Bild-Prompt generieren
     print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
-        linkedin_draft, en_draft, image_prompt, infographic_skeleton = generate_post_and_image_prompt(
+        linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
             winner, post_format, recent_infographic_types=recent_infographic_types
         )
     except Exception as e:
@@ -174,14 +190,32 @@ def run_daily():
     infographic_type = normalize_infographic_type(parse_infographic_type(infographic_skeleton))
     print(f"  Infografik-Typ: {infographic_type or 'unbekannt'}")
 
-    # Schritt 6: Bild generieren — Infografik aus dem Skelett (Pierre-Rubel-Playbook:
-    # Infografik treibt Saves, nicht der Editorial-Poster). Faellt auf den
-    # Editorial-Poster zurueck, falls kein Infografik-Skelett vorhanden ist.
-    infographic_prompt = build_infographic_prompt(infographic_skeleton, language="English")
-    if infographic_prompt:
-        gen_prompt, gen_ratio, gen_strip, gen_label = infographic_prompt, "1:1", False, "Infografik"
+    # Schritt 6: Bild-Archetyp waehlen + Bild generieren. Statt immer die literale
+    # Infografik zu rendern (die clunky/template-y wirkte), waehlt der Router aus 7
+    # visuell verschiedenen Formen die beste fuer diesen Post — concept-forward,
+    # mit Anti-Repeat gegen die letzten 2 Archetypen. Die Infografik bleibt eine
+    # Option, ist aber nur bei wirklich strukturellen Posts der starke Kandidat.
+    sig = skeleton_signals(infographic_skeleton, sound_byte)
+    chosen_archetype = select_archetype(
+        post_format=post_format,
+        infographic_type=infographic_type,
+        layers_count=sig["layers_count"],
+        has_metaphor=sig["has_metaphor"],
+        has_stat=sig["has_stat"],
+        recent_archetypes=recent_archetypes,
+    )
+    gen_archetype, gen_prompt, gen_ratio, gen_strip = build_archetype_prompt(
+        chosen_archetype,
+        soundbyte=sound_byte,
+        kontext=kontext,
+        skeleton=infographic_skeleton,
+        language="English",
+    )
+    gen_label = ARCHETYPES[gen_archetype]["label"]
+    if gen_archetype != chosen_archetype:
+        print(f"  Bild-Archetyp: {chosen_archetype} -> Fallback {gen_archetype} ({gen_label})")
     else:
-        gen_prompt, gen_ratio, gen_strip, gen_label = image_prompt, "3:2", True, "Editorial-Poster"
+        print(f"  Bild-Archetyp gewaehlt: {gen_archetype} ({gen_label})")
 
     image_url = ""
     image_failed = False
@@ -222,6 +256,7 @@ def run_daily():
             infographic_skeleton=infographic_skeleton,
             post_format=post_format,
             infographic_type=infographic_type,
+            archetype=gen_archetype,
         )
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:

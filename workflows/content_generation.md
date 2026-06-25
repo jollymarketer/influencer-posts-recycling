@@ -143,6 +143,14 @@ update_with_draft(
   `python .tmp/regenerate_failed_image.py <PAGE_ID> [MODEL]` — strippt den `[IMAGE FAILED]`-Prefix, erkennt Infografik (1:1, kein Mark-Strip) vs Editorial-Poster (3:2, Mark-Strip), patcht Image + bereinigten Prompt + Status=`Ready to Review`.
 - Achtung bei Infografik-Fallback: `strip_marks=False`, daher kann das Modell ein zweites (halluziniertes) Jolly-Logo unten links setzen. Deterministisch entfernbar via `_wipe_bottom_left_zone` auf dem fertigen PNG, dann neu hochladen + Image patchen.
 
+### 2026-06-25 — Bild-Archetyp-Router (weg von der clunky Default-Infografik)
+
+- Problem: Die Pipeline rendert in Schritt 6 fast immer die literale Infografik (`build_infographic_prompt`, 1:1). Der Editorial-Poster war nur Fallback und feuerte nie, weil das LLM immer EBENEN liefert. Resultat: zu oft eine clunky, template-y wirkende Infografik.
+- Fix: neues `tools/image_archetypes.py` mit Menue aus 7 Bild-Archetypen (`editorial_cover`, `stat_hero`, `statement_card`, `two_panel_contrast`, `metaphor_object`, `isometric_scene`, `structured_infographic`) + deterministischem, concept-forward Selektor `select_archetype()` + Anti-Repeat gegen die letzten 2 Archetypen. Die Infografik ist jetzt nur EINE Option, starker Kandidat nur bei wirklich strukturellen Posts (struktureller TYP + ≥3 Ebenen).
+- run_research Schritt 6 ruft jetzt `select_archetype` + `build_archetype_prompt` statt `build_infographic_prompt`. `generate_post_and_image_prompt` gibt zusaetzlich `soundbyte`/`kontext` zurueck (6-Tupel). Neue Notion-Property **Bild-Variante** (`scripts/add_bild_variante_property.py`) treibt das Anti-Repeat via `get_recent_archetypes()`.
+- Alle Archetypen 1:1; `strip_marks=False` nur fuer `structured_infographic`. Guard-Tests: `tests/test_image_archetypes.py`.
+- Phase 2 (offen): optionaler Vision-Quality-Gate + 1 Retry. Bewusst nicht gebaut — Review ist human-gated.
+
 ### 2026-06-24 — Infografik-Typ-Diversitaet (weg von ~80% Eisberg)
 
 - Problem: ~80% der Bilder waren Eisberge. Drei Biases: (1) Eisberg war das einzige Metaphern-Beispiel im Prompt (Anker), (2) kein Anti-Repeat auf den TYP (nur das Post-Format hatte eins), (3) "sichtbar vs. verborgen" passt scheinbar auf jeden Post.

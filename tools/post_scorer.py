@@ -842,12 +842,13 @@ def _parse_generation_response(raw: str) -> dict:
 
 
 def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
-                                   recent_infographic_types=None) -> tuple[str, str, str, str]:
+                                   recent_infographic_types=None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Das Bild wird aus den EN-Teilen (Soundbyte + Infografik) gebaut.
     post_format waehlt den Struktur-Block (Opinion/POV/Signature).
     recent_infographic_types steuert das Anti-Repeat des Infografik-Typs.
-    Gibt (de_draft, en_draft, image_prompt, infographic_skeleton) zurueck.
+    Gibt (de_draft, en_draft, image_prompt, infographic_skeleton, soundbyte, kontext)
+    zurueck. soundbyte/kontext speisen den Bild-Archetyp-Router (image_archetypes).
     """
     de_prompt, en_prompt = _format_prompts(post, post_format, recent_infographic_types)
 
@@ -877,4 +878,4 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
             language="English",
         )
 
-    return de_draft, en_draft, image_prompt, infographic_skeleton
+    return de_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext
