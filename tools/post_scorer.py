@@ -27,6 +27,10 @@ KERN-THEMEN die den ICP interessieren:
 GTM-Strategie, Outbound-Systeme, Cold Email, Pipeline-Aufbau, RevOps, Sales-Marketing-Alignment,
 Fractional CMO, B2B SaaS Growth, SDR/BDR Prozesse, LinkedIn fuer B2B, AI in Sales & Marketing,
 ICP-Definition, Customer Success, CRM & Sales-Tech-Stack
+
+NICHT pushen: Clay. Jolly setzt Clay nicht mehr ein. Clay-zentrische Posts (Clay als Held/Loesung)
+niedriger bewerten (topic_fit, recyclierbarkeit) und in generierten Posts nicht als Tool featuren.
+Beilaeufige Erwaehnungen sind ok; grundsaetzlich tool-agnostisch bleiben.
 """
 
 SCORING_PROMPT = """Du bist Content-Stratege bei Jolly Marketer.
