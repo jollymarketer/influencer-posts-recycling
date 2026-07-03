@@ -40,6 +40,8 @@ influencer = entry["properties"]["Influencer"]["rich_text"][0]["plain_text"]
 Recycel diesen LinkedIn-Post von {influencer} in einen eigenen Thought Leadership Post.
 Schreib aus First Person Perspektive. Bringe eine eigene, frische Perspektive ein.
 Nutze den Inhalt als Inspiration, nicht als Vorlage.
+NICHT pushen: Clay. Jolly setzt Clay nicht mehr ein. Clay nie als Held oder Lösung featuren.
+Beiläufige Erwähnungen sind ok; grundsätzlich tool-agnostisch bleiben.
 
 Original Post:
 {post_text}

@@ -147,3 +147,65 @@ def test_build_user_prompt_does_not_request_or_echo_urls():
     assert "https://x/very/long/url" not in prompt
     assert "supporting_post_urls" not in prompt
     assert "Do NOT echo post URLs" in prompt
+
+
+def _clay_theme(**overrides):
+    t = {
+        "theme_label": "Clay waterfall enrichment setup",
+        "support_count": 3,
+        "sample_influencers": ["X"],
+        "blog_score": 85,
+        "suggested_title_en": "How to build a Clay waterfall for DACH SaaS",
+        "suggested_title_de": "Clay-Waterfall fuer DACH-SaaS aufbauen",
+        "keyword_en": "clay waterfall enrichment",
+        "keyword_de": "clay waterfall anreicherung",
+        "supporting_post_urls": [],
+    }
+    t.update(overrides)
+    return t
+
+
+def test_build_user_prompt_pins_clay_policy():
+    # Clay de-emphasis policy is prompt text; this pins it against silent refactor loss.
+    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}], recent_titles=[])
+    assert "DE-PRIORITIZE any topic whose core hook is the Clay" in prompt
+    assert "a NAMED tool (HubSpot, Smartlead, Apollo, n8n, Claude)" in prompt
+
+
+def test_jolly_context_pins_clay_policy():
+    from tools.post_scorer import JOLLY_CONTEXT
+    assert "NICHT pushen: Clay" in JOLLY_CONTEXT
+    assert "tool-agnostisch" in JOLLY_CONTEXT
+
+
+def test_filter_candidates_caps_clay_hook_topics():
+    # Deterministic backstop: even if the model ignores the cap-at-40 instruction,
+    # a Clay-hook theme scored 85 must not pass the threshold-70 filter.
+    cands = _parse_clusters(_raw([_clay_theme(), SAMPLE[0]]))
+    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
+    labels = [c.theme_label for c in out]
+    assert "Clay waterfall enrichment setup" not in labels
+    assert "AI SDR adoption" in labels
+
+
+def test_filter_candidates_clay_cap_keeps_topic_below_low_threshold():
+    # With a low threshold the capped topic survives at exactly the cap (de-prioritized, not banned).
+    cands = _parse_clusters(_raw([_clay_theme()]))
+    out = filter_candidates(cands, threshold=30, top_n=5, recent_titles=[])
+    assert len(out) == 1
+    assert out[0].blog_score == 40
+
+
+def test_filter_candidates_clay_cap_word_boundary_spares_claude():
+    # "Claude" must not trigger the Clay cap.
+    t = _clay_theme(
+        theme_label="ICP extraction with Claude",
+        suggested_title_en="Extract your ICP from 20 closed-won deals in Claude",
+        suggested_title_de="ICP aus 20 Closed-Won-Deals in Claude extrahieren",
+        keyword_en="claude icp extraction",
+        keyword_de="claude icp extraktion",
+    )
+    cands = _parse_clusters(_raw([t]))
+    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
+    assert len(out) == 1
+    assert out[0].blog_score == 85

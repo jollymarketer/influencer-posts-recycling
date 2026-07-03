@@ -121,6 +121,23 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.lower()).strip()
 
 
+# Deterministic backstop for the prompt's "cap its blog_score at 40" Clay rule:
+# the prompt line is advisory (LLM can ignore it), this clamp is not. With
+# SCORE_THRESHOLD = 70 in run_topic_mining.py the capped topics are dropped;
+# under a threshold <= 40 they survive but sort last (de-prioritized).
+CLAY_SCORE_CAP = 40
+_CLAY_RE = re.compile(r"\bclay\b", re.IGNORECASE)
+
+
+def _cap_clay_topics(candidates: list[ThemeCandidate]) -> list[ThemeCandidate]:
+    for c in candidates:
+        hook_fields = (c.theme_label, c.suggested_title_en, c.suggested_title_de,
+                       c.keyword_en, c.keyword_de)
+        if any(_CLAY_RE.search(f or "") for f in hook_fields):
+            c.blog_score = min(c.blog_score, CLAY_SCORE_CAP)
+    return candidates
+
+
 def filter_candidates(
     candidates: list[ThemeCandidate],
     *,
@@ -129,7 +146,9 @@ def filter_candidates(
     recent_titles: list[str],
 ) -> list[ThemeCandidate]:
     """Drop below-threshold themes, dedup against recent titles (case-insensitive
-    normalized substring either direction), sort by score desc, cap at top_n."""
+    normalized substring either direction), sort by score desc, cap at top_n.
+    Clay-hook themes are clamped to CLAY_SCORE_CAP first."""
+    candidates = _cap_clay_topics(candidates)
     recent_norm = [_norm(t) for t in recent_titles if t]
 
     def is_dupe(c: ThemeCandidate) -> bool:
