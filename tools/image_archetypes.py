@@ -15,7 +15,11 @@ The selector is pure and deterministic (unit-testable). The dispatcher returns
 """
 import re
 
+from clients import load_client
 from tools.post_scorer import build_infographic_prompt
+
+_cfg = load_client()
+_DEFAULT_AUDIENCE = _cfg.TOKENS["DEFAULT_AUDIENCE_ARCHETYPE"]
 
 # Canonical infographic-type names (from post_scorer.INFOGRAPHIC_TYPE_CANON) that
 # represent a genuine structure worth rendering as a literal layered infographic.
@@ -190,14 +194,7 @@ def select_archetype(
 
 # --- prompt builders ----------------------------------------------------------
 
-_BRAND_RULES = """Jolly Marketer brand rules:
-- Background: white (#FFFFFF). No dark or colored backgrounds, no full-bleed gradients.
-- Headline / key type: Deep Navy (#1E2A3A), ultra-bold, Montserrat-style sans-serif.
-- Accent (one only): Electric Blue (#0066FF) or Bright Orange (#FF6B35), used sparingly.
-- Supporting neutrals: Light Grey #F4F6F8 / #EEF1F5, Mid Grey #8892A4. Max 3 prominent colors.
-- No brand, tool or company logos anywhere. No monograms, no signatures, no imprinted marks.
-- Reserve a clean, empty bottom-right corner (no text, no graphic) for a logo overlay added later.
-- It must read clearly at LinkedIn thumbnail size. Premium editorial feel, never a workshop slide."""
+_BRAND_RULES = _cfg.TOKENS["ARCHETYPE_BRAND_RULES"]
 
 
 def _editorial_cover(soundbyte, kontext, parsed, language):
@@ -206,7 +203,7 @@ def _editorial_cover(soundbyte, kontext, parsed, language):
 Core message to translate into a single image:
 {soundbyte}
 
-Audience: {kontext or "B2B founders, CEOs, revenue leaders"}
+Audience: {kontext or _DEFAULT_AUDIENCE}
 
 Concept: pick the single strongest visual direction (symbolic metaphor, cinematic still, conceptual illustration, tactile object). One dominant focal point, 2-4 major elements maximum. Atmosphere, depth of field and subtle texture are encouraged. Do not combine competing concepts.
 
@@ -221,7 +218,7 @@ def _stat_hero(soundbyte, kontext, parsed, language):
 
 Hero number (render large, dominant, unmistakable): {stat}
 Short supporting line (small, secondary), drawn from this idea: {soundbyte}
-Audience: {kontext or "B2B founders, CEOs, revenue leaders"}
+Audience: {kontext or _DEFAULT_AUDIENCE}
 
 Composition: the number fills most of the frame as the single focal point, ultra-bold. One short label beneath or beside it, max 6 words in {language}. One accent color only. Generous whitespace. Nothing else competes with the number. No charts, no icons, no decorative clutter. Spell the label correctly.
 
@@ -262,7 +259,7 @@ def _metaphor_object(soundbyte, kontext, parsed, language):
 
 Visual metaphor to build around: {metaphor}
 Idea it must convey: {soundbyte}
-Audience: {kontext or "B2B founders, CEOs, revenue leaders"}
+Audience: {kontext or _DEFAULT_AUDIENCE}
 
 Composition: one hero object as the sole focal point, rendered tactile and premium (studio light, depth, material detail). The metaphor must read instantly without explanation. Optional headline only if it sharpens the idea, max 5 words in {language}; otherwise no text at all. No diagram labels, no callouts, no icon rows. Spell any text correctly.
 

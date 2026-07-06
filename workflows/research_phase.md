@@ -17,7 +17,7 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
 - Manuell: `python run_research.py`
 
 ### Inputs
-- `influencers.csv` — Liste der Influencer-Profile
+- `clients/<name>/influencers.csv` — Liste der Influencer-Profile (pro Mandant, Default: jolly)
 - Notion DB `778bd719db9147ff994ddbf8a4ecac34` — bestehende Posts (Duplikat-Filter)
 
 ### Was passiert (run_research.py)

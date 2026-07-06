@@ -7,7 +7,6 @@ Substack Article Scraper via RSS Feeds
 
 import calendar
 import csv
-import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -15,9 +14,11 @@ from datetime import datetime, timezone
 import feedparser
 from dotenv import load_dotenv
 
+from clients import load_client
+
 load_dotenv()
 
-INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "..", "influencers.csv")
+INFLUENCERS_CSV = load_client().INFLUENCERS_CSV
 
 MIN_AGE_HOURS = 24
 MAX_AGE_HOURS = 120  # 5 Tage

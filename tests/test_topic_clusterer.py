@@ -173,9 +173,9 @@ def test_build_user_prompt_pins_clay_policy():
 
 
 def test_jolly_context_pins_clay_policy():
-    from tools.post_scorer import JOLLY_CONTEXT
-    assert "NICHT pushen: Clay" in JOLLY_CONTEXT
-    assert "tool-agnostisch" in JOLLY_CONTEXT
+    from clients.jolly.config import CONTEXT
+    assert "NICHT pushen: Clay" in CONTEXT
+    assert "tool-agnostisch" in CONTEXT
 
 
 def test_filter_candidates_caps_clay_hook_topics():

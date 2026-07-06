@@ -11,29 +11,17 @@ import os
 import anthropic
 from dotenv import load_dotenv
 
+from clients import apply_tokens, load_client
+
 load_dotenv()
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-JOLLY_CONTEXT = """
-Jolly Marketer ist eine B2B Revenue Engine Company (Fractional CMO / GTM as a Service).
+_cfg = load_client()
 
-POSITIONIERUNG: Planbare B2B-Pipeline in 90 Tagen durch systematischen Outbound.
+CLIENT_CONTEXT = _cfg.CONTEXT
 
-ICP:
-B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum. Buying Personas: Founder, CEO, CRO, CSO, VP Sales, Head of Sales - Entscheider mit Product-Market-Fit, die planbaren Outbound und eine Revenue Engine brauchen, aber bisher keine interne Rolle haben, die das System denkt (nicht nur bedient).
-
-KERN-THEMEN die den ICP interessieren:
-GTM-Strategie, Outbound-Systeme, Cold Email, Pipeline-Aufbau, RevOps, Sales-Marketing-Alignment,
-Fractional CMO, B2B SaaS Growth, SDR/BDR Prozesse, LinkedIn fuer B2B, AI in Sales & Marketing,
-ICP-Definition, Customer Success, CRM & Sales-Tech-Stack
-
-NICHT pushen: Clay. Jolly setzt Clay nicht mehr ein. Clay-zentrische Posts (Clay als Held/Loesung)
-niedriger bewerten (topic_fit, recyclierbarkeit) und in generierten Posts nicht als Tool featuren.
-Beilaeufige Erwaehnungen sind ok; grundsaetzlich tool-agnostisch bleiben.
-"""
-
-SCORING_PROMPT = """Du bist Content-Stratege bei Jolly Marketer.
+SCORING_PROMPT = """[[SCORING_ROLE]]
 
 KONTEXT:
 {context}
@@ -51,16 +39,17 @@ ENGAGEMENT-METRIKEN (bereits gemessen, nicht berechnen):
 {diversity_section}
 
 Bewertungskriterien:
-1. topic_fit (0-10): Passt das Thema zu GTM, Outbound, RevOps, Pipeline, SaaS-Growth, Fractional CMO?
-2. icp_relevanz (0-10): Wuerde ein Founder, CEO, CRO, CSO, VP Sales oder Head of Sales in einem B2B SaaS/Tech-Unternehmen in DACH diesen Inhalt wollen?
+1. topic_fit (0-10): [[TOPIC_FIT_QUESTION]]
+2. icp_relevanz (0-10): [[ICP_RELEVANZ_QUESTION]]
 3. recyclierbarkeit (0-10): Kann man daraus einen DACH-deutschen Thought-Leadership-Post machen? (starke These, konkretes Insight)
 4. einzigartigkeit (0-10): Frisches Insight oder austauschbarer Allgemeinplatz?
 5. themen_diversitaet (0-10): Wie unterschiedlich ist dieses Thema von den kuerzlich geposteten Inhalten? (10 = voellig anderes Thema, 0 = fast identisches Thema wurde kuerzlich gepostet). Falls keine Recent Posts vorhanden: 8 vergeben.
 
 Antworte NUR mit validem JSON (kein Markdown, kein Text davor/danach):
 {{"topic_fit": X, "icp_relevanz": X, "recyclierbarkeit": X, "einzigartigkeit": X, "themen_diversitaet": X, "reasoning": "1-2 Saetze warum dieser Score"}}"""
+SCORING_PROMPT = apply_tokens(SCORING_PROMPT, _cfg)
 
-DACH_POST_PROMPT = """Du bist Richard von Jolly Marketer (Fractional CMO / GTM as a Service fuer B2B).
+DACH_POST_PROMPT = """[[PERSONA_DE]]
 
 KONTEXT:
 {context}
@@ -74,23 +63,20 @@ ORIGINAL POST:
 
 TEIL 1 - LINKEDIN POST (auf Deutsch):
 
-Zielgruppe: Founder, CEOs, CROs, CSOs, VP Sales und Heads of Sales in B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum.
+Zielgruppe: [[AUDIENCE_DE]]
 
 Tonalitaet:
-- Schreibe fuer Revenue-Entscheider (Founder, CEO, CRO, CSO, VP/Head of Sales), nicht fuer Marketer
+- Schreibe fuer [[DECISION_MAKERS_DE]], nicht fuer Marketer
 - Keine Fachbegriffe ohne Erklaerung. Wenn ein Begriff noetig ist (z.B. ICP = Idealer Zielkunde), erklaere ihn beim ersten Mal kurz
 - Natuerlich und fluessig schreiben. Variiere Satzlaengen: kurze Saetze fuer Wirkung, laengere fuer Erklaerungen und Zusammenhaenge. Kein Stakkato-Stil mit nur abgehackten Einzelsaetzen. Der Text soll sich lesen wie ein kluger Mensch, der redet, nicht wie eine Bulletpoint-Liste
-- Fokus auf Revenue-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit
+- Fokus auf [[FOCUS_TOPICS_DE]]
 - Keine Buzzwords, kein Marketing-Sprech
-- Ich-Form (du bist der Fractional CMO aus der Praxis). Leichte, sparsame Direktansprache des Lesers ("du"/"ihr") ist erlaubt und erwuenscht, wo sie den Sog erhoeht
-- Auf den Kontext moderner B2B-SaaS/Tech-Teams in DACH uebertragen, ohne den Raum explizit zu betonen
+- Ich-Form ([[FIRST_PERSON_ROLE_DE]]). Leichte, sparsame Direktansprache des Lesers ("du"/"ihr") ist erlaubt und erwuenscht, wo sie den Sog erhoeht
+- [[CONTEXT_TRANSFER_DE]]
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
 
 Sprach-Verbote (hart):
-- Begriff "Mittelstand" niemals verwenden (klingt altbacken, passt nicht zum ICP)
-- Das Wort "DACH" maximal EINMAL im gesamten Post - nie als Label wie "DACH-Mittelstand", "DACH-Raum", "DACH-Unternehmen"
-- Kein "produzierende Unternehmen", "Industrie-", "traditionelle Firmen"
-- Statt Geo-Tags: den Leser durch Problem-Sprache adressieren (Pipeline, Outbound, RevOps), nicht durch Regional-Sprache
+[[LANGUAGE_BANS_DE]]
 - Nie die eigene Konstruktion offenlegen: verweise nie auf "das Original", "der Quell-Post", "der eigene Gedanke", "was im Original fehlt", "ich ergaenze". Den zusaetzlichen Gedanken einbauen, nie ankuendigen
 - Keine erfundenen Belege: keine erfundenen Kundennamen, Umsatzzahlen, Fallstudien oder konkrete Einzelfall-Statistiken. Muster-Beobachtungen ("ich sehe oft, dass...") sind ok, erfundene Spezifika nicht
 - Keine langen Striche: weder Em Dash (—) noch Halbgeviertstrich (–) als Gedankenstrich. Stattdessen Punkt, Doppelpunkt oder Komma. Normaler Bindestrich in Komposita bleibt erlaubt
@@ -119,7 +105,7 @@ Qualitaetspruefung (E3):
 - Executable: Sofort umsetzbar ohne grosses Marketing-Team?
 - Exclusive: Mind. 1 Gedanke den man so nicht ueberall findet?
 
-Am Ende des Posts: 4-6 relevante Hashtags (#B2BSaaS, #GTM, #RevOps, #Vertrieb, #SaaS, #Outbound, #Pipeline oder aehnlich). #DACH nur verwenden wenn thematisch zwingend.
+[[HASHTAG_LINE_DE]]
 
 ---
 
@@ -191,8 +177,9 @@ EBENEN:
 [Label 2]: [Keyword 1], [Keyword 2], [Keyword 3]
 [Label 3]: [Keyword 1], [Keyword 2], [Keyword 3]
 TOOL-LOGOS: keine"""
+DACH_POST_PROMPT = apply_tokens(DACH_POST_PROMPT, _cfg)
 
-EN_POST_PROMPT = """You are Richard from Jolly Marketer (Fractional CMO / GTM as a Service for B2B).
+EN_POST_PROMPT = """[[PERSONA_EN]]
 
 CONTEXT:
 {context}
@@ -206,16 +193,16 @@ ORIGINAL POST:
 
 PART 1 - LINKEDIN POST (in English):
 
-Audience: founders, CEOs, CROs, CSOs, VPs of Sales and Heads of Sales at B2B SaaS and tech companies (5-250 employees), international.
+Audience: [[AUDIENCE_EN]]
 
 Tone:
-- Write for revenue decision-makers, not for marketers.
+- Write for [[WRITE_FOR_EN]].
 - No jargon without explanation. If a term is needed (e.g. ICP = ideal customer profile), define it briefly on first use.
 - Natural, fluid writing. Vary sentence length: short sentences for impact, longer ones for explanation and context. No choppy staccato of single-sentence lines. It should read like a smart person talking, not a bullet list.
-- Focus on revenue relevance: pipeline, revenue, CAC, sales cycle, predictability.
+- Focus on [[FOCUS_TOPICS_EN]].
 - No buzzwords, no marketing-speak.
 - No long dashes: never use an em dash (—) or en dash (–) as a sentence break. Use a period, colon or comma instead. Normal hyphens in compounds are fine.
-- First person (you are the fractional CMO speaking from practice). Light, natural use of "you" toward the reader is fine.
+- First person ([[FIRST_PERSON_ROLE_EN]]). Light, natural use of "you" toward the reader is fine.
 - The post should feel helpful and human, not AI-generated.
 
 Content rules:
@@ -244,7 +231,7 @@ Quality check (E3):
 - Executable: immediately actionable without a big marketing team?
 - Exclusive: at least one thought you would not find everywhere?
 
-End the post with 4-6 relevant hashtags (#B2BSaaS, #GTM, #RevOps, #Sales, #SaaS, #Outbound, #Pipeline or similar).
+[[HASHTAG_LINE_EN]]
 
 ---
 
@@ -318,6 +305,7 @@ EBENEN:
 [Label 2]: [keyword 1], [keyword 2], [keyword 3]
 [Label 3]: [keyword 1], [keyword 2], [keyword 3]
 TOOL-LOGOS: none"""
+EN_POST_PROMPT = apply_tokens(EN_POST_PROMPT, _cfg)
 
 
 FORMAT_STRUCTURES = {
@@ -347,13 +335,13 @@ FORMAT_STRUCTURES = {
     },
     "Signature": {
         "de": """Post-Struktur (ohne explizite Benennung):
-1. Hook (1-2 Saetze): "Was Founder/Sales-Teams glauben:" - die verbreitete Annahme, zugespitzt. Entscheidet ob jemand weiterliest.
+1. Hook (1-2 Saetze): "Was [[BELIEF_ACTORS_DE]] glauben:" - die verbreitete Annahme, zugespitzt. Entscheidet ob jemand weiterliest.
 2. Realitaet: Was tatsaechlich das Ergebnis treibt - im Kontrast zur Annahme. Konkret, nicht abstrakt.
 3. Kontraste: 2-4 Glaube-gegen-Realitaet-Paare, je knapp. Ein eigener Gedanke der im Original nicht vorkommt.
 4. Abschluss: Offene Schleife. Eine spezifische, streitbare Frage oder eine Flag-Plant-Zeile, die das Operating-Principle zuspitzt und gegen die jemand argumentieren kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
 Hinweis fuer die Infografik weiter unten: Bevorzuge die Vergleichstabelle (Glaube vs. Realitaet).""",
         "en": """Post structure (without labeling it):
-1. Hook (1-2 sentences): "What founders/sales teams believe:" - the common assumption, sharpened. Decides whether anyone reads on.
+1. Hook (1-2 sentences): "What [[BELIEF_ACTORS_EN]] believe:" - the common assumption, sharpened. Decides whether anyone reads on.
 2. Reality: what actually drives the outcome, in contrast to the assumption. Concrete, not abstract.
 3. Contrasts: 2-4 belief-vs-reality pairs, each tight. One original thought not in the source.
 4. Close: an open loop. A specific, arguable question or a flag-plant line that sharpens the operating principle and that someone can argue against. Only the generic "What do you think?" is banned. No DM CTA.
@@ -361,18 +349,22 @@ Note for the infographic section below: prefer the comparison table (belief vs. 
     },
     "Story": {
         "de": """Post-Struktur (ohne explizite Benennung):
-1. Hook (1-2 Saetze): Steig mitten in eine konkrete Szene ein - ein Satz, den ein Founder oder Sales-Leader sinngemaess sagt, oder ein Moment aus der Praxis. Entscheidet ob jemand weiterliest.
+1. Hook (1-2 Saetze): Steig mitten in eine konkrete Szene ein - ein Satz, den [[SCENE_ACTOR_DE]] sinngemaess sagt, oder ein Moment aus der Praxis. Entscheidet ob jemand weiterliest.
 2. Spannung: Wie die Szene sich entwickelt und wo der eigentliche Konflikt sitzt. Erzaehlend, keine Bullet-Liste, keine Box.
 3. Wendung: Die Erkenntnis aus der Szene, die das Muster sichtbar macht. Ein eigener Gedanke, den der Quell-Post nicht hat.
 4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
 Erfinde dabei keine konkreten Namen, Umsatzzahlen oder Fallstudien. Eine generische, plausible Szene ohne erfundene Spezifika - oder ein erkennbares Muster ("ich sehe das oft") statt eines erfundenen Einzelfalls. Dieses Format nutzt KEINE Emoji-Liste und KEINE ASCII-Box.""",
         "en": """Post structure (without labeling it):
-1. Hook (1-2 sentences): drop into a concrete scene - a line a founder or sales leader would say, or a moment from practice. Decides whether anyone reads on.
+1. Hook (1-2 sentences): drop into a concrete scene - a line [[SCENE_ACTOR_EN]] would say, or a moment from practice. Decides whether anyone reads on.
 2. Tension: how the scene unfolds and where the real conflict sits. Narrative, no bullet list, no box.
 3. Turn: the realization from the scene that exposes the pattern. One original thought the source post does not have.
 4. Close: an open loop - a specific, arguable question or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.
 Do not invent specific names, revenue figures or case studies. A generic, plausible scene without fabricated specifics - or a recognizable pattern ("I see this often") instead of an invented single case. This format uses NO emoji list and NO ASCII box.""",
     },
+}
+FORMAT_STRUCTURES = {
+    fmt: {lang: apply_tokens(text, _cfg) for lang, text in variants.items()}
+    for fmt, variants in FORMAT_STRUCTURES.items()
 }
 
 
@@ -397,14 +389,14 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
     de = DACH_POST_PROMPT.format(
-        context=JOLLY_CONTEXT,
+        context=CLIENT_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
         structure_block=structures["de"],
         recent_types_line=de_recent,
     )
     en = EN_POST_PROMPT.format(
-        context=JOLLY_CONTEXT,
+        context=CLIENT_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
         structure_block=structures["en"],
@@ -510,7 +502,7 @@ def pick_format(post: dict, recent_formats: list[str]) -> str:
     return "Opinion"
 
 
-IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for Jolly Marketer that communicates the core idea of the post through one clear, strategically strong visual concept.
+IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for [[BRAND_NAME]] that communicates the core idea of the post through one clear, strategically strong visual concept.
 
 Core message:
 {core_message}
@@ -526,18 +518,9 @@ Create a scroll-stopping LinkedIn featured image that is understood within 1 to 
 The image should communicate one core idea fast and clearly, not explain an entire framework.
 
 Brand direction:
-Use the Jolly Marketer brand system flexibly.
-The visual identity should feel confident, clean, structured, modern, and premium.
-Use Jolly brand colors and Montserrat-style typography, but do not force one fixed layout, one fixed background color, or one recurring visual trick every time.
+[[IMAGE_BRAND_DIRECTION]]
 
-Jolly Marketer brand rules:
-
-Background: Always white (#FFFFFF). No dark backgrounds, no colored backgrounds, no gradients.
-Headlines: Deep Navy (#1E2A3A), ultra-bold, integrated into the composition
-Accent colors: Electric Blue (#0066FF) or Bright Orange (#FF6B35) — use sparingly as accent only
-Supporting neutrals: Light Grey #F4F6F8 or #EEF1F5, Mid Grey #8892A4
-Do not use more than 3 colors prominently in the same composition
-Keep the overall look bright, clean, and brand-consistent
+[[IMAGE_BRAND_RULES]]
 
 Creative discipline:
 
@@ -583,7 +566,7 @@ Every word in the image must earn its place
 
 Typography:
 
-Use Montserrat-style bold sans serif typography
+Use [[IMAGE_TYPOGRAPHY]] typography
 Typography should feel compact, modern, premium, and highly legible
 Avoid weak generic fonts, serif fonts, or presentation-style text layouts
 
@@ -617,9 +600,10 @@ Does it feel premium and brand-consistent?
 
 Output:
 A premium LinkedIn featured image that expresses one clear strategic idea fast, cleanly, and memorably."""
+IMAGE_PROMPT_TEMPLATE = apply_tokens(IMAGE_PROMPT_TEMPLATE, _cfg)
 
 
-INFOGRAPHIC_PROMPT_TEMPLATE = """Create a premium, clean LinkedIn infographic (vertical 4:5 or square) for Jolly Marketer that renders the layers below as a single, instantly readable visual.
+INFOGRAPHIC_PROMPT_TEMPLATE = """Create a premium, clean LinkedIn infographic (vertical 4:5 or square) for [[BRAND_NAME]] that renders the layers below as a single, instantly readable visual.
 
 Layout style: {layout}
 {metaphor_line}
@@ -645,12 +629,7 @@ Layout logic:
 
 Each layer shows its label as a short bold heading plus its keywords as a tight list. Keywords stay keywords, never full sentences.
 
-Jolly Marketer brand rules:
-- Background: always white (#FFFFFF). No dark or colored backgrounds, no gradients.
-- Headings/labels: Deep Navy (#1E2A3A), bold.
-- Accents (lines, the waterline, key shapes): Electric Blue (#0066FF) or Bright Orange (#FF6B35), used sparingly.
-- Neutrals: Light Grey #F4F6F8 / #EEF1F5, Mid Grey #8892A4.
-- Maximum 3 prominent colors. Montserrat-style bold sans-serif typography, compact and highly legible.
+[[INFOGRAPHIC_BRAND_RULES]]
 
 Hard rules:
 - No brand, tool, or company logos anywhere in the image. No logo row, no tool chips.
@@ -664,6 +643,7 @@ Composition:
 Avoid: clutter, decorative icons that add no meaning, busy backgrounds, more than 3 colors, full sentences, tiny unreadable text, chaotic layouts.
 
 Final check: Is the structure instantly clear? Are all {language} labels spelled correctly? Are there zero logos and zero title/type text? Is the bottom-right corner clear for the logo?"""
+INFOGRAPHIC_PROMPT_TEMPLATE = apply_tokens(INFOGRAPHIC_PROMPT_TEMPLATE, _cfg)
 
 
 def build_infographic_prompt(skeleton: str, language: str = "German") -> str:
@@ -758,7 +738,7 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
 
         try:
             prompt = SCORING_PROMPT.format(
-                context=JOLLY_CONTEXT,
+                context=CLIENT_CONTEXT,
                 influencer=post["influencer"],
                 post_text=post["post_text"][:3000],
                 likes=engagement.get("likes", 0),
@@ -878,7 +858,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     if sound_byte:
         image_prompt = IMAGE_PROMPT_TEMPLATE.format(
             core_message=sound_byte,
-            context=kontext or "B2B CEOs and founders",
+            context=kontext or _cfg.TOKENS["DEFAULT_AUDIENCE_IMAGE"],
             language="English",
         )
 

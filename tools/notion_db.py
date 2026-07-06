@@ -1,6 +1,6 @@
 """
 Notion DB Interface für Influencer Posts Recycling.
-DB ID: 778bd719db9147ff994ddbf8a4ecac34
+DB-ID kommt aus NOTION_DB_ID (Env) oder dem Default des aktiven Clients.
 Direkte Notion API (kein MCP) — für Python-Scripts und Railway.
 """
 
@@ -11,10 +11,12 @@ from datetime import datetime, timezone
 import requests
 from dotenv import load_dotenv
 
+from clients import load_client
+
 load_dotenv()
 
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-NOTION_DB_ID = os.getenv("NOTION_DB_ID", "778bd719db9147ff994ddbf8a4ecac34")
+NOTION_DB_ID = os.getenv("NOTION_DB_ID") or load_client().NOTION_DB_ID_DEFAULT
 NOTION_API = "https://api.notion.com/v1"
 NOTION_VERSION = "2022-06-28"
 

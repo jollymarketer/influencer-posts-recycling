@@ -14,6 +14,8 @@ from datetime import datetime, timezone, timedelta
 from apify_client import ApifyClient
 from dotenv import load_dotenv
 
+from clients import load_client
+
 load_dotenv()
 
 # Windows-Default cp1252 kann viele Influencer-Namen (Alić, Trümpi, Nordström, ...)
@@ -23,7 +25,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 APIFY_API_KEY = os.getenv("APIFY_API_KEY")
-INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "..", "influencers.csv")
+INFLUENCERS_CSV = load_client().INFLUENCERS_CSV
 
 # Daily-Cron-Setup: jeder Run liefert max 3 Posts pro Profil.
 # Mindest-Alter 6h (sonst werden frische Donnerstag-Nachmittag-Posts am Freitag-Morgen-Run

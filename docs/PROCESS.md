@@ -102,4 +102,4 @@ Make your Choice  →  Ready to Review  →  (Manuell) Veröffentlicht
 | Bildgenerierung | kie.ai API (Nano-Banano II, 1:1 Format) |
 | Datenspeicher | Notion DB `778bd719...` |
 | Bildhosting | catbox.moe (permanenter Link) |
-| Influencer-Liste | `influencers.csv` (20 Profile) |
+| Influencer-Liste | `clients/<name>/influencers.csv` (pro Mandant) |

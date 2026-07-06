@@ -26,6 +26,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+from clients import load_client
 from tools.notion_db import (
     get_existing_post_urls,
     get_recent_linkedin_drafts,
@@ -57,10 +58,15 @@ from run_keyword_scrape import scrape_and_persist
 
 MIN_SCORE = 25
 
+_cfg = load_client()
+
 
 def persist_scraped_posts(linkedin_posts: list, substack_posts: list) -> None:
     """Upsert ALL scraped posts (winners + losers) to Supabase. Non-fatal:
-    a failure here must never block the daily winner/draft flow."""
+    a failure here must never block the daily winner/draft flow.
+    Nur fuer Clients mit supabase_persist (speist das Jolly-Blog-Topic-Mining)."""
+    if not _cfg.FEATURES.get("supabase_persist"):
+        return
     for posts, source in ((linkedin_posts, "linkedin"), (substack_posts, "substack")):
         if not posts:
             continue
@@ -73,7 +79,7 @@ def persist_scraped_posts(linkedin_posts: list, substack_posts: list) -> None:
 
 def run_daily():
     start_time = datetime.now(timezone.utc)
-    print(f"=== Influencer Posts Recycling - Daily Run ===")
+    print(f"=== Influencer Posts Recycling - Daily Run (Client: {_cfg.NAME}) ===")
     print(f"Start: {start_time.strftime('%Y-%m-%d %H:%M UTC')}")
     print()
 
@@ -272,13 +278,13 @@ def run_daily():
 def main(now=None):
     run_daily()
     weekday = (now or datetime.now(timezone.utc)).weekday()
-    if weekday == 3:  # Thursday, UTC: keyword scrape feeds Friday's 7-day clustering window
+    if weekday == 3 and _cfg.FEATURES.get("keyword_scrape"):  # Thursday, UTC: keyword scrape feeds Friday's 7-day clustering window
         print("\n=== Donnerstag: starte Keyword-Scrape ===")
         try:
             scrape_and_persist(max_posts=15, posted_limit="week", min_virality=4)
         except Exception as e:
             print(f"  Keyword-Scrape fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
-    if weekday == 4:  # Friday, UTC
+    if weekday == 4 and _cfg.FEATURES.get("topic_mining"):  # Friday, UTC
         print("\n=== Freitag: starte Blog-Topic-Mining ===")
         try:
             run_topic_mining()
