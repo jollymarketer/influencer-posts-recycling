@@ -99,4 +99,7 @@ FEATURES = {
 
 NOTION_DB_ID_DEFAULT = "778bd719db9147ff994ddbf8a4ecac34"
 
+NOTION_TOKEN_ENV = "NOTION_TOKEN"
+MAKE_WEBHOOK_ENV = "MAKE_REVIEW_WEBHOOK"
+
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")

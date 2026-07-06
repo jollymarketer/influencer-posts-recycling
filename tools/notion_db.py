@@ -15,8 +15,12 @@ from clients import load_client
 
 load_dotenv()
 
-NOTION_TOKEN = os.getenv("NOTION_TOKEN")
-NOTION_DB_ID = os.getenv("NOTION_DB_ID") or load_client().NOTION_DB_ID_DEFAULT
+_cfg = load_client()
+
+# Pro Mandant eigener Token/Webhook moeglich (z.B. NOTION_TOKEN_LISOCON), damit
+# lokale Runs mit gesetztem Jolly-.env nicht in die falsche DB/Notification laufen.
+NOTION_TOKEN = os.getenv(getattr(_cfg, "NOTION_TOKEN_ENV", "NOTION_TOKEN")) or os.getenv("NOTION_TOKEN")
+NOTION_DB_ID = os.getenv("NOTION_DB_ID") or _cfg.NOTION_DB_ID_DEFAULT
 NOTION_API = "https://api.notion.com/v1"
 NOTION_VERSION = "2022-06-28"
 
@@ -192,7 +196,7 @@ def create_post_entry(
     return page_id
 
 
-MAKE_REVIEW_WEBHOOK = os.getenv("MAKE_REVIEW_WEBHOOK", "")
+MAKE_REVIEW_WEBHOOK = os.getenv(getattr(_cfg, "MAKE_WEBHOOK_ENV", "MAKE_REVIEW_WEBHOOK"), "")
 NOTION_PAGE_BASE_URL = "https://www.notion.so/"
 
 
