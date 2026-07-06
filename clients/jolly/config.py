@@ -97,6 +97,15 @@ FEATURES = {
     "topic_mining": True,       # Freitag: Blog-Topic-Clustering
 }
 
+# Daily-Kadenz (Cron Mo-Fr): 24h-Pool, max 3 Posts/Profil, Filter 6-36h.
+SCRAPE = {
+    "min_age_hours": 6,
+    "max_age_hours": 36,
+    "max_posts_per_profile": 3,
+    "substack_min_age_hours": 24,
+    "substack_max_age_hours": 120,
+}
+
 NOTION_DB_ID_DEFAULT = "778bd719db9147ff994ddbf8a4ecac34"
 
 NOTION_TOKEN_ENV = "NOTION_TOKEN"

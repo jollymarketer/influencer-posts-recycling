@@ -1,0 +1,12 @@
+# Config fuer den Service lisocon-content-engine (railwayConfigFile, server-side gesetzt).
+# BEWUSST OHNE cronSchedule: die Kadenz wird ausschliesslich via GraphQL
+# serviceInstanceUpdate gesteuert (weekly "0 7 * * 1" beim Scharfstellen),
+# damit Deploys eine Pause nie wieder scharf stellen. Jolly-Service nutzt railway.toml.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python run_research.py"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

@@ -25,16 +25,18 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 APIFY_API_KEY = os.getenv("APIFY_API_KEY")
-INFLUENCERS_CSV = load_client().INFLUENCERS_CSV
+_cfg = load_client()
+INFLUENCERS_CSV = _cfg.INFLUENCERS_CSV
 
-# Daily-Cron-Setup: jeder Run liefert max 3 Posts pro Profil.
-# Mindest-Alter 6h (sonst werden frische Donnerstag-Nachmittag-Posts am Freitag-Morgen-Run
-# gefiltert, bevor Engagement reifen konnte), Hoechst-Alter 36h.
+# Kadenz-Parameter pro Mandant (clients/<name>/config.py, SCRAPE-Block).
+# Jolly daily: Filter 6-36h, max 3 Posts/Profil. Lisocon weekly: 6-168h, max 10.
+# Mindest-Alter 6h: sonst werden frische Posts gefiltert, bevor Engagement reifen konnte.
 # Das Apify-Fetch-Fenster (postedLimit, s.u.) MUSS >= MAX_AGE_HOURS sein, sonst faellt
-# ein Post, der am Vortag <6h alt (also gefiltert) war, beim naechsten 24h-Run aus dem
-# Fetch-Fenster und wird nie gesehen. postedLimit-Enum kennt kein "36h" → "week".
-MIN_AGE_HOURS = 6
-MAX_AGE_HOURS = 36
+# ein Post, der beim letzten Run zu jung (also gefiltert) war, beim naechsten Run aus dem
+# Fetch-Fenster und wird nie gesehen. postedLimit-Enum: "week" deckt bis 168h.
+MIN_AGE_HOURS = _cfg.SCRAPE["min_age_hours"]
+MAX_AGE_HOURS = _cfg.SCRAPE["max_age_hours"]
+MAX_POSTS_PER_PROFILE = _cfg.SCRAPE["max_posts_per_profile"]
 
 
 def load_influencers():
@@ -155,7 +157,8 @@ def scrape_new_posts(existing_urls: set) -> list:
             continue
         print(f"  Scraping: {influencer['name']} ...", flush=True)
         try:
-            items = scrape_posts_for_profile(client, influencer["linkedin_url"])
+            items = scrape_posts_for_profile(client, influencer["linkedin_url"],
+                                             max_posts=MAX_POSTS_PER_PROFILE)
             for item in items:
                 post = extract_post_data(item, influencer["name"])
                 if not post:

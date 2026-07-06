@@ -18,10 +18,11 @@ from clients import load_client
 
 load_dotenv()
 
-INFLUENCERS_CSV = load_client().INFLUENCERS_CSV
+_cfg = load_client()
+INFLUENCERS_CSV = _cfg.INFLUENCERS_CSV
 
-MIN_AGE_HOURS = 24
-MAX_AGE_HOURS = 120  # 5 Tage
+MIN_AGE_HOURS = _cfg.SCRAPE["substack_min_age_hours"]
+MAX_AGE_HOURS = _cfg.SCRAPE["substack_max_age_hours"]
 
 
 def load_influencers_with_substack():

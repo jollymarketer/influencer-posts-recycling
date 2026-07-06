@@ -104,6 +104,17 @@ FEATURES = {
     "topic_mining": False,
 }
 
+# Wochen-Kadenz (Richard 2026-07-06): 1 Lauf/Woche, Content-Pool 7 Tage,
+# 1 Winner/Woche. Cron beim Scharfstellen: "0 7 * * 1" (Montag 07:00 UTC).
+# max_posts hoeher als bei Jolly, weil aktive Poster in 7 Tagen mehr als 3 Posts haben.
+SCRAPE = {
+    "min_age_hours": 6,
+    "max_age_hours": 168,
+    "max_posts_per_profile": 10,
+    "substack_min_age_hours": 24,
+    "substack_max_age_hours": 168,
+}
+
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene Lisocon-Content-DB).
 NOTION_DB_ID_DEFAULT = None
 
