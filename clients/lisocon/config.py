@@ -6,8 +6,13 @@ Quellen: Full_Social_Media_Strategy_InTO.txt, playbook-lisocon.md,
 InTo brand-guide_v2.json (warm-ivory premium-editorial, Montserrat+Poppins).
 
 Harte Regeln aus dem Playbook: niemals Preise in Content (40K-Anchor nur im
-Discovery-Call), InTO nie als Übersetzungstool framen, Schreibweisen
-InTO / lisocon strikt.
+Discovery-Call), InTO nie als Übersetzungstool framen, Feindbild ist der Status
+quo (nie ein Wettbewerber, Across = Partner), jeder Post zahlt auf eine der 5
+Content-Säulen ein, Schreibweisen InTO / lisocon strikt.
+
+Content-Strategie-Quelle (Richard 2026-07-06): 5 Themen-Säulen + Persona-Split +
+Feindbild-Leitplanke, siehe project_lisocon_content_strategy.md /
+project_lisocon_into_positioning_objection_battlecard.md.
 """
 import os
 
@@ -16,7 +21,7 @@ NAME = "lisocon"
 CONTEXT = """
 lisocon (lindner software & consulting GmbH, Hannover) ist ein B2B-Software-Unternehmen. Produkt: InTO — übersetzt InDesign-Dokumente direkt im Original-Layout. Kein Copy-Paste, keine DTP-Nacharbeit, kein Formatierungs-Chaos nach der Übersetzung; 99,5% Layout-Erhalt. SaaS oder On-Premise, SAP-Integration, arbeitet mit allen gängigen Translation-Management-Systemen (Trados, Across etc.).
 
-POSITIONIERUNG: "Übersetzung kostet fast nichts mehr. Lokalisierung immer noch genauso viel." InTO ist KEIN Übersetzungstool, sondern die Schicht NACH der Übersetzung: es eliminiert die versteckten Layout-Kosten zwischen übersetztem Text und druckfertigem Dokument. Der eigentliche Gegner ist der Status quo: Agenturen bündeln DTP-Nacharbeit unsichtbar in die Rechnung.
+POSITIONIERUNG (Kernbotschaft, wörtlich): "Übersetzt ist erst die Hälfte. Der teure Teil ist das Layout." InTO tritt nicht gegen DeepL/Trados/Crowdin an, sondern besitzt die Kategorie NACH der Übersetzung: Post-Translation-Layout-Automatisierung. Es eliminiert die versteckten Layout-Kosten zwischen übersetztem Text und druckfertigem Dokument. Der eigentliche Gegner ist der Status quo: Agenturen bündeln DTP-Nacharbeit unsichtbar in die Rechnung. Der Engpass ist Nachfrage/Awareness, nicht Wettbewerb: Content macht erst das Problem sichtbar ("Layout ist der teure Teil"), bevor er eine Lösung andeutet.
 
 ICP:
 Marketingleiter/MarCom-Direktoren, Lokalisierungsverantwortliche und Leiter Technische Dokumentation in produzierenden Unternehmen (500-10.000 MA), DACH und international. Typisch: Kataloge, Datenblätter und Technische Dokumentation in 10+ Sprachen, InDesign-basierte Publishing-Workflows, signifikantes Übersetzungs-/DTP-Budget.
@@ -24,12 +29,26 @@ Marketingleiter/MarCom-Direktoren, Lokalisierungsverantwortliche und Leiter Tech
 KERN-THEMEN die den ICP interessieren:
 Versteckte Lokalisierungs-/DTP-Kosten, Time-to-Market mehrsprachiger Materialien, Terminologie-Konsistenz, Translation Management, Technische Redaktion und Dokumentation, CCMS und strukturierter Content, InDesign-/Publishing-Automatisierung, AI in Übersetzung und Dokumentation, EU-Maschinenverordnung 2027, globale Content Operations, Abgrenzung der Ebenen: KI-Übersetzung (DeepL, Google, Plugins, Portale) löst Text, nicht Layout.
 
+CONTENT-SÄULEN (jeder Post zahlt klar auf EINE dieser 5 Säulen ein; höherer Säulen-Bezug = besserer Score):
+1. Versteckte Lokalisierungskosten — die teure DTP-Nacharbeit, die niemand budgetiert (Money-Säule, Persona Käufer).
+2. Mehrsprachige Dokumentproduktion in der Praxis — InDesign-/DTP-/Versions-Chaos über viele Sprachen.
+3. Terminologie und Qualität über Sprachen — Konsistenz, Glossare, TM; die stärkste Säule.
+4. Compliance/Zukunft — EU-Maschinenverordnung 2023/1230 ab 14.01.2027, Sprachpflicht je Zielland als Deadline-Anker.
+5. Einwände und Abgrenzung — "KI übersetzt doch schon", Google, DeepL-Plugin, Portale: jeder Einwand ist Steilvorlage, nicht Bedrohung. Ebenen-Trennung Text vs. Layout.
+Kein Produkt-Content: InTO ist nie das Thema, höchstens die beiläufige Auflösung.
+
+PERSONA-REGEL (zwei kollidierende Wertachsen, in EINEM Post nie mischen):
+- Käufer (Marketing-Leitung, GF): versteckte Kosten, DTP-Nacharbeit, ROI. Laut Daten die EINZIGE konvertierende Persona — im Zweifel diese Achse fahren.
+- Anwender (Translation-Manager, Designer): einfache Bedienung, Browser-Lektorat ohne InDesign.
+Ein Post fährt genau EINE Achse. Kosten-Argument und Easy-to-use nie im selben Post vermengen.
+
 SOCIAL PROOF (nur diese echten Referenzen, nie neue erfinden, Zahlen exakt so): Hörmann (offiziell 69% Kostensenkung), WAGO (80% Kostenreduktion, 17 Sprachen), Stiebel Eltron (30 Sprachen).
 
 HARTE REGELN:
 - Niemals Preise, Lizenzkosten oder Budget-Größenordnungen nennen
 - InTO nie als Übersetzungstool oder DeepL/Trados-Konkurrent framen
 - InTO höchstens beiläufig erwähnen; Posts sind Thought Leadership, kein Produkt-Pitch
+- Feindbild ist IMMER der Status quo (versteckte DTP-Kosten, manuelles Neu-Layouten, der Glaube "übersetzt = fertig"), NIE ein namentlicher Wettbewerber. Across = Partner, nie angreifen. Trados/SDL/Crowdin/DeepL/Google nur über die Ebenen-Trennung einordnen ("löst Text, nicht Layout"), nie abwerten
 - Schreibweisen: "InTO" (großes I, T, O), "lisocon" (immer klein)
 """
 
