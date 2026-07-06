@@ -22,9 +22,9 @@ ICP:
 Marketingleiter/MarCom-Direktoren, Lokalisierungsverantwortliche und Leiter Technische Dokumentation in produzierenden Unternehmen (500-10.000 MA), DACH und international. Typisch: Kataloge, Datenblätter und Technische Dokumentation in 10+ Sprachen, InDesign-basierte Publishing-Workflows, signifikantes Übersetzungs-/DTP-Budget.
 
 KERN-THEMEN die den ICP interessieren:
-Versteckte Lokalisierungs-/DTP-Kosten, Time-to-Market mehrsprachiger Materialien, Terminologie-Konsistenz, Translation Management, Technische Redaktion und Dokumentation, CCMS und strukturierter Content, InDesign-/Publishing-Automatisierung, AI in Übersetzung und Dokumentation, EU-Maschinenverordnung 2027, globale Content Operations.
+Versteckte Lokalisierungs-/DTP-Kosten, Time-to-Market mehrsprachiger Materialien, Terminologie-Konsistenz, Translation Management, Technische Redaktion und Dokumentation, CCMS und strukturierter Content, InDesign-/Publishing-Automatisierung, AI in Übersetzung und Dokumentation, EU-Maschinenverordnung 2027, globale Content Operations, Abgrenzung der Ebenen: KI-Übersetzung (DeepL, Google, Plugins, Portale) löst Text, nicht Layout.
 
-SOCIAL PROOF (nur diese echten Referenzen, nie neue erfinden): Hörmann (82% Einsparung, 1,5 Mio auf 260K EUR/Jahr), WAGO (80% Kostenreduktion, 17 Sprachen), Stiebel Eltron (30 Sprachen).
+SOCIAL PROOF (nur diese echten Referenzen, nie neue erfinden, Zahlen exakt so): Hörmann (offiziell 69% Kostensenkung), WAGO (80% Kostenreduktion, 17 Sprachen), Stiebel Eltron (30 Sprachen).
 
 HARTE REGELN:
 - Niemals Preise, Lizenzkosten oder Budget-Größenordnungen nennen
