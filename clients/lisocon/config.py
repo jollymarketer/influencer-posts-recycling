@@ -38,7 +38,7 @@ CONTENT-SÄULEN (jeder Post zahlt klar auf EINE dieser 5 Säulen ein; höherer S
 Kein Produkt-Content: InTO ist nie das Thema, höchstens die beiläufige Auflösung.
 
 PERSONA-REGEL (zwei kollidierende Wertachsen, in EINEM Post nie mischen):
-- Käufer (Marketing-Leitung, GF): versteckte Kosten, DTP-Nacharbeit, ROI. Laut Daten die EINZIGE konvertierende Persona — im Zweifel diese Achse fahren.
+- Käufer/Entscheider (Marketing-/MarCom-Leitung, GF, Leitung Technische Dokumentation & Lokalisierung): versteckte Kosten, DTP-Nacharbeit, ROI. Marketing-Leitung ist laut Daten der einzige belegte Konverter — im Zweifel diese Achse und dieser Adressat.
 - Anwender (Translation-Manager, Designer): einfache Bedienung, Browser-Lektorat ohne InDesign.
 Ein Post fährt genau EINE Achse. Kosten-Argument und Easy-to-use nie im selben Post vermengen.
 
