@@ -107,6 +107,32 @@ def _sanitize(text: str) -> str:
     return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text or "")
 
 
+def _utf16_len(text: str) -> int:
+    # Notion misst content.length in UTF-16 Code Units: Astral-Zeichen
+    # (Emoji, 𝗯𝗼𝗹𝗱-Unicode aus LinkedIn-Posts) zaehlen 2, Python-Slicing 1.
+    return sum(2 if ord(c) > 0xFFFF else 1 for c in text)
+
+
+def _utf16_chunks(text: str, limit: int = 1900) -> list:
+    chunks, cur, cur_len = [], [], 0
+    for ch in text:
+        w = 2 if ord(ch) > 0xFFFF else 1
+        if cur_len + w > limit and cur:
+            chunks.append("".join(cur))
+            cur, cur_len = [], 0
+        cur.append(ch)
+        cur_len += w
+    if cur:
+        chunks.append("".join(cur))
+    return chunks
+
+
+def _utf16_truncate(text: str, limit: int = 2000) -> str:
+    if _utf16_len(text) <= limit:
+        return text
+    return _utf16_chunks(text, limit)[0]
+
+
 def create_post_entry(
     influencer: str,
     post_url: str,
@@ -131,11 +157,10 @@ def create_post_entry(
     excerpt = post_text[:300]
 
     def text_blocks(text):
-        chunks = [text[i:i+1900] for i in range(0, len(text), 1900)]
         return [
             {"object": "block", "type": "paragraph",
              "paragraph": {"rich_text": [{"type": "text", "text": {"content": chunk}}]}}
-            for chunk in chunks
+            for chunk in _utf16_chunks(text)
         ]
 
     page_children = [
@@ -173,8 +198,8 @@ def create_post_entry(
             "Post Excerpt": {"rich_text": [{"text": {"content": excerpt}}]},
             "Status": {"select": {"name": status}},
             "Date Scraped": {"date": {"start": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")}},
-            "LinkedIn Draft": {"rich_text": [{"text": {"content": linkedin_draft[:2000]}}]} if linkedin_draft else {},
-            "Image Prompt": {"rich_text": [{"text": {"content": image_prompt[:2000]}}]} if image_prompt else {},
+            "LinkedIn Draft": {"rich_text": [{"text": {"content": _utf16_truncate(linkedin_draft)}}]} if linkedin_draft else {},
+            "Image Prompt": {"rich_text": [{"text": {"content": _utf16_truncate(image_prompt)}}]} if image_prompt else {},
             "Image": {"files": [{"name": "featured-image.jpg", "type": "external", "external": {"url": image_url}}]} if image_url else {},
         },
         "children": page_children,
@@ -203,7 +228,7 @@ NOTION_PAGE_BASE_URL = "https://www.notion.so/"
 def _append_infographic_block(page_id: str, skeleton: str) -> None:
     """Haengt das Infografik-Skelett als neuen Block an die Notion-Seite an."""
     skeleton = _sanitize(skeleton)
-    chunks = [skeleton[i:i+1900] for i in range(0, len(skeleton), 1900)]
+    chunks = _utf16_chunks(skeleton)
     children = [
         {"object": "block", "type": "divider", "divider": {}},
         {"object": "block", "type": "heading_2",
@@ -227,7 +252,7 @@ def _append_draft_blocks(page_id: str, de_draft: str, en_draft: str) -> None:
     """Haengt DE- und EN-Draft als Body-Bloecke mit Slot-Headings an die Seite."""
     def text_blocks(text):
         text = _sanitize(text)
-        chunks = [text[i:i+1900] for i in range(0, len(text), 1900)] or [""]
+        chunks = _utf16_chunks(text) or [""]
         return [
             {"object": "block", "type": "paragraph",
              "paragraph": {"rich_text": [{"type": "text", "text": {"content": c}}]}}
@@ -295,11 +320,11 @@ def update_with_draft(
     }
     if linkedin_draft:
         properties["LinkedIn Draft"] = {
-            "rich_text": [{"text": {"content": linkedin_draft[:3000]}}]
+            "rich_text": [{"text": {"content": _utf16_truncate(linkedin_draft)}}]
         }
     if en_draft:
         properties["LinkedIn Draft EN"] = {
-            "rich_text": [{"text": {"content": en_draft[:3000]}}]
+            "rich_text": [{"text": {"content": _utf16_truncate(en_draft)}}]
         }
     if image_prompt:
         # Bei Image-Failure haengen wir die letzte Fehlermeldung an, damit
@@ -308,7 +333,7 @@ def update_with_draft(
         if image_failed and image_error:
             prompt_payload = f"[IMAGE FAILED] {image_error[:400]}\n\n{image_prompt}"
         properties["Image Prompt"] = {
-            "rich_text": [{"text": {"content": prompt_payload[:2000]}}]
+            "rich_text": [{"text": {"content": _utf16_truncate(prompt_payload)}}]
         }
     if image_url:
         properties["Image"] = {

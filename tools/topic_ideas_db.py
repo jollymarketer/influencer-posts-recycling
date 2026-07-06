@@ -7,6 +7,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from tools.notion_db import _utf16_truncate
 from tools.topic_clusterer import ThemeCandidate
 
 load_dotenv()
@@ -39,7 +40,7 @@ def _headers() -> dict:
 
 
 def _rt(text: str) -> dict:
-    return {"rich_text": [{"text": {"content": (text or "")[:1990]}}]}
+    return {"rich_text": [{"text": {"content": _utf16_truncate(text or "", 1990)}}]}
 
 
 def write_candidates(candidates: list[ThemeCandidate]) -> int:
@@ -49,7 +50,7 @@ def write_candidates(candidates: list[ThemeCandidate]) -> int:
     written = 0
     for c in candidates:
         props = {
-            "Title": {"title": [{"text": {"content": c.theme_label[:1990]}}]},
+            "Title": {"title": [{"text": {"content": _utf16_truncate(c.theme_label, 1990)}}]},
             "Suggested Title EN": _rt(c.suggested_title_en),
             "Suggested Title DE": _rt(c.suggested_title_de),
             "Keyword EN": _rt(c.keyword_en),

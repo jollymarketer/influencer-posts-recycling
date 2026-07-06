@@ -30,10 +30,10 @@ def test_en_draft_written_to_own_property(monkeypatch):
     assert props["LinkedIn Draft EN"]["rich_text"][0]["text"]["content"] == "EN text"
 
 
-def test_de_and_en_truncate_at_3000(monkeypatch):
+def test_de_and_en_truncate_at_notion_limit_2000(monkeypatch):
     props = _run(monkeypatch, linkedin_draft="D" * 3500, en_draft="E" * 3500)
-    assert len(props["LinkedIn Draft"]["rich_text"][0]["text"]["content"]) == 3000
-    assert len(props["LinkedIn Draft EN"]["rich_text"][0]["text"]["content"]) == 3000
+    assert len(props["LinkedIn Draft"]["rich_text"][0]["text"]["content"]) == 2000
+    assert len(props["LinkedIn Draft EN"]["rich_text"][0]["text"]["content"]) == 2000
 
 
 def test_empty_en_draft_omits_property(monkeypatch):
