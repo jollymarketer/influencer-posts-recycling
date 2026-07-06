@@ -108,11 +108,12 @@ FEATURES = {
 # Cron beim Scharfstellen: "0 7 * * 2-5" (Di-Fr 07:00 UTC, Montag-Skip wie Jolly).
 # Verlierer werden nicht persistiert und bleiben im Pool: sie konkurrieren in den
 # Folge-Laeufen erneut, nur Winner sind via Notion-URL-Dedup gesperrt.
-# max_posts hoeher als bei Jolly, weil aktive Poster in 7 Tagen mehr als 3 Posts haben.
+# max_posts 5 (Richard 2026-07-06, Kosten ~7 USD/Monat statt ~13 bei 10):
+# deckt die 5 neuesten Posts pro Profil im 7-Tage-Pool, Vielposter verlieren etwas Tiefe.
 SCRAPE = {
     "min_age_hours": 6,
     "max_age_hours": 168,
-    "max_posts_per_profile": 10,
+    "max_posts_per_profile": 5,
     "substack_min_age_hours": 24,
     "substack_max_age_hours": 168,
 }
