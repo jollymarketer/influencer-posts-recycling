@@ -121,6 +121,28 @@ FEATURES = {
     "supabase_persist": False,  # speist nur das Jolly-Blog-Topic-Mining
     "keyword_scrape": False,
     "topic_mining": False,
+    "keyword_source_daily": True,  # Schritt 2b: Keyword-Suche als Daily-Quelle
+}
+
+# Keyword-Suche als zusaetzliche Daily-Quelle (Richard 2026-07-06, ~4 EUR/Monat Apify):
+# LinkedIn-weite Suche nach InTO-Kernthemen, konkurriert im selben Scoring-Pool wie
+# die Influencer-Posts. Bewusst enge Begriffe (Doku x Mehrsprachigkeit x Layout);
+# breite Begriffe wie "technical documentation" abgelehnt (zu viel Rauschen).
+# posted_limit "week" = gleicher 7-Tage-Pool wie SCRAPE (Verlierer konkurrieren erneut).
+DAILY_KEYWORD_SEARCH = {
+    "keywords": [
+        "multilingual technical documentation",
+        "documentation localization",
+        "DTP localization",
+        "InDesign localization",
+        "DITA localization",
+        "CCMS",
+        "Fremdsprachensatz",
+        "mehrsprachige Dokumentation",
+        "Redaktionssystem",
+    ],
+    "max_posts": 10,
+    "posted_limit": "week",
 }
 
 # Kadenz (Richard 2026-07-06): 4 Winner/Woche aus einem 7-Tage-Content-Pool.

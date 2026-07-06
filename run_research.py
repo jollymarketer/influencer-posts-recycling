@@ -37,6 +37,7 @@ from tools.notion_db import (
     update_with_draft,
 )
 from tools.linkedin_scraper import scrape_new_posts
+from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.substack_scraper import scrape_substack_posts
 from tools.post_scorer import (
     score_posts,
@@ -77,6 +78,29 @@ def persist_scraped_posts(linkedin_posts: list, substack_posts: list) -> None:
             print(f"  Supabase-Persist {source} fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
 
 
+def scrape_daily_keyword_posts(existing_urls: set, new_posts: list) -> list:
+    """Schritt 2b: LinkedIn-weite Keyword-Suche als zusaetzliche Daily-Quelle
+    (FEATURES["keyword_source_daily"]). Dedupet gegen Notion-Winner-URLs und
+    die in diesem Run bereits gescrapten Posts. Fehler nicht-fatal."""
+    if not _cfg.FEATURES.get("keyword_source_daily"):
+        return []
+    kw = _cfg.DAILY_KEYWORD_SEARCH
+    print("\nSchritt 2b: Keyword-Suche (LinkedIn) ...")
+    try:
+        seen = set(existing_urls) | {p["post_url"] for p in new_posts}
+        posts = scrape_keyword_posts(
+            kw["keywords"],
+            existing_urls=seen,
+            max_posts=kw.get("max_posts", 10),
+            posted_limit=kw.get("posted_limit", "week"),
+        )
+        print(f"  Keyword-Suche: {len(posts)} neue Posts")
+        return posts
+    except Exception as e:
+        print(f"  FEHLER - Keyword-Scraping (nicht kritisch): {e}", file=sys.stderr)
+        return []
+
+
 def run_daily():
     start_time = datetime.now(timezone.utc)
     print(f"=== Influencer Posts Recycling - Daily Run (Client: {_cfg.NAME}) ===")
@@ -110,6 +134,8 @@ def run_daily():
         new_posts.extend(substack_posts)
     except Exception as e:
         print(f"  FEHLER - Substack-Scraping: {e}", file=sys.stderr)
+
+    new_posts.extend(scrape_daily_keyword_posts(existing_urls, new_posts))
 
     # Persist ALL scraped posts (winners + losers) for weekly blog-topic mining.
     persist_scraped_posts(linkedin_posts, substack_posts)
