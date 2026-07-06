@@ -104,8 +104,10 @@ FEATURES = {
     "topic_mining": False,
 }
 
-# Wochen-Kadenz (Richard 2026-07-06): 1 Lauf/Woche, Content-Pool 7 Tage,
-# 1 Winner/Woche. Cron beim Scharfstellen: "0 7 * * 1" (Montag 07:00 UTC).
+# Kadenz (Richard 2026-07-06): 4 Winner/Woche aus einem 7-Tage-Content-Pool.
+# Cron beim Scharfstellen: "0 7 * * 2-5" (Di-Fr 07:00 UTC, Montag-Skip wie Jolly).
+# Verlierer werden nicht persistiert und bleiben im Pool: sie konkurrieren in den
+# Folge-Laeufen erneut, nur Winner sind via Notion-URL-Dedup gesperrt.
 # max_posts hoeher als bei Jolly, weil aktive Poster in 7 Tagen mehr als 3 Posts haben.
 SCRAPE = {
     "min_age_hours": 6,
