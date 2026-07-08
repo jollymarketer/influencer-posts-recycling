@@ -5,6 +5,8 @@ Asset-Auswahl und Zahlen-Guard. Spec:
 docs/superpowers/specs/2026-07-08-content-matrix-coverage-design.md
 """
 
+import re
+
 JOBS = ("Perspective", "Proof", "Promotion")
 STAGES = ("Awareness", "Education", "Selection")
 
@@ -173,3 +175,54 @@ def coverage_line(recent_boxes: list, cfg) -> str:
     sel = sum(1 for _, s in window if s == "Selection")
     parts.append(f"Selection {sel}/{matrix['selection_floor']}")
     return f"Coverage ({len(window)} Posts): " + " | ".join(parts)
+
+
+def pick_asset(assets: list, recent_ids: list):
+    """Least-recently-used Asset: erst nie genutzte, sonst das am laengsten
+    nicht genutzte (recent_ids ist neuestes-zuerst). [] -> None."""
+    if not assets:
+        return None
+    for asset in assets:
+        if asset.get("id") not in recent_ids:
+            return asset
+    # Alle benutzt: das mit dem aeltesten (= letzten) Auftritt in recent_ids.
+    return max(assets, key=lambda a: recent_ids.index(a["id"]))
+
+
+def asset_for_format(post_format: str, cfg, recent_ids: list):
+    """Asset fuer ein Asset-Format aus der Mandanten-Config. None wenn das
+    Format kein Asset braucht oder der Block leer ist."""
+    attr = FORMAT_ASSET_ATTR.get(post_format)
+    if not attr:
+        return None
+    return pick_asset(getattr(cfg, attr, None) or [], recent_ids or [])
+
+
+# Zahlen mit Einheit: Prozent, Waehrung, Vielfache. Reine Zaehl-Zahlen
+# ("3 Schritte", Jahreszahlen) sind bewusst NICHT geschuetzt.
+_FIGURE_RE = re.compile(
+    r"\d+(?:[.,]\d+)?\s*(?:%|prozent|percent)"
+    r"|(?:€|\$|eur|usd)\s*\d+(?:[.,]\d+)*"
+    r"|\d+(?:[.,]\d+)*\s*(?:€|eur|usd|dollar)"
+    r"|\d+(?:[.,]\d+)?\s*(?:x\b|-fach\b|fach\b|times\b)",
+    re.IGNORECASE,
+)
+
+
+def extract_figures(text: str) -> set:
+    """Alle Einheiten-Zahlen eines Texts, normalisiert (lowercase, ohne
+    Leerzeichen, Komma -> Punkt)."""
+    out = set()
+    for m in _FIGURE_RE.finditer(text or ""):
+        out.add(re.sub(r"\s+", "", m.group(0)).replace(",", ".").lower())
+    return out
+
+
+def figures_ok(text: str, asset: dict) -> bool:
+    """Zahlen-Guard: jede Einheiten-Zahl im Draft muss aus dem gewaehlten
+    Asset stammen (alle String-Felder des Assets zaehlen als Whitelist)."""
+    allowed = set()
+    for value in (asset or {}).values():
+        if isinstance(value, str):
+            allowed |= extract_figures(value)
+    return extract_figures(text) <= allowed

@@ -178,3 +178,55 @@ def test_coverage_line_reports_actuals_vs_targets():
     assert "Proof 2/3" in line
     assert "Promotion 2/2" in line
     assert "Selection 0/2" in line
+
+
+ASSETS = [{"id": "case-a", "metric": "69% Kostensenkung"},
+          {"id": "case-b", "metric": "80% Kostenreduktion"},
+          {"id": "case-c", "metric": "12 Meetings in 6 Wochen"}]
+
+
+def test_pick_asset_prefers_unused():
+    assert cm.pick_asset(ASSETS, ["case-a", "case-b"])["id"] == "case-c"
+
+
+def test_pick_asset_all_used_takes_least_recent():
+    # recent_ids newest first -> case-c is the oldest use.
+    assert cm.pick_asset(ASSETS, ["case-a", "case-b", "case-c"])["id"] == "case-c"
+
+
+def test_pick_asset_empty_returns_none():
+    assert cm.pick_asset([], []) is None
+
+
+def test_asset_for_format_maps_attr():
+    cfg = _cfg(boxes=ALL_BOXES, proof=ASSETS)
+    assert cm.asset_for_format("CaseProof", cfg, [])["id"] == "case-a"
+    assert cm.asset_for_format("Offer", cfg, []) is None      # OFFERS empty
+    assert cm.asset_for_format("Opinion", cfg, []) is None    # no asset format
+
+
+def test_extract_figures_normalizes():
+    figs = cm.extract_figures("Wir haben 69 % gesenkt, 3,5x Pipeline, EUR 40.000 Budget.")
+    assert "69%" in figs
+    assert "3.5x" in figs
+    assert any(f.startswith("eur40.000") or f.startswith("eur40000") for f in figs)
+
+
+def test_extract_figures_ignores_plain_counts():
+    # "3 Schritte" and years carry no unit -> not guarded.
+    assert cm.extract_figures("In 3 Schritten seit 2024.") == set()
+
+
+def test_figures_ok_accepts_whitelisted_number():
+    asset = {"id": "hoermann", "claim": "Katalogproduktion", "metric": "69% Kostensenkung"}
+    assert cm.figures_ok("Hoermann senkte die Kosten um 69%.", asset)
+
+
+def test_figures_ok_rejects_foreign_number():
+    asset = {"id": "hoermann", "metric": "69% Kostensenkung"}
+    assert not cm.figures_ok("Das brachte 72% Ersparnis.", asset)
+
+
+def test_figures_ok_true_when_draft_has_no_figures():
+    asset = {"id": "hoermann", "metric": "69% Kostensenkung"}
+    assert cm.figures_ok("Ein Post ganz ohne Zahlen mit Einheit.", asset)
