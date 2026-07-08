@@ -202,8 +202,8 @@ def asset_for_format(post_format: str, cfg, recent_ids: list):
 # ("3 Schritte", Jahreszahlen) sind bewusst NICHT geschuetzt.
 _FIGURE_RE = re.compile(
     r"\d+(?:[.,]\d+)?\s*(?:%|prozent|percent)"
-    r"|(?:€|\$|eur|usd)\s*\d+(?:[.,]\d+)*"
-    r"|\d+(?:[.,]\d+)*\s*(?:€|eur|usd|dollar)"
+    r"|(?:\u20ac|\$|\beur\b|\busd\b)\s*\d+(?:[.,]\d+)*"
+    r"|\d+(?:[.,]\d+)*\s*(?:\u20ac|\beur\b|\busd\b|\bdollar\b)"
     r"|\d+(?:[.,]\d+)?\s*(?:x\b|-fach\b|fach\b|times\b)",
     re.IGNORECASE,
 )

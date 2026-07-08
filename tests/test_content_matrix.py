@@ -230,3 +230,16 @@ def test_figures_ok_rejects_foreign_number():
 def test_figures_ok_true_when_draft_has_no_figures():
     asset = {"id": "hoermann", "metric": "69% Kostensenkung"}
     assert cm.figures_ok("Ein Post ganz ohne Zahlen mit Einheit.", asset)
+
+
+def test_extract_figures_ignores_words_containing_currency_tokens():
+    # "Ingenieur 40" / "5 Europa" duerfen NICHT als Waehrung matchen.
+    assert cm.extract_figures("Als Ingenieur 40 Jahre gearbeitet.") == set()
+    assert cm.extract_figures("5 Europa Reisen, 10 Euroscheine, 3 Eurozone-Laender.") == set()
+
+
+def test_extract_figures_currency_and_multiplier_variants():
+    figs = cm.extract_figures("Kostet 40 \u20ac, ersparte 5-fach Aufwand, 69 Prozent weniger.")
+    assert "40\u20ac" in figs
+    assert "5-fach" in figs
+    assert "69prozent" in figs
