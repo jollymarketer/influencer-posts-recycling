@@ -16,6 +16,8 @@ import requests
 from dotenv import load_dotenv
 from PIL import Image, ImageFilter
 
+from clients import load_client
+
 load_dotenv()
 
 KIEAI_API_KEY = os.getenv("KIEAI_API_KEY")
@@ -44,7 +46,9 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = "jollymarketer/influencer-posts-recycling"
 GITHUB_IMAGES_PATH = "images"
 
-LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "Resources", "Jolly Marketer_logo_horizontal.png")
+# Mandanten-Logo (LOGO_FILE in clients/<name>/config.py); Default: Jolly Marketer.
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "Resources",
+                         getattr(load_client(), "LOGO_FILE", "Jolly Marketer_logo_horizontal.png"))
 LOGO_PADDING = 28       # Abstand vom Rand in px
 LOGO_MAX_WIDTH_RATIO = 0.11  # Logo nimmt max. 11% der Bildbreite ein (50% kleiner als zuvor)
 
@@ -231,7 +235,7 @@ def _strip_hallucinated_brand_marks(image_bytes: bytes) -> bytes:
 
 
 def _overlay_logo(image_bytes: bytes) -> bytes:
-    """Blendet das Jolly Marketer Logo unten rechts über das generierte Bild."""
+    """Blendet das Mandanten-Logo unten rechts über das generierte Bild."""
     base = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
 
     logo = Image.open(LOGO_PATH).convert("RGBA")

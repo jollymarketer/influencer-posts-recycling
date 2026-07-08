@@ -161,6 +161,12 @@ SCRAPE = {
     "substack_max_age_hours": 168,
 }
 
+# Kundenfeedback Reinhard 2026-07-08: InTO-Logo (statt Jolly) als Bild-Overlay,
+# CTA-Link ganz unten in jedem Post. Wortlaut DE vom Kunden vorgegeben (Sie-Form).
+LOGO_FILE = "into_logo.png"
+CTA_DE = "Interessant? Besuchen Sie uns auf www.in2go.io"
+CTA_EN = "Sounds interesting? Visit us at www.in2go.io"
+
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene Lisocon-Content-DB).
 NOTION_DB_ID_DEFAULT = None
 
