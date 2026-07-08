@@ -350,6 +350,24 @@ def set_post_status(page_id: str, status: str) -> None:
     resp.raise_for_status()
 
 
+def _patch_select_nonfatal(page_id: str, prop: str, value: str) -> None:
+    """Setzt eine Select-Property separat + non-fatal: fehlt die Property in
+    Notion (noch), darf das den kritischen Status-PATCH nicht killen."""
+    if not value:
+        return
+    try:
+        r = _notion_request(
+            "PATCH",
+            f"{NOTION_API}/pages/{page_id}",
+            headers=_headers(),
+            json={"properties": {prop: {"select": {"name": value}}}},
+        )
+        r.raise_for_status()
+        print(f"  {prop}-Property gesetzt: {value}", flush=True)
+    except Exception as e:
+        print(f"  {prop}-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+
 def update_with_draft(
     page_id: str,
     linkedin_draft: str,
@@ -364,6 +382,10 @@ def update_with_draft(
     post_format: str = "",
     infographic_type: str = "",
     archetype: str = "",
+    matrix_job: str = "",
+    matrix_stage: str = "",
+    persona: str = "",
+    asset_id: str = "",
     post_text: str = "",
     post_url: str = "",
 ):
@@ -461,6 +483,12 @@ def update_with_draft(
             print(f"  Bild-Variante-Property gesetzt: {archetype}", flush=True)
         except Exception as e:
             print(f"  Bild-Variante-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    # Matrix-Tracking (Quota-Fenster des naechsten Runs) + Persona/Asset-Anti-Repeat.
+    _patch_select_nonfatal(page_id, "Matrix-Job", matrix_job)
+    _patch_select_nonfatal(page_id, "Matrix-Stage", matrix_stage)
+    _patch_select_nonfatal(page_id, "Persona", persona)
+    _patch_select_nonfatal(page_id, "Asset", asset_id)
 
     # Make-Webhook feuern → E-Mail-Alert an Richard.
     # image_failed-Flag steht im Payload, damit die Make-Scenario spaeter
@@ -643,6 +671,75 @@ def get_recent_archetypes(limit: int = 3) -> list[str]:
         if name:
             archetypes.append(name)
     return archetypes
+
+
+def get_recent_boxes(limit: int = 10) -> list[tuple[str, str]]:
+    """(Matrix-Job, Matrix-Stage)-Paare der letzten N Eintraege, neuestes
+    zuerst. Eintraege ohne beide Properties werden uebersprungen."""
+    payload = {
+        "filter": {
+            "or": [
+                {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Approved"}},
+                {"property": "Status", "select": {"equals": "Ready to Review"}},
+            ]
+        },
+        "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
+        "page_size": limit,
+    }
+    resp = _notion_request(
+        "POST",
+        f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    boxes = []
+    for page in resp.json().get("results", []):
+        props = page.get("properties", {})
+        job = (props.get("Matrix-Job", {}).get("select") or {}).get("name")
+        stage = (props.get("Matrix-Stage", {}).get("select") or {}).get("name")
+        if job and stage:
+            boxes.append((job, stage))
+    return boxes
+
+
+def _get_recent_select(prop: str, limit: int) -> list[str]:
+    """Werte einer Select-Property der letzten N Eintraege (neuestes zuerst)."""
+    payload = {
+        "filter": {
+            "or": [
+                {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Approved"}},
+                {"property": "Status", "select": {"equals": "Ready to Review"}},
+            ]
+        },
+        "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
+        "page_size": limit,
+    }
+    resp = _notion_request(
+        "POST",
+        f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+        headers=_headers(),
+        json=payload,
+    )
+    resp.raise_for_status()
+    values = []
+    for page in resp.json().get("results", []):
+        name = (page.get("properties", {}).get(prop, {}).get("select") or {}).get("name")
+        if name:
+            values.append(name)
+    return values
+
+
+def get_recent_assets(limit: int = 5) -> list[str]:
+    """Asset-Ids der letzten N Eintraege (fuer das LRU-Asset-Anti-Repeat)."""
+    return _get_recent_select("Asset", limit)
+
+
+def get_recent_personas(limit: int = 2) -> list[str]:
+    """Persona-Ids der letzten N Eintraege (Sekundaer-Persona nie 2x in Folge)."""
+    return _get_recent_select("Persona", limit)
 
 
 def get_entry_by_url(post_url: str) -> dict | None:
