@@ -194,12 +194,13 @@ def run_daily():
     if target_box:
         print(f"  Pflicht-Box: {target_box[0]} x {target_box[1]}")
         box_formats = formats_for_box(target_box, _cfg)
-        best_idx = rank_box_fit(scored[:10], target_box, box_formats)
+        eligible = [p for p in scored[:10] if p["score"] >= MIN_SCORE]
+        best_idx = rank_box_fit(eligible, target_box, box_formats)
         if best_idx is None:
             print("  Kein Quell-Post traegt die Pflicht-Box (Fit < 6) - Defizit bleibt offen, freier Run.")
             target_box = None
         else:
-            winner = scored[:10][best_idx]
+            winner = eligible[best_idx]
             print(f"  Box-Winner: {winner['influencer']} (Score: {winner['score']}/60)")
 
     # Schritt 4.5: Format waehlen (best-fit + anti-repeat, Pierre-Herubel Format-Varietaet)
@@ -276,30 +277,40 @@ def run_daily():
     # Zahlen-Guard (nur CaseProof): jede Einheiten-Zahl muss aus dem Asset
     # stammen. 1 Retry, danach Downgrade auf Method ohne Asset-Block.
     if post_format == "CaseProof" and chosen_asset:
-        for attempt in ("retry", "downgrade"):
-            if figures_ok(f"{linkedin_draft}\n{en_draft}", chosen_asset):
-                break
-            if attempt == "retry":
-                print("  Zahlen-Guard verletzt - ein Retry.", file=sys.stderr)
-                linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
-                    winner, post_format, recent_infographic_types=recent_infographic_types,
-                    assets_de=assets_block(post_format, chosen_asset, "de"),
-                    assets_en=assets_block(post_format, chosen_asset, "en"),
-                    persona_de=persona_block(persona, "de"),
-                    persona_en=persona_block(persona, "en"),
-                )
-            else:
-                print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
-                post_format = "Method"
-                chosen_asset = None
-                linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
-                    winner, post_format, recent_infographic_types=recent_infographic_types,
-                    persona_de=persona_block(persona, "de"),
-                    persona_en=persona_block(persona, "en"),
-                )
-        if not linkedin_draft:
-            print("  FEHLER: Leerer Draft nach Guard-Behandlung.", file=sys.stderr)
+        try:
+            for attempt in ("retry", "downgrade"):
+                if figures_ok(f"{linkedin_draft}\n{en_draft}", chosen_asset):
+                    break
+                if attempt == "retry":
+                    print("  Zahlen-Guard verletzt - ein Retry.", file=sys.stderr)
+                    linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
+                        winner, post_format, recent_infographic_types=recent_infographic_types,
+                        assets_de=assets_block(post_format, chosen_asset, "de"),
+                        assets_en=assets_block(post_format, chosen_asset, "en"),
+                        persona_de=persona_block(persona, "de"),
+                        persona_en=persona_block(persona, "en"),
+                    )
+                else:
+                    print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
+                    post_format = "Method"
+                    chosen_asset = None
+                    linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
+                        winner, post_format, recent_infographic_types=recent_infographic_types,
+                        persona_de=persona_block(persona, "de"),
+                        persona_en=persona_block(persona, "en"),
+                    )
+            if not linkedin_draft:
+                print("  FEHLER: Leerer Draft nach Guard-Behandlung.", file=sys.stderr)
+                sys.exit(1)
+        except SystemExit:
+            raise
+        except Exception as e:
+            print(f"  FEHLER bei Guard-Regenerierung: {e}", file=sys.stderr)
             sys.exit(1)
+
+    if not en_draft:
+        en_draft = "[EN-Generierung fehlgeschlagen - manuell nachziehen]"
+        print("  WARNUNG: Leerer EN-Draft nach Guard-Regenerierung. Platzhalter gesetzt.", file=sys.stderr)
 
     print(f"  DE-Draft: {len(linkedin_draft)} Zeichen")
     print(f"  EN-Draft: {len(en_draft)} Zeichen")
