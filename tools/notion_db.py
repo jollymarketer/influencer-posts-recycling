@@ -248,6 +248,66 @@ def _append_infographic_block(page_id: str, skeleton: str) -> None:
     resp.raise_for_status()
 
 
+def _h2_block(text: str) -> dict:
+    return {"object": "block", "type": "heading_2",
+            "heading_2": {"rich_text": [{"type": "text", "text": {"content": text}}]}}
+
+
+def _para_blocks(text: str) -> list:
+    return [
+        {"object": "block", "type": "paragraph",
+         "paragraph": {"rich_text": [{"type": "text", "text": {"content": c}}]}}
+        for c in _utf16_chunks(_sanitize(text))
+    ]
+
+
+_DIVIDER_BLOCK = {"object": "block", "type": "divider", "divider": {}}
+
+
+def _rebuild_page_body(page_id: str, image_url: str, de_draft: str, en_draft: str,
+                       post_text: str, post_url: str, skeleton: str,
+                       image_prompt: str) -> None:
+    """Ersetzt den kompletten Page-Body durch die Review-Template-Reihenfolge
+    (Richard 2026-07-08): Bild -> DE-Draft -> EN-Draft -> Original ->
+    Infografik-Skelett -> Image Prompt ganz unten."""
+    blocks, cursor = [], None
+    while True:
+        url = f"{NOTION_API}/blocks/{page_id}/children?page_size=100"
+        if cursor:
+            url += f"&start_cursor={cursor}"
+        resp = _notion_request("GET", url, headers=_headers())
+        resp.raise_for_status()
+        data = resp.json()
+        blocks.extend(data["results"])
+        if not data.get("has_more"):
+            break
+        cursor = data["next_cursor"]
+    for b in blocks:
+        resp = _notion_request("DELETE", f"{NOTION_API}/blocks/{b['id']}", headers=_headers())
+        resp.raise_for_status()
+
+    children = []
+    if image_url:
+        children += [_h2_block("Generated Image"),
+                     {"object": "block", "type": "image",
+                      "image": {"type": "external", "external": {"url": image_url}}},
+                     _DIVIDER_BLOCK]
+    children += [_h2_block("LinkedIn Draft DE (Slot: Vormittag)"), *_para_blocks(de_draft), _DIVIDER_BLOCK]
+    children += [_h2_block("LinkedIn Draft EN (Slot: Nachmittag)"), *_para_blocks(en_draft), _DIVIDER_BLOCK]
+    children += [_h2_block("Original Post"),
+                 {"object": "block", "type": "bookmark", "bookmark": {"url": post_url}},
+                 _h2_block("Post Text (Original)"), *_para_blocks(post_text)]
+    if skeleton:
+        children += [_DIVIDER_BLOCK, _h2_block("Infografik-Skelett (Canva)"), *_para_blocks(skeleton)]
+    if image_prompt:
+        children += [_DIVIDER_BLOCK, _h2_block("Image Prompt"), *_para_blocks(image_prompt)]
+
+    for i in range(0, len(children), 100):  # Notion-Limit: 100 Blocks pro Append
+        resp = _notion_request("PATCH", f"{NOTION_API}/blocks/{page_id}/children",
+                               headers=_headers(), json={"children": children[i:i + 100]})
+        resp.raise_for_status()
+
+
 def _append_draft_blocks(page_id: str, de_draft: str, en_draft: str) -> None:
     """Haengt DE- und EN-Draft als Body-Bloecke mit Slot-Headings an die Seite."""
     def text_blocks(text):
@@ -304,11 +364,16 @@ def update_with_draft(
     post_format: str = "",
     infographic_type: str = "",
     archetype: str = "",
+    post_text: str = "",
+    post_url: str = "",
 ):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
     Setzt Status auf 'Ready to Review' (oder 'Image Failed' falls Bildgenerierung
     fehlgeschlagen ist) und feuert den Make-Webhook fuer die E-Mail-Benachrichtigung.
+    Mit post_text + post_url wird der Page-Body komplett in Review-Template-
+    Reihenfolge neu aufgebaut (Bild -> Drafts -> Original -> Skelett -> Prompt);
+    ohne bleibt das alte Append-Verhalten.
     Raises ValueError wenn linkedin_draft leer ist.
     """
     if not linkedin_draft:
@@ -416,6 +481,16 @@ def update_with_draft(
             print(f"  Make-Webhook gefeuert: {status_name} Alert", flush=True)
         except Exception as e:
             print(f"  Make-Webhook fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    if post_text and post_url:
+        try:
+            _rebuild_page_body(page_id, image_url=image_url, de_draft=linkedin_draft,
+                               en_draft=en_draft, post_text=post_text, post_url=post_url,
+                               skeleton=infographic_skeleton, image_prompt=image_prompt)
+            print("  Page-Body in Template-Reihenfolge geschrieben.", flush=True)
+        except Exception as e:
+            print(f"  Body-Rebuild fehlgeschlagen (nicht kritisch): {e}", flush=True)
+        return result
 
     try:
         _append_draft_blocks(page_id, linkedin_draft, en_draft)

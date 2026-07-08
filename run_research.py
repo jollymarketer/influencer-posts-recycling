@@ -289,6 +289,8 @@ def run_daily():
             post_format=post_format,
             infographic_type=infographic_type,
             archetype=gen_archetype,
+            post_text=winner["post_text"],
+            post_url=winner["post_url"],
         )
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:
