@@ -130,8 +130,10 @@ def pick_target_box(recent_boxes: list, cfg):
     def _promo_ok(box):
         return box[0] != "Promotion" or promo_count < cap
 
-    # 1) Selection-Floor zuerst.
-    if selection_count < floor:
+    # 1) Selection-Floor zuerst - aber nie zwei Selection-Posts direkt
+    #    hintereinander erzwingen: ist der neueste Eintrag bereits Selection,
+    #    setzt der Floor einen Run aus.
+    if selection_count < floor and not (window and window[0][1] == "Selection"):
         candidates = [b for b in boxes if b[1] == "Selection" and _promo_ok(b)]
         if candidates:
             # Zeile mit groesstem Defizit zuerst, Tie-Break = feste JOBS-Ordnung.

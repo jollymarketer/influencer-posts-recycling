@@ -95,6 +95,8 @@ def test_caseproof_pins_numbers_to_asset():
     de, en = _format_prompts(POST, "CaseProof")
     assert "CASE-ASSET" in de and "woertlich" in de
     assert "case asset" in en.lower() and "verbatim" in en.lower()
+    assert "Keine anderen Referenzen" in de
+    assert "no other references" in en.lower()
 
 
 def test_debate_demands_reply_not_dm():

@@ -36,6 +36,24 @@ def test_get_recent_boxes_pairs_job_and_stage():
     assert boxes == [("Perspective", "Awareness"), ("Proof", "Selection")]
 
 
+def test_get_recent_boxes_widens_window_and_cuts_after_filtering():
+    # 3 pages without matrix properties followed by 2 classified pages must
+    # not shrink the window: both classified tuples still come back, and the
+    # outgoing query must request the wider page_size (50), not limit.
+    pages = [_page(), _page(), _page(),
+             _page("Perspective", "Awareness"), _page("Proof", "Selection")]
+    calls = []
+
+    def fake_request(method, url, **kwargs):
+        calls.append(kwargs.get("json", {}))
+        return _query_response(pages)
+
+    with patch.object(notion_db, "_notion_request", side_effect=fake_request):
+        boxes = notion_db.get_recent_boxes()
+    assert boxes == [("Perspective", "Awareness"), ("Proof", "Selection")]
+    assert calls[0]["page_size"] == 50
+
+
 def test_get_recent_assets_and_personas():
     pages = [_page(asset="case-a", persona="founder-ceo"), _page(asset="case-b")]
     with patch.object(notion_db, "_notion_request", return_value=_query_response(pages)):

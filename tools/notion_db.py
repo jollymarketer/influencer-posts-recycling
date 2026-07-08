@@ -675,7 +675,9 @@ def get_recent_archetypes(limit: int = 3) -> list[str]:
 
 def get_recent_boxes(limit: int = 10) -> list[tuple[str, str]]:
     """(Matrix-Job, Matrix-Stage)-Paare der letzten N Eintraege, neuestes
-    zuerst. Eintraege ohne beide Properties werden uebersprungen."""
+    zuerst. Eintraege ohne beide Properties werden uebersprungen. Holt ein
+    breiteres Fenster (50) und schneidet ERST NACH dem Filtern zu, damit
+    Seiten ohne die Property das Fenster nicht verkuerzen."""
     payload = {
         "filter": {
             "or": [
@@ -685,7 +687,7 @@ def get_recent_boxes(limit: int = 10) -> list[tuple[str, str]]:
             ]
         },
         "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
-        "page_size": limit,
+        "page_size": 50,
     }
     resp = _notion_request(
         "POST",
@@ -701,11 +703,13 @@ def get_recent_boxes(limit: int = 10) -> list[tuple[str, str]]:
         stage = (props.get("Matrix-Stage", {}).get("select") or {}).get("name")
         if job and stage:
             boxes.append((job, stage))
-    return boxes
+    return boxes[:limit]
 
 
 def _get_recent_select(prop: str, limit: int) -> list[str]:
-    """Werte einer Select-Property der letzten N Eintraege (neuestes zuerst)."""
+    """Werte einer Select-Property der letzten N Eintraege (neuestes zuerst).
+    Holt ein breiteres Fenster (50) und schneidet ERST NACH dem Filtern zu,
+    damit Seiten ohne die Property das Fenster nicht verkuerzen."""
     payload = {
         "filter": {
             "or": [
@@ -715,7 +719,7 @@ def _get_recent_select(prop: str, limit: int) -> list[str]:
             ]
         },
         "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
-        "page_size": limit,
+        "page_size": 50,
     }
     resp = _notion_request(
         "POST",
@@ -729,7 +733,7 @@ def _get_recent_select(prop: str, limit: int) -> list[str]:
         name = (page.get("properties", {}).get(prop, {}).get("select") or {}).get("name")
         if name:
             values.append(name)
-    return values
+    return values[:limit]
 
 
 def get_recent_assets(limit: int = 5) -> list[str]:

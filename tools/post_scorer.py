@@ -398,13 +398,13 @@ Do not invent specific names, revenue figures or case studies. A generic, plausi
 2. Ausgangslage: Wo das Unternehmen vorher stand und warum der Status quo teuer war. Konkret, ohne erfundene Details.
 3. Weg: Was konkret veraendert wurde (Methode, Reihenfolge, Entscheidung) - als kurzes scanbares Artefakt. Ein eigener Gedanke, den der Quell-Post nicht hat.
 4. Abschluss: Das Learning als uebertragbare Regel plus offene Schleife (streitbare Frage oder Flag-Plant-Zeile). Kein DM-CTA.
-Harte Zahlen-Regel: JEDE Zahl mit Einheit (Prozent, Euro, x-fach) stammt woertlich aus dem CASE-ASSET-Block. Keine weiteren Zahlen erfinden, auch keine plausiblen. Firmenname nur wenn im Asset genannt.""",
+Harte Zahlen-Regel: JEDE Zahl mit Einheit (Prozent, Euro, x-fach) stammt woertlich aus dem CASE-ASSET-Block. Keine weiteren Zahlen erfinden, auch keine plausiblen. Firmenname nur wenn im Asset genannt. Keine anderen Referenzen oder Kundennamen nennen, auch keine anderen freigegebenen Cases.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): the result number from the CASE ASSET below, framed by the problem. Decides whether anyone reads on.
 2. Starting point: where the company stood before and why the status quo was expensive. Concrete, no invented detail.
 3. Path: what concretely changed (method, sequence, decision) - as a short scannable artifact. One original thought the source post does not have.
 4. Close: the learning as a transferable rule plus an open loop (arguable question or flag-plant line). No DM CTA.
-Hard numbers rule: EVERY unit-bearing number (percent, currency, x-times) is taken verbatim from the CASE ASSET block. Invent no further numbers, not even plausible ones. Company name only if the asset names it.""",
+Hard numbers rule: EVERY unit-bearing number (percent, currency, x-times) is taken verbatim from the CASE ASSET block. Invent no further numbers, not even plausible ones. Company name only if the asset names it. Name no other references or client cases, not even other approved ones.""",
     },
     "Debate": {
         "de": """Post-Struktur (ohne explizite Benennung):

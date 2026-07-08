@@ -120,6 +120,20 @@ def test_floor_pick_skips_promotion_when_cap_reached():
     assert cm.pick_target_box(window, cfg) == (P, S)
 
 
+def test_selection_floor_defers_when_newest_is_selection():
+    # Floor verletzt (1 < 2), aber neuester Eintrag ist bereits Selection:
+    # Floor setzt aus; Teilfenster (6 Posts) -> keine Zeilen-Quota -> None.
+    window = [(P, S), (P, A), (P, E), (PR, A), (P, A), (P, E)]
+    assert cm.pick_target_box(window, FULL_CFG) is None
+
+
+def test_selection_floor_fires_when_newest_is_not_selection():
+    # Gleiche Zusammensetzung, Selection nicht am neuesten Ende -> Floor feuert.
+    window = [(P, A), (P, S), (P, E), (PR, A), (P, A), (P, E)]
+    target = cm.pick_target_box(window, FULL_CFG)
+    assert target is not None and target[1] == S
+
+
 def test_full_window_row_deficit_targets_promotion():
     # P=6, Proof=4, Promo=0 -> Promotion deficient (0 < 2-1). Stage least
     # represented within Promotion boxes; all promo stages at 0 -> order A first.

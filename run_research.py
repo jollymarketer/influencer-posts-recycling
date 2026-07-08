@@ -54,6 +54,7 @@ from tools.post_scorer import (
     assets_block,
 )
 from tools.content_matrix import (
+    FORMAT_ASSET_ATTR,
     FORMAT_TO_BOX,
     asset_for_format,
     coverage_line,
@@ -231,6 +232,21 @@ def run_daily():
         print(f"  Asset-Wahl fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if chosen_asset:
         print(f"  Asset: {chosen_asset['id']}")
+
+    # Whitelist-Backstop: ein Asset-Format ohne Asset (z.B. Notion-Getter-Fehler)
+    # darf NIE ungeschuetzt generieren - zurueck auf freien Best-Fit-Run.
+    if post_format in FORMAT_ASSET_ATTR and not chosen_asset:
+        print("  Asset-Format ohne Asset - falle auf freien Run zurueck.", file=sys.stderr)
+        target_box = None
+        post_format = pick_format(winner, recent_formats, candidates=free_formats(_cfg))
+
+    # Asset-Formate (CaseProof/Magnet/Offer) fahren immer die dominante Persona:
+    # Sekundaer-Personas koennen genau das verbieten, was das Asset-Format verlangt.
+    if persona and post_format in FORMAT_ASSET_ATTR:
+        personas = getattr(_cfg, "CONTENT_PERSONAS", None) or []
+        dominant = next((p for p in personas if p.get("share") == "dominant"), None)
+        if dominant:
+            persona = dominant
 
     # Schritt 4.6: Zuletzt genutzte Infografik-Typen laden (Anti-Repeat gegen die
     # Eisberg-Monotonie). Non-fatal: fehlt die Property, laeuft der Run ohne Hinweis.
