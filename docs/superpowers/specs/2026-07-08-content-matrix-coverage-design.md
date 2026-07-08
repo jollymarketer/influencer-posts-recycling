@@ -36,6 +36,9 @@ boxes that convert (Proof x Selection, Promotion x Education/Selection).
 4. Assets live in `clients/<name>/config.py` (versioned, numbers pinned).
 5. Target mix: rows 50 / 30 / 20 (Perspective / Proof / Promotion),
    Selection-column floor 2 of 10, Promotion cap 2 of 10.
+6. Content persona (added 2026-07-08): persona lens + tracking ship NOW
+   (Notion property, config blocks, generation uses the persona), persona
+   QUOTA and box-compatibility map are Phase 2 after an observation week.
 
 ## Scope
 
@@ -48,7 +51,7 @@ Additive change, same architecture as the format router. Touches:
   `get_recent_boxes`, `get_recent_assets`
 - `run_research.py` — wiring (target box step, asset pick, property writes)
 - `clients/jolly/config.py`, `clients/lisocon/config.py` — MATRIX config,
-  PROOF_ASSETS / OFFERS / LEAD_MAGNETS, new format tokens
+  PROOF_ASSETS / OFFERS / LEAD_MAGNETS, CONTENT_PERSONAS, new format tokens
 - `scripts/add_matrix_properties.py` — one-time idempotent Notion schema setup
 - `workflows/content_generation.md` — manual path gets the same rules
 - `tests/` — TDD coverage
@@ -163,11 +166,57 @@ enforcement needs a code backstop + pin tests):
   property, so the same case number does not run every two weeks.
 - The existing no-fabrication prompt text stays in all formats.
 
+## Content persona (v1: lens + tracking; quota in Phase 2)
+
+Third dimension besides job and stage: which buying-committee persona the
+post addresses. NOT built as a full 3D grid (9 boxes x N personas cannot
+converge in a 10-post window) — persona is an independent lens.
+
+- New config block per client:
+
+```python
+CONTENT_PERSONAS = [
+    {"id": "founder-ceo", "label": "Founder / CEO",
+     "share": "dominant",          # dominant | secondary (quota in Phase 2)
+     "pains": "...", "kpis": "...",
+     "vocabulary_use": "...", "vocabulary_avoid": "...",
+     "scene_de": "...", "scene_en": "...",
+     "cta_style": "discovery"},
+]
+```
+
+- Hard rule (generalized from lisocon): exactly ONE persona per post, value
+  axes are never mixed. The rule moves from prose CONTEXT into the prompt
+  build.
+- Generation: the persona block overrides the static audience tokens
+  (AUDIENCE, DECISION_MAKERS, SCENE_ACTOR, FOCUS_TOPICS become per-persona
+  lookups with the current values as fallback when a client defines no
+  personas).
+- v1 persona pick: folded into the existing format/box-fit Haiku step —
+  best fit to the source post, default to the dominant persona when unclear,
+  never the same secondary persona twice in a row. No quota yet.
+- Scoring: icp_relevanz stays against the client ICP in v1 (persona-aware
+  scoring lands with the Phase-2 quota).
+- Phase 2 (explicitly out of this build): persona target mix (e.g. 70/30)
+  over the last 10 posts, persona x box compatibility map (e.g. Offer only
+  to budget personas), persona-tagged assets.
+
+Per client:
+
+- **jolly**: founder-ceo (dominant; predictability, revenue, no internal
+  GTM brain) and cro-vp-sales (secondary; pipeline steering, team, quota).
+  Exact wording drafted at implementation, Richard approves.
+- **lisocon**: kaeufer (dominant; Marketing/MarCom/Doku-Leitung, hidden
+  costs, ROI — the only proven converter axis) and anwender (secondary;
+  translation managers/designers, ease of use, browser proofing without
+  InDesign). Content comes from the existing PERSONA-REGEL prose.
+
 ## Notion
 
-- New select properties **Matrix-Job** (Perspective/Proof/Promotion) and
-  **Matrix-Stage** (Awareness/Education/Selection), plus **Asset** (select,
-  asset id). Written non-fatally like Format / Infografik-Typ today.
+- New select properties **Matrix-Job** (Perspective/Proof/Promotion),
+  **Matrix-Stage** (Awareness/Education/Selection) and **Persona**
+  (persona id), plus **Asset** (select, asset id). Written non-fatally like
+  Format / Infografik-Typ today.
 - `get_recent_boxes(limit=10)`, `get_recent_assets(limit=5)` with the same
   status filter as the existing getters.
 - Seed script `scripts/add_matrix_properties.py`, idempotent, same pattern as
@@ -208,7 +257,9 @@ by the numbers guard.
 - Unit: quota math (deficits, floor, cap, cold start, cap-block), whitelist
   guard (missing assets -> boxes off), numbers guard (foreign figure ->
   retry -> downgrade), format structure pin tests (all 6 new blocks, DE+EN),
-  `get_recent_boxes` parsing, promotion-only-when-targeted rule.
+  `get_recent_boxes` parsing, promotion-only-when-targeted rule, persona
+  token lookup (per-persona override + fallback to static tokens when
+  CONTENT_PERSONAS is empty), one-persona-per-post prompt pin test.
 - Integration: dry run against a fake pool asserting the full chain
   (deficit -> target box -> re-rank -> asset pick -> property writes).
 - Existing suite (104 green) must stay green.
@@ -228,3 +279,6 @@ Blocking only the asset-gated formats, nothing else:
 - Jolly PROOF_ASSETS: case studies with approved, exact numbers.
 - Jolly OFFERS: current offer(s), e.g. ICP sprint, with CTA wording.
 - Jolly LEAD_MAGNETS: existing downloadable artifacts, if any.
+- Jolly CONTENT_PERSONAS: wording drafted at implementation from the ICP,
+  Richard approves (non-blocking: empty block falls back to today's static
+  audience tokens).
