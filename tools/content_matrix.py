@@ -86,6 +86,12 @@ def free_formats(cfg) -> list:
     ]
 
 
+def _window(recent_boxes: list) -> list:
+    """Die letzten (bis zu) 10 KLASSIFIZIERTEN Boxen: erst filtern, dann
+    schneiden — unklassifizierte Eintraege duerfen das Fenster nicht verkuerzen."""
+    return [tuple(b) for b in recent_boxes if tuple(b) in BOX_FORMATS][:10]
+
+
 def _row_deficits(window: list, mix: dict) -> dict:
     """Row -> Fehlbetrag gegen Soll (nur positive Defizite)."""
     counts = {job: 0 for job in JOBS}
@@ -108,7 +114,7 @@ def pick_target_box(recent_boxes: list, cfg):
     if not matrix or not boxes:
         return None
 
-    window = [tuple(b) for b in recent_boxes[:10] if tuple(b) in BOX_FORMATS]
+    window = _window(recent_boxes)
     if len(window) < 5:
         return None
 
@@ -158,7 +164,7 @@ def coverage_line(recent_boxes: list, cfg) -> str:
     matrix = getattr(cfg, "MATRIX", None)
     if not matrix:
         return "Matrix: aus (keine MATRIX-Config)"
-    window = [tuple(b) for b in recent_boxes[:10] if tuple(b) in BOX_FORMATS]
+    window = _window(recent_boxes)
     mix = matrix["mix"]
     parts = [
         f"{job} {sum(1 for j, _ in window if j == job)}/{mix.get(job, 0)}"

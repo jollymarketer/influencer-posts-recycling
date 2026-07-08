@@ -134,13 +134,33 @@ def test_full_window_balanced_returns_none():
     assert cm.pick_target_box(window, FULL_CFG) is None
 
 
-def test_full_window_promotion_deficit_blocked_by_cap():
-    # Promotion count 2 == cap -> even though Proof fine and P over target,
-    # no promotion target may be produced; here nothing else is deficient.
-    window = [(P, A), (P, E), (P, S), (P, A), (P, E), (P, S),
-              (PR, A), (PR, E), (PM, A), (PM, E)]
-    # P=6 (no deficit possible upward), Proof=2 (2 < 3-1 is False), Promo at cap.
-    assert cm.pick_target_box(window, FULL_CFG) is None
+def test_row_deficit_promotion_blocked_by_cap_with_custom_mix():
+    # Mix verlangt 4 Promotion-Posts, Kappe erlaubt nur 2: Promotion ist
+    # defizitaer (2 < 4-1), aber die Kappe blockt das Ziel -> None
+    # (keine andere Zeile defizitaer: P=5 >= 5-1, Proof=3 >= 3-1).
+    cfg = _cfg(boxes=ALL_BOXES, proof=[{"id": "a"}], offers=[{"id": "b"}],
+               magnets=[{"id": "c"}], mix={"Perspective": 5, "Proof": 3, "Promotion": 4})
+    window = [(P, A), (P, E), (P, S), (P, A), (P, E),
+              (PR, A), (PR, E), (PR, S), (PM, A), (PM, E)]
+    assert cm.pick_target_box(window, cfg) is None
+
+
+def test_row_deficit_tie_breaks_in_jobs_order():
+    # Proof und Promotion beide Defizit 2 -> feste JOBS-Ordnung waehlt Proof.
+    window = [(P, A), (P, E), (P, S), (P, A), (P, E),
+              (P, S), (P, A), (P, E), (P, A), (PR, A)]
+    # P=9, Proof=1 (1 < 2 defizitaer), Promotion=0 (0 < 1 defizitaer); Tie bei Defizit 2.
+    target = cm.pick_target_box(window, FULL_CFG)
+    assert target[0] == PR
+
+
+def test_unclassified_entries_do_not_shrink_the_window():
+    # 5 unklassifizierte Eintraege vor 10 sauberen: Fenster bleibt 10,
+    # volle Zeilen-Logik greift (Promotion 0 -> defizitaer -> (PM, A)).
+    noise = [("Unbekannt", "X")] * 5
+    clean = [(P, A), (P, E), (P, S), (P, A), (P, E), (P, S),
+             (PR, A), (PR, E), (PR, A), (PR, E)]
+    assert cm.pick_target_box(noise + clean, FULL_CFG) == (PM, A)
 
 
 def test_coverage_line_reports_actuals_vs_targets():
