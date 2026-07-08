@@ -165,6 +165,16 @@ def select_archetype(
         ranked += ["statement_card", "editorial_cover"]
     elif post_format == "POV":
         ranked += ["isometric_scene", "editorial_cover"]
+    elif post_format == "Comparison":
+        ranked += ["two_panel_contrast", "structured_infographic"]
+    elif post_format == "CaseProof":
+        ranked += ["stat_hero", "editorial_cover"]
+    elif post_format == "Method":
+        ranked += ["isometric_scene", "structured_infographic"]
+    elif post_format in ("Debate", "Offer"):
+        ranked += ["statement_card", "editorial_cover"]
+    elif post_format == "Magnet":
+        ranked += ["structured_infographic", "statement_card"]
     # Literal infographic only when the post is genuinely structural.
     if infographic_type in STRUCTURAL_TYPES and layers_count >= 3:
         ranked.append("structured_infographic")

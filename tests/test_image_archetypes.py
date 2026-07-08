@@ -156,3 +156,27 @@ def test_statement_card_renders_full_soundbyte():
         "statement_card", soundbyte="Pipeline is a process, not a prayer", language="English"
     )
     assert "Pipeline is a process, not a prayer" in prompt
+
+
+# --- select_archetype: new formats (Comparison, Method, CaseProof, Debate, Magnet, Offer) ---
+
+def test_comparison_prefers_two_panel_contrast():
+    assert ia.select_archetype(
+        "Comparison", infographic_type="", layers_count=0,
+        has_metaphor=False, has_stat=False,
+    ) == "two_panel_contrast"
+
+
+def test_caseproof_prefers_stat_hero():
+    assert ia.select_archetype(
+        "CaseProof", infographic_type="", layers_count=0,
+        has_metaphor=False, has_stat=False,
+    ) == "stat_hero"
+
+
+def test_debate_and_offer_prefer_statement_card():
+    for fmt in ("Debate", "Offer"):
+        assert ia.select_archetype(
+            fmt, infographic_type="", layers_count=0,
+            has_metaphor=False, has_stat=False,
+        ) == "statement_card"
