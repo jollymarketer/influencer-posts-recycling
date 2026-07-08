@@ -58,6 +58,8 @@ TOKENS = {
     "BELIEF_ACTORS_EN": "founders/sales teams",
     "SCENE_ACTOR_DE": "ein Founder oder Sales-Leader",
     "SCENE_ACTOR_EN": "a founder or sales leader",
+    "COMPARISON_SUBJECT_DE": "externe GTM-Unterstuetzung (Fractional CMO, Outbound-Agentur oder interner Hire)",
+    "COMPARISON_SUBJECT_EN": "external GTM support (fractional CMO, outbound agency, or an internal hire)",
 
     # --- Bild-Prompts ---
     "BRAND_NAME": "Jolly Marketer",
@@ -112,3 +114,53 @@ NOTION_TOKEN_ENV = "NOTION_TOKEN"
 MAKE_WEBHOOK_ENV = "MAKE_REVIEW_WEBHOOK"
 
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
+
+# --- Content-Matrix (Spec 2026-07-08) ---------------------------------------
+# 9 Boxen deklariert; Boxen mit leerem Asset-Block schaltet der Whitelist-Guard
+# in tools/content_matrix.py automatisch ab (aktuell: CaseProof/Magnet/Offer).
+MATRIX = {
+    "mix": {"Perspective": 5, "Proof": 3, "Promotion": 2},  # Soll pro 10 Posts
+    "selection_floor": 2,   # mind. 2 von 10 in der Selection-Spalte
+    "promotion_cap": 2,     # max. 2 von 10 in der Promotion-Zeile
+    "boxes": [(job, stage)
+              for job in ("Perspective", "Proof", "Promotion")
+              for stage in ("Awareness", "Education", "Selection")],
+}
+
+# Nur echte, von Richard freigegebene Zahlen. Leer = CaseProof bleibt aus.
+PROOF_ASSETS: list = []
+
+# Aktuelle Angebote mit CTA-Wortlaut. Leer = Offer-Format bleibt aus.
+OFFERS: list = []
+
+# Existierende Artefakte (PDF, Checkliste, Template). Leer = Magnet bleibt aus.
+LEAD_MAGNETS: list = []
+
+# Content-Personas (v1: Generierungs-Linse + Notion-Tracking; Quota = Phase 2).
+# Wortlaut-Entwurf, Freigabe Richard ausstehend.
+CONTENT_PERSONAS = [
+    {
+        "id": "founder-ceo",
+        "label": "Founder / CEO",
+        "share": "dominant",
+        "pains": "Pipeline nicht planbar, Wachstum haengt am Gruender-Netzwerk, keine interne Rolle die das GTM-System denkt",
+        "kpis": "qualifizierte Meetings pro Monat, CAC, Forecast-Genauigkeit, Zeit bis zum ersten planbaren Kanal",
+        "vocabulary_use": "Planbarkeit, System, Engpass, Prioritaeten, Investition vs. Wette",
+        "vocabulary_avoid": "Marketing-Jargon (MQL, Attribution-Modelle), Tool-Namen als Loesung",
+        "scene_de": "ein Founder, der nach einem starken Quartal ploetzlich in einen leeren Pipeline-Monat laeuft",
+        "scene_en": "a founder who hits an empty-pipeline month right after a strong quarter",
+        "cta_style": "discovery",
+    },
+    {
+        "id": "cro-vp-sales",
+        "label": "CRO / VP Sales",
+        "share": "secondary",
+        "pains": "Team verfehlt Quote trotz Aktivitaet, Uebergaben zwischen Marketing und Sales reissen, Forecast auf Bauchgefuehl",
+        "kpis": "Pipeline-Coverage, Conversion je Stage, Ramp-Zeit neuer Reps, Reply-to-Meeting-Rate",
+        "vocabulary_use": "Coverage, Stage-Conversion, Playbook, Kadenz, Qualifizierung",
+        "vocabulary_avoid": "Brand-Sprech, abstrakte Strategie-Floskeln ohne operativen Hebel",
+        "scene_de": "ein VP Sales im Forecast-Call, der die Luecke zwischen Commit und Realitaet erklaeren muss",
+        "scene_en": "a VP of sales in a forecast call explaining the gap between commit and reality",
+        "cta_style": "discovery",
+    },
+]

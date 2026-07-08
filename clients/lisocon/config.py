@@ -84,6 +84,8 @@ TOKENS = {
     "BELIEF_ACTORS_EN": "marketing and documentation teams",
     "SCENE_ACTOR_DE": "ein Marketingleiter oder Doku-Verantwortlicher",
     "SCENE_ACTOR_EN": "a marketing lead or localization manager",
+    "COMPARISON_SUBJECT_DE": "eine Lösung für mehrsprachige Dokumentproduktion (Agentur-DTP, interne Nacharbeit oder Automatisierung)",
+    "COMPARISON_SUBJECT_EN": "a solution for multilingual document production (agency DTP, internal rework, or automation)",
 
     # --- Bild-Prompts (InTO Brand: warm-ivory premium-editorial, NICHT blau/weiss) ---
     "BRAND_NAME": "lisocon / InTO",
@@ -167,3 +169,58 @@ NOTION_TOKEN_ENV = "NOTION_TOKEN_LISOCON"
 MAKE_WEBHOOK_ENV = "MAKE_REVIEW_WEBHOOK_LISOCON"
 
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
+
+# --- Content-Matrix (Spec 2026-07-08) ---------------------------------------
+# Promotion × Selection ist per Playbook AUSGESCHLOSSEN (kein Demo-CTA, kein
+# Produkt-Pitch) - deklarativ, nicht nur asset-gated. Promotion × Education
+# fällt automatisch weg, solange LEAD_MAGNETS leer ist.
+MATRIX = {
+    "mix": {"Perspective": 5, "Proof": 3, "Promotion": 2},
+    "selection_floor": 2,
+    "promotion_cap": 2,
+    "boxes": [(job, stage)
+              for job in ("Perspective", "Proof", "Promotion")
+              for stage in ("Awareness", "Education", "Selection")
+              if (job, stage) != ("Promotion", "Selection")],
+}
+
+# Einzige erlaubte Referenzen (Playbook), Zahlen exakt so - nie neue erfinden.
+PROOF_ASSETS = [
+    {"id": "hoermann", "claim": "Katalog- und Doku-Produktion automatisiert",
+     "metric": "69% Kostensenkung", "context": "offizielle, freigegebene Zahl"},
+    {"id": "wago", "claim": "mehrsprachige Dokumentproduktion",
+     "metric": "80% Kostenreduktion bei 17 Sprachen", "context": "freigegebene Referenz"},
+    {"id": "stiebel-eltron", "claim": "Dokumentproduktion über 30 Sprachen",
+     "metric": "30 Sprachen im Einsatz", "context": "freigegebene Referenz"},
+]
+
+OFFERS: list = []        # bewusst leer: kein Offer-Content für lisocon
+LEAD_MAGNETS: list = []  # keine Lead Magnets gebaut -> Magnet-Format aus
+
+# Aus der PERSONA-REGEL im CONTEXT strukturiert: genau EINE Achse pro Post.
+CONTENT_PERSONAS = [
+    {
+        "id": "kaeufer",
+        "label": "Käufer/Entscheider (Marketing-/MarCom-/Doku-Leitung)",
+        "share": "dominant",
+        "pains": "versteckte DTP-Nacharbeit sprengt Budget und Timeline, niemand budgetiert die Layout-Kosten nach der Übersetzung",
+        "kpis": "Kosten pro Sprachversion, Time-to-Market mehrsprachiger Materialien, Reklamationen wegen Layout-Fehlern",
+        "vocabulary_use": "versteckte Kosten, Durchlaufzeit, ROI, Prozesskette, druckfertig",
+        "vocabulary_avoid": "Toolbedienung, Feature-Details, Übersetzungsqualität als Thema",
+        "scene_de": "ein Marketingleiter, der die Agentur-Rechnung liest und die DTP-Position zum ersten Mal hinterfragt",
+        "scene_en": "a head of marketing reading the agency invoice and questioning the DTP line item for the first time",
+        "cta_style": "reply",
+    },
+    {
+        "id": "anwender",
+        "label": "Anwender (Translation-Manager, Designer)",
+        "share": "secondary",
+        "pains": "Copy-Paste-Korrekturen in InDesign über Dutzende Sprachversionen, Versionschaos zwischen Übersetzern und Layout",
+        "kpis": "Korrekturschleifen pro Dokument, Stunden Nacharbeit pro Sprache, Fehler nach Freigabe",
+        "vocabulary_use": "Korrekturlauf, Lektorat im Browser, Versionen, Layout-Erhalt",
+        "vocabulary_avoid": "Budget- und ROI-Argumente (Käufer-Achse), Preise",
+        "scene_de": "eine Designerin, die zum dritten Mal denselben Umbruch in zwölf Sprachversionen fixt",
+        "scene_en": "a designer fixing the same line break in twelve language versions for the third time",
+        "cta_style": "reply",
+    },
+]
