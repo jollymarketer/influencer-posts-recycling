@@ -2,11 +2,15 @@
 # BEWUSST OHNE cronSchedule: die Kadenz wird ausschliesslich via GraphQL
 # serviceInstanceUpdate gesteuert (weekly "0 7 * * 1" beim Scharfstellen),
 # damit Deploys eine Pause nie wieder scharf stellen. Jolly-Service nutzt railway.toml.
+#
+# PAUSED-Guard: Railway fuehrt das startCommand bei JEDEM Deploy einmal aus,
+# auch ohne cronSchedule (jeder Push auf master = Auto-Deploy = ein Lauf).
+# Service-Env-Var PAUSED=1 stoppt das deploy-fest; Re-Arm = Var loeschen.
 
 [build]
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python run_research.py"
+startCommand = "sh -c 'if [ \"$PAUSED\" = \"1\" ]; then echo \"lisocon-content-engine PAUSED, skipping run\"; else python run_research.py; fi'"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
