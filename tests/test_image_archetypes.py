@@ -180,3 +180,17 @@ def test_debate_and_offer_prefer_statement_card():
             fmt, infographic_type="", layers_count=0,
             has_metaphor=False, has_stat=False,
         ) == "statement_card"
+
+
+def test_magnet_with_thin_skeleton_avoids_literal_infographic():
+    assert ia.select_archetype(
+        "Magnet", infographic_type="", layers_count=2,
+        has_metaphor=False, has_stat=False,
+    ) == "statement_card"
+
+
+def test_magnet_with_structural_skeleton_prefers_infographic():
+    assert ia.select_archetype(
+        "Magnet", infographic_type="", layers_count=3,
+        has_metaphor=False, has_stat=False,
+    ) == "structured_infographic"

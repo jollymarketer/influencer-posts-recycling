@@ -174,7 +174,10 @@ def select_archetype(
     elif post_format in ("Debate", "Offer"):
         ranked += ["statement_card", "editorial_cover"]
     elif post_format == "Magnet":
-        ranked += ["structured_infographic", "statement_card"]
+        if layers_count >= 3:
+            ranked += ["structured_infographic", "statement_card"]
+        else:
+            ranked += ["statement_card", "editorial_cover"]
     # Literal infographic only when the post is genuinely structural.
     if infographic_type in STRUCTURAL_TYPES and layers_count >= 3:
         ranked.append("structured_infographic")
