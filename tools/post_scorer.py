@@ -54,6 +54,7 @@ DACH_POST_PROMPT = """[[PERSONA_DE]]
 
 KONTEXT:
 {context}
+{persona_block}
 
 Deine Aufgabe: Recycel den folgenden LinkedIn-Post von {influencer} in einen hochwertigen DACH-deutschen Thought-Leadership-Post.
 
@@ -89,6 +90,7 @@ Inhaltliche Regeln:
 - Genau EIN konkretes, scanbares Artefakt liefern, das man speichern will: nummerierte Schritte, eine kurze Checkliste, ein benanntes Framework oder eine harte Zahl. Als abgesetztes Element formatieren, nicht als Fliesstext-Beschreibung. Der Leser muss es in 2 Sekunden als Referenz erkennen. Im Story-Format stattdessen eine einzelne, klar benannte Regel oder Zahl, die haengen bleibt
 - Eine falsche Praxis oder ein Feindbild explizit und hart benennen. Brave Ausgewogenheit ("X ist nicht Y, sondern Z") allein reicht nicht - es braucht eine klare Gegenposition, gegen die jemand argumentieren kann
 
+{assets_block}
 {structure_block}
 
 Formatierung:
@@ -185,6 +187,7 @@ EN_POST_PROMPT = """[[PERSONA_EN]]
 
 CONTEXT:
 {context}
+{persona_block}
 
 Your task: recycle the following LinkedIn post by {influencer} into a high-quality, native English thought-leadership post. Write it natively in English — do NOT translate German phrasing or sentence structure. Same core thesis, your own added thought, but it must read like it was written in English from scratch.
 
@@ -216,6 +219,7 @@ Content rules:
 - Deliver exactly ONE concrete, scannable artifact worth saving: numbered steps, a short checklist, a named framework or a hard number. Format it as a set-apart element, not buried in prose. The reader must recognize it as a reference in 2 seconds. In the Story format, instead give one clearly named rule or number that sticks.
 - Name one wrong practice or enemy explicitly and hard. A balanced "X is not Y, it's Z" alone is not enough — there must be a clear counter-position someone can argue against.
 
+{assets_block}
 {structure_block}
 
 Formatting:
@@ -459,10 +463,12 @@ def _recent_types_lines(recent_infographic_types) -> tuple[str, str]:
 
 
 def _format_prompts(post: dict, post_format: str = "Opinion",
-                    recent_infographic_types=None) -> tuple[str, str]:
-    """Pure builder: returns (de_prompt, en_prompt) with the format structure and
-    the infographic-type anti-repeat line injected. Unknown format keys fall back
-    to Opinion. No API calls."""
+                    recent_infographic_types=None,
+                    assets_de: str = "", assets_en: str = "",
+                    persona_de: str = "", persona_en: str = "") -> tuple[str, str]:
+    """Pure builder: returns (de_prompt, en_prompt) with the format structure,
+    the infographic anti-repeat line, and optional persona/asset blocks
+    injected. Unknown format keys fall back to Opinion. No API calls."""
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
     de = DACH_POST_PROMPT.format(
@@ -471,6 +477,8 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         post_text=post["post_text"][:3000],
         structure_block=structures["de"],
         recent_types_line=de_recent,
+        persona_block=persona_de,
+        assets_block=assets_de,
     )
     en = EN_POST_PROMPT.format(
         context=CLIENT_CONTEXT,
@@ -478,6 +486,8 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         post_text=post["post_text"][:3000],
         structure_block=structures["en"],
         recent_types_line=en_recent,
+        persona_block=persona_en,
+        assets_block=assets_en,
     )
     return de, en
 
@@ -654,6 +664,111 @@ def rank_box_fit(scored_posts: list, box, formats: list, min_fit: int = 6):
     except Exception as e:
         print(f"  Box-Fit-Rank fehlgeschlagen (Fallback: freier Run): {e}")
         return None
+
+
+PERSONA_BLOCK_DE = """ZIEL-PERSONA fuer diesen Post (genau EINE Persona, deren Wertachse nie mit einer anderen mischen):
+- Rolle: {label}
+- Schmerzpunkte: {pains}
+- KPIs die zaehlen: {kpis}
+- Vokabular nutzen: {vocabulary_use}
+- Vokabular meiden: {vocabulary_avoid}
+- Typische Szene: {scene}"""
+
+PERSONA_BLOCK_EN = """TARGET PERSONA for this post (exactly ONE persona, never mix its value axis with another):
+- Role: {label}
+- Pains: {pains}
+- KPIs that matter: {kpis}
+- Vocabulary to use: {vocabulary_use}
+- Vocabulary to avoid: {vocabulary_avoid}
+- Typical scene: {scene}"""
+
+
+def persona_block(persona, lang: str) -> str:
+    """Persona-Linse fuer den Generierungs-Prompt. None/leer -> ""."""
+    if not persona:
+        return ""
+    template = PERSONA_BLOCK_DE if lang == "de" else PERSONA_BLOCK_EN
+    return template.format(
+        label=persona.get("label", ""),
+        pains=persona.get("pains", ""),
+        kpis=persona.get("kpis", ""),
+        vocabulary_use=persona.get("vocabulary_use", ""),
+        vocabulary_avoid=persona.get("vocabulary_avoid", ""),
+        scene=persona.get("scene_de" if lang == "de" else "scene_en", ""),
+    )
+
+
+_ASSET_BLOCK_HEADERS = {
+    "CaseProof": ("CASE-ASSET (einzige erlaubte Zahlenquelle, Zahlen woertlich uebernehmen)",
+                  "CASE ASSET (the only allowed source of numbers, use them verbatim)"),
+    "Magnet": ("LEAD-MAGNET-ASSET (dieses Artefakt bewirbt der Post, CTA-Keyword woertlich nutzen)",
+               "LEAD MAGNET ASSET (the artifact this post promotes, use the CTA keyword verbatim)"),
+    "Offer": ("OFFER-ASSET (dieses Angebot bewirbt der Post, CTA woertlich uebernehmen)",
+              "OFFER ASSET (the offer this post promotes, use the CTA verbatim)"),
+}
+
+
+def assets_block(post_format: str, asset, lang: str) -> str:
+    """Asset-Whitelist-Block fuer CaseProof/Magnet/Offer. Sonst ""."""
+    if not asset or post_format not in _ASSET_BLOCK_HEADERS:
+        return ""
+    header = _ASSET_BLOCK_HEADERS[post_format][0 if lang == "de" else 1]
+    lines = [f"- {k}: {v}" for k, v in asset.items() if isinstance(v, str) and v]
+    return header + ":\n" + "\n".join(lines)
+
+
+PICK_PERSONA_PROMPT = """Du waehlst die Ziel-Persona fuer einen LinkedIn-Post.
+
+PERSONAS:
+{persona_menu}
+
+QUELL-POST:
+{post_text}
+
+Regel: Waehle die Persona, deren Schmerzpunkte der Quell-Post am direktesten trifft. Im Zweifel: {dominant_id}.
+Antworte NUR mit der id, nichts sonst."""
+
+
+def pick_persona(post: dict, cfg, recent_personas: list):
+    """v1-Persona-Wahl: Best-Fit zum Quell-Post, im Zweifel dominante Persona,
+    dieselbe Sekundaer-Persona nie zweimal hintereinander. Wirft nie.
+    Mandant ohne CONTENT_PERSONAS -> None (statische Audience-Tokens gelten)."""
+    personas = getattr(cfg, "CONTENT_PERSONAS", None) or []
+    if not personas:
+        return None
+    by_id = {p["id"]: p for p in personas}
+    dominant = next((p for p in personas if p.get("share") == "dominant"), personas[0])
+    if len(personas) == 1:
+        return dominant
+
+    choice_id = dominant["id"]
+    try:
+        menu = "\n".join(
+            f"- {p['id']}: {p['label']} | Schmerzpunkte: {p['pains']}" for p in personas
+        )
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=20,
+            messages=[{"role": "user", "content": PICK_PERSONA_PROMPT.format(
+                persona_menu=menu,
+                post_text=post["post_text"][:2000],
+                dominant_id=dominant["id"],
+            )}],
+        )
+        raw = response.content[0].text.strip().lower()
+        for pid in by_id:
+            if pid in raw:
+                choice_id = pid
+                break
+    except Exception as e:
+        print(f"  Persona-Pick fehlgeschlagen, Fallback dominant: {e}")
+
+    chosen = by_id[choice_id]
+    # Sekundaer-Persona nie zweimal in Folge.
+    if (chosen["id"] != dominant["id"] and recent_personas
+            and recent_personas[0] == chosen["id"]):
+        return dominant
+    return chosen
 
 
 IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for [[BRAND_NAME]] that communicates the core idea of the post through one clear, strategically strong visual concept.
@@ -1001,15 +1116,23 @@ def _parse_generation_response(raw: str) -> dict:
 
 
 def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
-                                   recent_infographic_types=None) -> tuple[str, str, str, str, str, str]:
+                                   recent_infographic_types=None,
+                                   assets_de: str = "", assets_en: str = "",
+                                   persona_de: str = "", persona_en: str = "") -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Das Bild wird aus den EN-Teilen (Soundbyte + Infografik) gebaut.
     post_format waehlt den Struktur-Block (Opinion/POV/Signature).
     recent_infographic_types steuert das Anti-Repeat des Infografik-Typs.
+    assets_de/assets_en und persona_de/persona_en sind vorgefertigte Prompt-
+    Bloecke (siehe assets_block/persona_block), Default "" bleibt wirkungslos.
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton, soundbyte, kontext)
     zurueck. soundbyte/kontext speisen den Bild-Archetyp-Router (image_archetypes).
     """
-    de_prompt, en_prompt = _format_prompts(post, post_format, recent_infographic_types)
+    de_prompt, en_prompt = _format_prompts(
+        post, post_format, recent_infographic_types,
+        assets_de=assets_de, assets_en=assets_en,
+        persona_de=persona_de, persona_en=persona_en,
+    )
 
     de_resp = client.messages.create(
         model="claude-sonnet-4-6",
