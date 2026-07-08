@@ -602,7 +602,7 @@ def pick_format(post: dict, recent_formats: list[str],
     return candidates[0]
 
 
-RANK_BOX_FIT_PROMPT = """Du prueftst, welcher Quell-Post am besten ein bestimmtes Content-Format tragen kann.
+RANK_BOX_FIT_PROMPT = """Du pruefst, welcher Quell-Post am besten ein bestimmtes Content-Format tragen kann.
 
 ZIEL-BOX: {job} x {stage}
 ZIEL-FORMAT(E): {formats} - {format_desc}
@@ -622,11 +622,11 @@ def rank_box_fit(scored_posts: list, box, formats: list, min_fit: int = 6):
     Jeder Fehler -> None (Run faellt auf freien Best-Fit zurueck)."""
     if not scored_posts:
         return None
-    numbered = "\n".join(
-        f"[{i}] ({p['influencer']}) {p['post_text'][:400]}"
-        for i, p in enumerate(scored_posts)
-    )
     try:
+        numbered = "\n".join(
+            f"[{i}] ({p['influencer']}) {p['post_text'][:400]}"
+            for i, p in enumerate(scored_posts)
+        )
         prompt = RANK_BOX_FIT_PROMPT.format(
             job=box[0], stage=box[1],
             formats=", ".join(formats),
