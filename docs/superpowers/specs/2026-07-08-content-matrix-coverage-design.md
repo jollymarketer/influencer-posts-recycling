@@ -272,6 +272,33 @@ by the numbers guard.
 4. `workflows/content_generation.md` (manual path) is updated in the same
    change — it was the unprotected path once before.
 
+## Implementation amendments (2026-07-08, from task + final reviews)
+
+Deviations from the text above that the implementation deliberately made;
+the code and tests govern:
+
+1. `free_formats` excludes promotion formats AND asset-gated formats
+   (CaseProof/Magnet/Offer run only via their quota/asset path, never the
+   free-fill pool) — paces rare case numbers, keeps the cap deterministic.
+2. Numbers-guard regex: currency tokens are word-boundary-anchored
+   ("Ingenieur 40" no longer matches as eur40); euro sign written as a
+   unicode escape (ASCII source). Convention: asset metric strings use
+   spaced or symbol currency forms ("40 EUR", "40 €"), never "USD100".
+3. Magnet image archetype is layers-gated: structured infographic first
+   only for >= 3 skeleton layers, else statement card.
+4. Quota window fetches 50 pages and filters client-side before cutting to
+   10 (property-less pages must not shrink the window); Selection floor
+   defers one run when the newest classified post is already Selection
+   (no back-to-back forced Comparisons).
+5. Asset-format backstop in the pipeline: an asset format without a
+   resolved asset (e.g. Notion getter failure) falls back to a free run —
+   it never generates unguarded. Asset formats always address the dominant
+   persona (v1 mitigation of the persona/asset value-axis clash).
+6. CaseProof prompt additionally forbids naming any other reference or
+   client case, even other approved ones (isolates the guard from the
+   client CONTEXT's social-proof list).
+7. Box-quota winner override only picks from posts >= MIN_SCORE.
+
 ## Open inputs (Richard)
 
 Blocking only the asset-gated formats, nothing else:
