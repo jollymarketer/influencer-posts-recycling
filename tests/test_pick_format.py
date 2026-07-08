@@ -48,3 +48,24 @@ def test_api_exception_falls_back():
     with patch.object(post_scorer, "client", c):
         result = post_scorer.pick_format(POST, ["Signature"])
     assert result in ("Opinion", "POV")
+
+
+def test_single_candidate_skips_llm_and_beats_anti_repeat():
+    c = MagicMock()  # must not be called
+    with patch.object(post_scorer, "client", c):
+        assert post_scorer.pick_format(POST, ["CaseProof"], candidates=["CaseProof"]) == "CaseProof"
+    c.messages.create.assert_not_called()
+
+
+def test_candidates_restrict_choice():
+    with patch.object(post_scorer, "client", _mock_client("Opinion")):
+        result = post_scorer.pick_format(POST, [], candidates=["POV", "Signature"])
+    assert result in ("POV", "Signature")  # Opinion not offered
+
+
+def test_candidate_prompt_lists_only_candidates():
+    c = _mock_client("POV")
+    with patch.object(post_scorer, "client", c):
+        post_scorer.pick_format(POST, [], candidates=["POV", "Signature"])
+    prompt = c.messages.create.call_args.kwargs["messages"][0]["content"]
+    assert "POV" in prompt and "Signature" in prompt and "Opinion" not in prompt

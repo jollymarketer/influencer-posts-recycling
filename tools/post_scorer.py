@@ -7,6 +7,7 @@ Post Scorer & Content Generator via Claude API.
 import json
 import math
 import os
+import re
 
 import anthropic
 from dotenv import load_dotenv
@@ -91,6 +92,7 @@ Inhaltliche Regeln:
 {structure_block}
 
 Formatierung:
+- Kein Markdown: keine **Sternchen** fuer Fettung, kein *kursiv*, keine #-Ueberschriften. LinkedIn rendert Markdown nicht, die Zeichen erscheinen woertlich im Post
 - Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, nicht nach jedem Satz
 - Hoechstens EIN Formatierungselement auswaehlen (Story-Format: keines):
   * Emoji-Liste (mind. 3 gleichwertige Punkte): z.B. 📍 fuer Befunde, 👉 fuer Empfehlungen
@@ -217,6 +219,7 @@ Content rules:
 {structure_block}
 
 Formatting:
+- No Markdown: no **asterisks** for bold, no *italics*, no # headings. LinkedIn does not render Markdown, the characters appear literally in the post.
 - Paragraphs may be 2-4 sentences. Not every sentence is its own paragraph. Blank lines only between thematic blocks.
 - Pick at most ONE formatting element (Story format: none):
   * Emoji list (at least 3 equal items): e.g. 📍 for findings, 👉 for recommendations
@@ -519,13 +522,24 @@ def normalize_infographic_type(raw: str) -> str:
 
 VALID_FORMATS = ("Opinion", "POV", "Signature", "Story")
 
+# Kurzbeschreibung je Format fuer den Auswahl-Prompt.
+FORMAT_PICK_DESCRIPTIONS = {
+    "Opinion": "kontroverse These gegen eine gaengige Praxis.",
+    "POV": "eine strukturierte Denk-Linse / ein Framework.",
+    "Signature": '"Glaube vs. Realitaet" - verbreitete Annahme gegen das was wirklich zaehlt.',
+    "Story": "eine konkrete Szene oder Anekdote aus der Praxis, erzaehlend statt Liste.",
+    "Comparison": "Entscheidungshilfe: harte Kriterien und Red Flags fuer eine Auswahl.",
+    "Method": "Schritt-fuer-Schritt-Methode mit dem typischen Stolperstein.",
+    "CaseProof": "echtes Kundenergebnis, getragen von einer belegten Zahl.",
+    "Debate": "polarisierende Entweder-Oder-These, die explizit zur Antwort auffordert.",
+    "Magnet": "wertvolles Artefakt mit Kommentar-CTA.",
+    "Offer": "konkretes Angebot mit ehrlichem naechsten Schritt.",
+}
+
 PICK_FORMAT_PROMPT = """Du waehlst das Post-Format fuer einen Recycling-Post.
 
 Verfuegbare Formate:
-- Opinion: kontroverse These gegen eine gaengige Praxis.
-- POV: eine strukturierte Denk-Linse / ein Framework.
-- Signature: "Glaube vs. Realitaet" - verbreitete Annahme gegen das was wirklich zaehlt.
-- Story: eine konkrete Szene oder Anekdote aus der Praxis, erzaehlend statt Liste.
+{format_menu}
 
 QUELL-POST:
 {post_text}
@@ -535,13 +549,21 @@ QUELL-POST:
 Regeln:
 - Waehle das Format das am besten zum Thema des Quell-Posts passt.
 - Das zuletzt genutzte Format ist verboten (nie zweimal hintereinander).
-- Antworte mit EINEM Wort: Opinion, POV oder Signature. Nichts sonst."""
+- Antworte mit EINEM Wort: {format_names}. Nichts sonst."""
 
 
-def pick_format(post: dict, recent_formats: list[str]) -> str:
-    """Waehlt Opinion/POV/Signature: bester Topic-Fit, aber nie das zuletzt
-    genutzte Format. Faellt deterministisch zurueck und wirft nie."""
-    recent_formats = [f for f in recent_formats if f]  # None/leere Werte droppen
+def pick_format(post: dict, recent_formats: list[str],
+                candidates: list[str] | None = None) -> str:
+    """Waehlt das Format unter den Kandidaten: bester Topic-Fit, aber nie das
+    zuletzt genutzte Format. candidates=None -> die 4 Legacy-Formate.
+    Genau EIN Kandidat (Pflicht-Box) -> direkt zurueck, ohne API-Call und
+    ohne Anti-Repeat (Quota schlaegt Wiederholungs-Regel).
+    Faellt deterministisch zurueck und wirft nie."""
+    candidates = list(candidates) if candidates else list(VALID_FORMATS)
+    if len(candidates) == 1:
+        return candidates[0]
+
+    recent_formats = [f for f in recent_formats if f]
     most_recent = recent_formats[0] if recent_formats else None
 
     if recent_formats:
@@ -552,10 +574,15 @@ def pick_format(post: dict, recent_formats: list[str]) -> str:
     else:
         recent_section = "Zuletzt genutzte Formate: keine."
 
+    format_menu = "\n".join(
+        f"- {f}: {FORMAT_PICK_DESCRIPTIONS.get(f, '')}" for f in candidates
+    )
     try:
         prompt = PICK_FORMAT_PROMPT.format(
+            format_menu=format_menu,
             post_text=post["post_text"][:3000],
             recent_section=recent_section,
+            format_names=", ".join(candidates),
         )
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
@@ -563,17 +590,16 @@ def pick_format(post: dict, recent_formats: list[str]) -> str:
             messages=[{"role": "user", "content": prompt}],
         )
         choice = response.content[0].text.strip()
-        for f in VALID_FORMATS:
+        for f in candidates:
             if f.lower() in choice.lower() and f != most_recent:
                 return f
     except Exception as e:
         print(f"  Format-Pick fehlgeschlagen, Fallback: {e}")
 
-    # Deterministic fallback: first valid format that is not the most recent.
-    for f in VALID_FORMATS:
+    for f in candidates:
         if f != most_recent:
             return f
-    return "Opinion"
+    return candidates[0]
 
 
 IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for [[BRAND_NAME]] that communicates the core idea of the post through one clear, strategically strong visual concept.
@@ -858,6 +884,27 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
     return sorted(scored, key=lambda x: x["score"], reverse=True)
 
 
+def sanitize_generated_text(text: str) -> str:
+    """Deterministische Nachbereitung der LLM-Drafts (Kundenfeedback lisocon 2026-07-08).
+    Prompt-Verbote allein halten nicht zuverlaessig:
+    - Markdown-Sternchen: LinkedIn rendert kein Markdown, **fett** erscheint woertlich
+    - Em/En-Dash als Gedankenstrich liest als KI-Signal -> Komma;
+      Zahlenbereiche behalten einen normalen Bindestrich, Strich-Bullets werden "- "
+    """
+    text = text.replace("**", "")
+    text = re.sub(r"(?m)^([ \t]*)[—–][ \t]+", r"\1- ", text)
+    text = re.sub(r"(?<=\d)[ \t]*[—–][ \t]*(?=\d)", "-", text)
+    text = re.sub(r"[ \t]*[—–][ \t]*", ", ", text)
+    return text
+
+
+def _append_cta(text: str, cta: str) -> str:
+    """Haengt den Mandanten-CTA (CTA_DE/CTA_EN in der Client-Config) ganz unten an."""
+    if not cta or not text:
+        return text
+    return text.rstrip() + "\n\n" + cta
+
+
 def _parse_generation_response(raw: str) -> dict:
     """Zerlegt eine LLM-Antwort an den ===MARKER=== in ihre Teile.
     Gibt dict mit keys post, soundbyte, kontext, infografik zurueck.
@@ -915,7 +962,10 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         max_tokens=2048,
         messages=[{"role": "user", "content": de_prompt}],
     )
-    de_draft = _parse_generation_response(de_resp.content[0].text.strip())["post"]
+    de_draft = sanitize_generated_text(
+        _parse_generation_response(de_resp.content[0].text.strip())["post"]
+    )
+    de_draft = _append_cta(de_draft, getattr(_cfg, "CTA_DE", ""))
 
     en_resp = client.messages.create(
         model="claude-sonnet-4-6",
@@ -923,8 +973,9 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         messages=[{"role": "user", "content": en_prompt}],
     )
     en_parts = _parse_generation_response(en_resp.content[0].text.strip())
-    en_draft = en_parts["post"]
-    sound_byte = en_parts["soundbyte"]
+    en_draft = _append_cta(sanitize_generated_text(en_parts["post"]),
+                           getattr(_cfg, "CTA_EN", ""))
+    sound_byte = sanitize_generated_text(en_parts["soundbyte"])
     kontext = en_parts["kontext"]
     infographic_skeleton = en_parts["infografik"]
 
