@@ -361,6 +361,80 @@ Erfinde dabei keine konkreten Namen, Umsatzzahlen oder Fallstudien. Eine generis
 4. Close: an open loop - a specific, arguable question or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.
 Do not invent specific names, revenue figures or case studies. A generic, plausible scene without fabricated specifics - or a recognizable pattern ("I see this often") instead of an invented single case. This format uses NO emoji list and NO ASCII box.""",
     },
+    "Comparison": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Der Entscheidungs-Moment - jemand steht vor der Wahl von [[COMPARISON_SUBJECT_DE]] und waehlt nach den falschen Kriterien. Entscheidet ob jemand weiterliest.
+2. Entscheidungskriterien: 3-5 harte Kriterien oder Red Flags als scanbares Artefakt (das ist das eine Artefakt dieses Posts). Jedes Kriterium konkret pruefbar, keine Allgemeinplaetze.
+3. Einordnung: Wann welche Option wirklich passt - inklusive mindestens einem ehrlichen Fall, in dem die eigene Kategorie NICHT die richtige Wahl ist. Kein Wettbewerber-Bashing, keine Namen.
+4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage zur Entscheidungslogik oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): the decision moment - someone choosing [[COMPARISON_SUBJECT_EN]] using the wrong criteria. Decides whether anyone reads on.
+2. Decision criteria: 3-5 hard criteria or red flags as the scannable artifact of this post. Each one concretely checkable, no platitudes.
+3. Placement: when each option genuinely fits - including at least one honest case where your own category is NOT the right choice. No competitor bashing, no names.
+4. Close: an open loop - a specific, arguable question about the decision logic, or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.""",
+    },
+    "Method": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Das Ergebnis oder der Engpass, den die Methode adressiert - konkret, nicht abstrakt. Entscheidet ob jemand weiterliest.
+2. Methode: 3-5 nummerierte Schritte (➊ ➋ ➌) als das eine scanbare Artefakt. Jeder Schritt eine Handlung mit erkennbarem Output, keine Theorie.
+3. Stolperstein: Der eine Punkt, an dem Teams in der Praxis scheitern, und wie man ihn umgeht. Ein eigener Gedanke, den der Quell-Post nicht hat. Vorher-Nachher nur qualitativ - keine erfundenen Zahlen.
+4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage zur Methode oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): the outcome or bottleneck the method addresses - concrete, not abstract. Decides whether anyone reads on.
+2. Method: 3-5 numbered steps (➊ ➋ ➌) as the one scannable artifact. Each step an action with a visible output, no theory.
+3. Pitfall: the one point where teams fail in practice and how to avoid it. One original thought the source post does not have. Before/after only qualitative - no invented numbers.
+4. Close: an open loop - a specific, arguable question about the method, or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.""",
+    },
+    "CaseProof": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Die Ergebnis-Zahl aus dem CASE-ASSET unten, im Kontext des Problems. Entscheidet ob jemand weiterliest.
+2. Ausgangslage: Wo das Unternehmen vorher stand und warum der Status quo teuer war. Konkret, ohne erfundene Details.
+3. Weg: Was konkret veraendert wurde (Methode, Reihenfolge, Entscheidung) - als kurzes scanbares Artefakt. Ein eigener Gedanke, den der Quell-Post nicht hat.
+4. Abschluss: Das Learning als uebertragbare Regel plus offene Schleife (streitbare Frage oder Flag-Plant-Zeile). Kein DM-CTA.
+Harte Zahlen-Regel: JEDE Zahl mit Einheit (Prozent, Euro, x-fach) stammt woertlich aus dem CASE-ASSET-Block. Keine weiteren Zahlen erfinden, auch keine plausiblen. Firmenname nur wenn im Asset genannt.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): the result number from the CASE ASSET below, framed by the problem. Decides whether anyone reads on.
+2. Starting point: where the company stood before and why the status quo was expensive. Concrete, no invented detail.
+3. Path: what concretely changed (method, sequence, decision) - as a short scannable artifact. One original thought the source post does not have.
+4. Close: the learning as a transferable rule plus an open loop (arguable question or flag-plant line). No DM CTA.
+Hard numbers rule: EVERY unit-bearing number (percent, currency, x-times) is taken verbatim from the CASE ASSET block. Invent no further numbers, not even plausible ones. Company name only if the asset names it.""",
+    },
+    "Debate": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Eine polarisierende Entweder-Oder-These, bei der sich beide Lager sofort angesprochen fuehlen. Entscheidet ob jemand weiterliest.
+2. Zwei Lager: Beide Positionen kurz und fair in je 2-3 Saetzen - so, dass Vertreter beider Seiten sich wiedererkennen. Konkret, nicht abstrakt.
+3. Eigene Position: Auf welcher Seite du stehst und der eine Beleg aus der Praxis. Ein eigener Gedanke, den der Quell-Post nicht hat.
+4. Abschluss: Explizite Aufforderung, sich in den Kommentaren fuer ein Lager zu entscheiden und die Wahl zu begruenden. Das ist der Kern dieses Formats. Kein DM-CTA, keine Umfrage-Mechanik ausserhalb der Kommentare.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): a polarizing either-or thesis both camps instantly react to. Decides whether anyone reads on.
+2. Two camps: both positions short and fair, 2-3 sentences each - so members of either side recognize themselves. Concrete, not abstract.
+3. Your position: which camp you are in and the one proof from practice. One original thought the source post does not have.
+4. Close: an explicit prompt to pick a camp in the comments and justify the pick. That prompt is the point of this format. No DM CTA, no poll mechanics outside the comments.""",
+    },
+    "Magnet": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Das Problem, das das LEAD-MAGNET-ASSET unten loest - aus der Praxis, nicht als Werbetext. Entscheidet ob jemand weiterliest.
+2. Substanz-Vorschau: 3-5 konkrete Punkte aus dem Artefakt als scanbares Element - genug Wert, dass der Post auch ohne Download traegt. Keine leeren Teaser.
+3. Einordnung: Fuer wen das Artefakt gedacht ist und was es NICHT ist (Erwartungen ehrlich setzen). Ein eigener Gedanke, den der Quell-Post nicht hat.
+4. Abschluss: Genau EIN Kommentar-CTA mit dem Keyword aus dem LEAD-MAGNET-ASSET (z.B. "Kommentiere KEYWORD, ich schicke es dir"). Kein DM-CTA daneben, kein kuenstlicher Zeitdruck, keine Follower-Bedingung.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): the problem the LEAD MAGNET ASSET below solves - from practice, not ad copy. Decides whether anyone reads on.
+2. Substance preview: 3-5 concrete points from the artifact as the scannable element - enough value that the post stands without the download. No empty teasers.
+3. Placement: who the artifact is for and what it is NOT (set expectations honestly). One original thought the source post does not have.
+4. Close: exactly ONE comment CTA using the keyword from the LEAD MAGNET ASSET (e.g. "Comment KEYWORD and I'll send it over"). No DM CTA next to it, no fake scarcity, no follow-gate.""",
+    },
+    "Offer": {
+        "de": """Post-Struktur (ohne explizite Benennung):
+1. Hook (1-2 Saetze): Das Ergebnis, das das OFFER-ASSET unten verspricht, verankert im Problem der Zielgruppe. Kein Marktschreier-Ton. Entscheidet ob jemand weiterliest.
+2. Passung: Fuer wen das Angebot gebaut ist (2-3 harte Fit-Kriterien) und fuer wen explizit nicht. Ehrlichkeit ist der Differenzierer.
+3. Inhalt: Was konkret drinsteckt - 3-4 Punkte als scanbares Artefakt, Ablauf oder Bestandteile. Ein eigener Gedanke, warum JETZT der richtige Zeitpunkt ist (Markt-Logik, kein Druck).
+4. Abschluss: Genau EIN CTA, woertlich aus dem OFFER-ASSET (DM oder Discovery-Call). Kein kuenstlicher Zeitdruck, keine erfundene Verknappung, keine Fake-Slots. Preise nur wenn im Asset genannt.""",
+        "en": """Post structure (without labeling it):
+1. Hook (1-2 sentences): the outcome the OFFER ASSET below promises, anchored in the audience's problem. No carnival-barker tone. Decides whether anyone reads on.
+2. Fit: who the offer is built for (2-3 hard fit criteria) and who it is explicitly not for. Honesty is the differentiator.
+3. Contents: what is concretely inside - 3-4 points as the scannable artifact, sequence or components. One original thought on why NOW is the right time (market logic, no pressure).
+4. Close: exactly ONE CTA, taken verbatim from the OFFER ASSET (DM or discovery call). No fake scarcity, no invented urgency, no fake slots. Pricing only if the asset states it.""",
+    },
 }
 FORMAT_STRUCTURES = {
     fmt: {lang: apply_tokens(text, _cfg) for lang, text in variants.items()}
