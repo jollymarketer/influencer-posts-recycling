@@ -163,6 +163,14 @@ def test_unclassified_entries_do_not_shrink_the_window():
     assert cm.pick_target_box(noise + clean, FULL_CFG) == (PM, A)
 
 
+def test_row_at_exactly_mix_minus_one_is_not_deficient():
+    # Proof genau bei mix-1 (2 von Soll 3): unter Soll, aber nicht um einen
+    # vollen Post -> nicht defizitaer -> None.
+    window = [(P, A), (P, E), (P, S), (P, A), (P, E), (P, S),
+              (PR, A), (PR, E), (PM, A), (PM, E)]
+    assert cm.pick_target_box(window, FULL_CFG) is None
+
+
 def test_coverage_line_reports_actuals_vs_targets():
     window = [(P, A)] * 6 + [(PR, E)] * 2 + [(PM, A)] * 2
     line = cm.coverage_line(window, FULL_CFG)

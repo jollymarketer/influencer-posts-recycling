@@ -88,7 +88,7 @@ def free_formats(cfg) -> list:
 
 def _window(recent_boxes: list) -> list:
     """Die letzten (bis zu) 10 KLASSIFIZIERTEN Boxen: erst filtern, dann
-    schneiden — unklassifizierte Eintraege duerfen das Fenster nicht verkuerzen."""
+    schneiden: unklassifizierte Eintraege duerfen das Fenster nicht verkuerzen."""
     return [tuple(b) for b in recent_boxes if tuple(b) in BOX_FORMATS][:10]
 
 
