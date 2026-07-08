@@ -78,3 +78,75 @@ def test_formats_for_box_and_free_formats():
 def test_free_formats_fallback_when_matrix_missing():
     cfg = SimpleNamespace()
     assert cm.free_formats(cfg) == ["Opinion", "POV", "Signature", "Story"]
+
+
+P, PR, PM = "Perspective", "Proof", "Promotion"
+A, E, S = "Awareness", "Education", "Selection"
+FULL_CFG = _cfg(boxes=ALL_BOXES, proof=[{"id": "a"}],
+                offers=[{"id": "b"}], magnets=[{"id": "c"}])
+
+
+def test_pick_target_none_when_matrix_missing():
+    assert cm.pick_target_box([(P, A)] * 10, SimpleNamespace()) is None
+
+
+def test_pick_target_none_below_five_classified():
+    assert cm.pick_target_box([(P, A)] * 4, FULL_CFG) is None
+
+
+def test_partial_window_enforces_only_selection_floor():
+    # 6 classified, zero Selection -> floor violated -> a Selection box.
+    window = [(P, A), (P, E), (P, A), (PR, A), (P, E), (P, A)]
+    target = cm.pick_target_box(window, FULL_CFG)
+    assert target is not None and target[1] == S
+    # row with the largest deficit that owns a whitelisted Selection box:
+    # counts P=5 (target 5, deficit 0), Proof=1 (deficit 2), Promo=0 (deficit 2)
+    # tie Proof/Promotion -> fixed order puts Proof first.
+    assert target == (PR, S)
+
+
+def test_partial_window_with_floor_met_returns_none():
+    # 6 classified incl. 2 Selection -> floor ok, row quotas not yet enforced.
+    window = [(P, S), (PR, S), (P, A), (P, E), (P, A), (P, A)]
+    assert cm.pick_target_box(window, FULL_CFG) is None
+
+
+def test_floor_pick_skips_promotion_when_cap_reached():
+    # zero Selection, but already 2 promotion posts -> Promotion x Selection
+    # is not a valid floor target; Proof x Selection gated off (no assets).
+    cfg = _cfg(boxes=ALL_BOXES)  # 6 effective boxes, only P x S has Selection
+    window = [(PM, A), (PM, E), (P, A), (P, E), (P, A), (PR, A),
+              (P, A), (P, E), (PR, A), (P, A)]
+    assert cm.pick_target_box(window, cfg) == (P, S)
+
+
+def test_full_window_row_deficit_targets_promotion():
+    # P=6, Proof=4, Promo=0 -> Promotion deficient (0 < 2-1). Stage least
+    # represented within Promotion boxes; all promo stages at 0 -> order A first.
+    window = [(P, A), (P, E), (P, S), (P, A), (P, E), (P, S),
+              (PR, A), (PR, E), (PR, A), (PR, E)]
+    assert cm.pick_target_box(window, FULL_CFG) == (PM, A)
+
+
+def test_full_window_balanced_returns_none():
+    window = [(P, A), (P, E), (P, S), (P, A), (P, E),
+              (PR, A), (PR, E), (PR, S), (PM, A), (PM, E)]
+    assert cm.pick_target_box(window, FULL_CFG) is None
+
+
+def test_full_window_promotion_deficit_blocked_by_cap():
+    # Promotion count 2 == cap -> even though Proof fine and P over target,
+    # no promotion target may be produced; here nothing else is deficient.
+    window = [(P, A), (P, E), (P, S), (P, A), (P, E), (P, S),
+              (PR, A), (PR, E), (PM, A), (PM, E)]
+    # P=6 (no deficit possible upward), Proof=2 (2 < 3-1 is False), Promo at cap.
+    assert cm.pick_target_box(window, FULL_CFG) is None
+
+
+def test_coverage_line_reports_actuals_vs_targets():
+    window = [(P, A)] * 6 + [(PR, E)] * 2 + [(PM, A)] * 2
+    line = cm.coverage_line(window, FULL_CFG)
+    assert "Perspective 6/5" in line
+    assert "Proof 2/3" in line
+    assert "Promotion 2/2" in line
+    assert "Selection 0/2" in line
