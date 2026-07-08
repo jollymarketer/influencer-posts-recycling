@@ -602,6 +602,60 @@ def pick_format(post: dict, recent_formats: list[str],
     return candidates[0]
 
 
+RANK_BOX_FIT_PROMPT = """Du prueftst, welcher Quell-Post am besten ein bestimmtes Content-Format tragen kann.
+
+ZIEL-BOX: {job} x {stage}
+ZIEL-FORMAT(E): {formats} - {format_desc}
+
+KANDIDATEN (nummeriert):
+{numbered_posts}
+
+Bewerte je Kandidat mit fit 0-10: Wie gut laesst sich aus DIESEM Quell-Post ein Post im Ziel-Format machen? 10 = der Quell-Post liefert die Struktur praktisch mit, 0 = passt gar nicht.
+
+Antworte NUR mit validem JSON (kein Markdown):
+[{{"index": 0, "fit": X}}, {{"index": 1, "fit": X}}, ...]"""
+
+
+def rank_box_fit(scored_posts: list, box, formats: list, min_fit: int = 6):
+    """Re-rankt die Top-Kandidaten auf Tauglichkeit fuer die Pflicht-Box.
+    Gibt den Index des besten Posts mit fit >= min_fit zurueck, sonst None.
+    Jeder Fehler -> None (Run faellt auf freien Best-Fit zurueck)."""
+    if not scored_posts:
+        return None
+    numbered = "\n".join(
+        f"[{i}] ({p['influencer']}) {p['post_text'][:400]}"
+        for i, p in enumerate(scored_posts)
+    )
+    try:
+        prompt = RANK_BOX_FIT_PROMPT.format(
+            job=box[0], stage=box[1],
+            formats=", ".join(formats),
+            format_desc=" / ".join(FORMAT_PICK_DESCRIPTIONS.get(f, "") for f in formats),
+            numbered_posts=numbered,
+        )
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=400,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = response.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip()
+        ranking = json.loads(raw)
+        best_index, best_fit = None, min_fit - 1
+        for entry in ranking:
+            idx, fit = int(entry["index"]), int(entry["fit"])
+            if 0 <= idx < len(scored_posts) and fit > best_fit:
+                best_index, best_fit = idx, fit
+        return best_index
+    except Exception as e:
+        print(f"  Box-Fit-Rank fehlgeschlagen (Fallback: freier Run): {e}")
+        return None
+
+
 IMAGE_PROMPT_TEMPLATE = """Create a premium LinkedIn square image (1:1) for [[BRAND_NAME]] that communicates the core idea of the post through one clear, strategically strong visual concept.
 
 Core message:
