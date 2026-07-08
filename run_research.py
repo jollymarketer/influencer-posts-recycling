@@ -33,6 +33,9 @@ from tools.notion_db import (
     get_recent_formats,
     get_recent_infographic_types,
     get_recent_archetypes,
+    get_recent_boxes,
+    get_recent_assets,
+    get_recent_personas,
     create_post_entry,
     update_with_draft,
 )
@@ -45,6 +48,19 @@ from tools.post_scorer import (
     pick_format,
     parse_infographic_type,
     normalize_infographic_type,
+    rank_box_fit,
+    pick_persona,
+    persona_block,
+    assets_block,
+)
+from tools.content_matrix import (
+    FORMAT_TO_BOX,
+    asset_for_format,
+    coverage_line,
+    figures_ok,
+    formats_for_box,
+    free_formats,
+    pick_target_box,
 )
 from tools.image_archetypes import (
     select_archetype,
@@ -166,14 +182,54 @@ def run_daily():
 
     print(f"\nSchritt 4: Winner = {winner['influencer']} (Score: {winner['score']}/60)")
 
+    # Schritt 4.35: Matrix-Ziel-Box (Quota 50/30/20 + Selection-Floor + Promotion-Kappe).
+    # Non-fatal: jeder Fehler -> freier Best-Fit-Run wie bisher.
+    target_box = None
+    try:
+        recent_boxes = get_recent_boxes()
+        print(f"  {coverage_line(recent_boxes, _cfg)}")
+        target_box = pick_target_box(recent_boxes, _cfg)
+    except Exception as e:
+        print(f"  Matrix-Coverage laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    if target_box:
+        print(f"  Pflicht-Box: {target_box[0]} x {target_box[1]}")
+        box_formats = formats_for_box(target_box, _cfg)
+        best_idx = rank_box_fit(scored[:10], target_box, box_formats)
+        if best_idx is None:
+            print("  Kein Quell-Post traegt die Pflicht-Box (Fit < 6) - Defizit bleibt offen, freier Run.")
+            target_box = None
+        else:
+            winner = scored[:10][best_idx]
+            print(f"  Box-Winner: {winner['influencer']} (Score: {winner['score']}/60)")
+
     # Schritt 4.5: Format waehlen (best-fit + anti-repeat, Pierre-Herubel Format-Varietaet)
     try:
         recent_formats = get_recent_formats()
     except Exception as e:
         print(f"  Recent-Formate laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
         recent_formats = []
-    post_format = pick_format(winner, recent_formats)
+    candidates = formats_for_box(target_box, _cfg) if target_box else free_formats(_cfg)
+    post_format = pick_format(winner, recent_formats, candidates=candidates)
     print(f"  Format gewaehlt: {post_format} (zuletzt: {recent_formats[:3]})")
+
+    # Persona-Linse (v1: Best-Fit + dominant-Fallback; leerer Block -> None).
+    persona = None
+    try:
+        persona = pick_persona(winner, _cfg, get_recent_personas())
+    except Exception as e:
+        print(f"  Persona-Pick fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    if persona:
+        print(f"  Persona: {persona['id']}")
+
+    # Asset fuer CaseProof/Magnet/Offer (LRU). Whitelist-Guard garantiert:
+    # asset-pflichtige Formate sind nur waehlbar, wenn der Block gefuellt ist.
+    chosen_asset = None
+    try:
+        chosen_asset = asset_for_format(post_format, _cfg, get_recent_assets())
+    except Exception as e:
+        print(f"  Asset-Wahl fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    if chosen_asset:
+        print(f"  Asset: {chosen_asset['id']}")
 
     # Schritt 4.6: Zuletzt genutzte Infografik-Typen laden (Anti-Repeat gegen die
     # Eisberg-Monotonie). Non-fatal: fehlt die Property, laeuft der Run ohne Hinweis.
@@ -199,7 +255,11 @@ def run_daily():
     print("\nSchritt 5: Generiere LinkedIn-Draft + Bild-Prompt ...")
     try:
         linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
-            winner, post_format, recent_infographic_types=recent_infographic_types
+            winner, post_format, recent_infographic_types=recent_infographic_types,
+            assets_de=assets_block(post_format, chosen_asset, "de"),
+            assets_en=assets_block(post_format, chosen_asset, "en"),
+            persona_de=persona_block(persona, "de"),
+            persona_en=persona_block(persona, "en"),
         )
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
@@ -212,6 +272,34 @@ def run_daily():
     if not en_draft:
         en_draft = "[EN-Generierung fehlgeschlagen - manuell nachziehen]"
         print("  WARNUNG: Leerer EN-Draft. Platzhalter gesetzt, DE wird gespeichert.", file=sys.stderr)
+
+    # Zahlen-Guard (nur CaseProof): jede Einheiten-Zahl muss aus dem Asset
+    # stammen. 1 Retry, danach Downgrade auf Method ohne Asset-Block.
+    if post_format == "CaseProof" and chosen_asset:
+        for attempt in ("retry", "downgrade"):
+            if figures_ok(f"{linkedin_draft}\n{en_draft}", chosen_asset):
+                break
+            if attempt == "retry":
+                print("  Zahlen-Guard verletzt - ein Retry.", file=sys.stderr)
+                linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
+                    winner, post_format, recent_infographic_types=recent_infographic_types,
+                    assets_de=assets_block(post_format, chosen_asset, "de"),
+                    assets_en=assets_block(post_format, chosen_asset, "en"),
+                    persona_de=persona_block(persona, "de"),
+                    persona_en=persona_block(persona, "en"),
+                )
+            else:
+                print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
+                post_format = "Method"
+                chosen_asset = None
+                linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
+                    winner, post_format, recent_infographic_types=recent_infographic_types,
+                    persona_de=persona_block(persona, "de"),
+                    persona_en=persona_block(persona, "en"),
+                )
+        if not linkedin_draft:
+            print("  FEHLER: Leerer Draft nach Guard-Behandlung.", file=sys.stderr)
+            sys.exit(1)
 
     print(f"  DE-Draft: {len(linkedin_draft)} Zeichen")
     print(f"  EN-Draft: {len(en_draft)} Zeichen")
@@ -275,6 +363,7 @@ def run_daily():
             post_date=winner["date"],
             status="New",
         )
+        matrix_box = FORMAT_TO_BOX.get(post_format, ("", ""))
         update_with_draft(
             page_id=page_id,
             linkedin_draft=linkedin_draft,
@@ -289,6 +378,10 @@ def run_daily():
             post_format=post_format,
             infographic_type=infographic_type,
             archetype=gen_archetype,
+            matrix_job=matrix_box[0],
+            matrix_stage=matrix_box[1],
+            persona=(persona or {}).get("id", ""),
+            asset_id=(chosen_asset or {}).get("id", ""),
             post_text=winner["post_text"],
             post_url=winner["post_url"],
         )

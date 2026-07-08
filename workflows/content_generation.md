@@ -6,6 +6,24 @@ Den ausgewählten Influencer-Post in einen eigenen LinkedIn-Thought-Leadership-P
 ## Trigger
 User gibt Claude die Notion-URL oder Page-ID des ausgewählten Posts.
 
+## Content-Matrix-Regeln (Spec 2026-07-08, gelten auch für den manuellen Pfad)
+
+- Jeder Post gehört in genau EINE Matrix-Box (Job x Stage). Vor der Generierung
+  Box + Format wählen: Opinion (Perspective x Awareness), POV/Signature
+  (Perspective x Education), Comparison (Perspective x Selection), Story
+  (Proof x Awareness), Method (Proof x Education), CaseProof (Proof x Selection),
+  Debate (Promotion x Awareness), Magnet (Promotion x Education), Offer
+  (Promotion x Selection). Matrix-Job/Matrix-Stage-Properties in Notion setzen.
+- Asset-Formate NUR mit Eintrag aus der Mandanten-Config: CaseProof braucht
+  PROOF_ASSETS, Magnet LEAD_MAGNETS, Offer OFFERS. Jede Zahl mit Einheit
+  (Prozent, Euro, x-fach) wörtlich aus dem Asset: keine anderen Zahlen.
+- CTA-Politik: Kein DM-/Angebots-CTA außer in Magnet (genau ein Kommentar-CTA)
+  und Offer (genau ein DM- oder Discovery-CTA). Kein künstlicher Zeitdruck.
+- Genau EINE Content-Persona pro Post (CONTENT_PERSONAS des Mandanten),
+  Wertachsen nie mischen. Persona-Property in Notion setzen.
+- Promotion-Posts (Debate/Magnet/Offer) max. 2 von 10; Selection-Spalte
+  mind. 2 von 10 (Quota macht das im Cron automatisch, manuell mitzählen).
+
 ## Inputs
 - Notion Page URL oder ID (z.B. `https://www.notion.so/abc123...`)
 - Opcional: Spezifische Perspektive oder Winkel für den Post
