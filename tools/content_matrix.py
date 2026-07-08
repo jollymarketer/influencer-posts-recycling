@@ -4,7 +4,6 @@ Reine Python-Logik ohne LLM: Box-Modell, Mandanten-Whitelist, Quota-Mathe,
 Asset-Auswahl und Zahlen-Guard. Spec:
 docs/superpowers/specs/2026-07-08-content-matrix-coverage-design.md
 """
-import re
 
 JOBS = ("Perspective", "Proof", "Promotion")
 STAGES = ("Awareness", "Education", "Selection")
@@ -71,8 +70,11 @@ def formats_for_box(box, cfg) -> list:
 
 def free_formats(cfg) -> list:
     """Format-Kandidaten fuer einen freien Best-Fit-Run: alle Formate der
-    effektiven Boxen MINUS Promotion (Promotion nur via Quota-Ziel, damit die
-    Kappe deterministisch haelt). Ohne MATRIX -> die 4 Legacy-Formate."""
+    effektiven Boxen MINUS Promotion-Formate UND MINUS Asset-gated Formate
+    (CaseProof/Magnet/Offer). Beide laufen ausschliesslich ueber ihren
+    dedizierten Quota-/Asset-Pfad, nie ueber den generischen Free-Fill-Pool,
+    damit Promotion-Kappe und Asset-Guard deterministisch halten.
+    Ohne MATRIX -> die 4 Legacy-Formate."""
     boxes = effective_boxes(cfg)
     if not boxes:
         return list(LEGACY_FORMATS)
