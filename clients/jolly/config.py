@@ -14,7 +14,7 @@ Jolly Marketer ist eine B2B Revenue Engine Company (Fractional CMO / GTM as a Se
 POSITIONIERUNG: Planbare B2B-Pipeline in 90 Tagen durch systematischen Outbound.
 
 ICP:
-B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum. Buying Personas: Founder, CEO, CRO, CSO, VP Sales, Head of Sales - Entscheider mit Product-Market-Fit, die planbaren Outbound und eine Revenue Engine brauchen, aber bisher keine interne Rolle haben, die das System denkt (nicht nur bedient).
+B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum sowie etablierte B2B-Unternehmen (bis ca. 50 MA, z.B. Tech-Services, Software-nahe Dienstleister, Beratungen), die seit Jahren am Markt sind, deren Neugeschaeft aus Empfehlungen, Bestandskunden oder klassischem Vertrieb kommt und denen ein planbarer digitaler Akquise-Kanal fehlt. Buying Personas: Founder, CEO, Inhaber, Geschaeftsfuehrer, CRO, CSO, VP Sales, Head of Sales - Entscheider, die planbaren Outbound und eine Revenue Engine brauchen, aber bisher keine interne Rolle haben, die das System denkt (nicht nur bedient).
 
 KERN-THEMEN die den ICP interessieren:
 GTM-Strategie, Outbound-Systeme, Cold Email, Pipeline-Aufbau, RevOps, Sales-Marketing-Alignment,
@@ -29,16 +29,16 @@ Beilaeufige Erwaehnungen sind ok; grundsaetzlich tool-agnostisch bleiben.
 TOKENS = {
     # --- Scoring ---
     "SCORING_ROLE": "Du bist Content-Stratege bei Jolly Marketer.",
-    "TOPIC_FIT_QUESTION": "Passt das Thema zu GTM, Outbound, RevOps, Pipeline, SaaS-Growth, Fractional CMO?",
-    "ICP_RELEVANZ_QUESTION": "Wuerde ein Founder, CEO, CRO, CSO, VP Sales oder Head of Sales in einem B2B SaaS/Tech-Unternehmen in DACH diesen Inhalt wollen?",
+    "TOPIC_FIT_QUESTION": "Passt das Thema zu GTM, Outbound, RevOps, Pipeline, digitaler Neukundengewinnung, SaaS-Growth, Fractional CMO?",
+    "ICP_RELEVANZ_QUESTION": "Wuerde ein Founder, CEO, Inhaber, CRO, CSO, VP Sales oder Head of Sales in einem B2B-SaaS/Tech-Unternehmen oder einer etablierten B2B-Firma ohne planbaren digitalen Akquise-Kanal (DACH) diesen Inhalt wollen?",
 
     # --- DE-Post-Prompt ---
     "PERSONA_DE": "Du bist Richard von Jolly Marketer (Fractional CMO / GTM as a Service fuer B2B).",
-    "AUDIENCE_DE": "Founder, CEOs, CROs, CSOs, VP Sales und Heads of Sales in B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum.",
+    "AUDIENCE_DE": "Founder, CEOs, Inhaber, Geschaeftsfuehrer, CROs, CSOs, VP Sales und Heads of Sales in B2B SaaS und Tech-Unternehmen (5-250 MA) sowie etablierten B2B-Firmen ohne planbaren digitalen Akquise-Kanal im deutschsprachigen Raum.",
     "DECISION_MAKERS_DE": "Revenue-Entscheider (Founder, CEO, CRO, CSO, VP/Head of Sales)",
     "FOCUS_TOPICS_DE": "Revenue-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit",
     "FIRST_PERSON_ROLE_DE": "du bist der Fractional CMO aus der Praxis",
-    "CONTEXT_TRANSFER_DE": "Auf den Kontext moderner B2B-SaaS/Tech-Teams in DACH uebertragen, ohne den Raum explizit zu betonen",
+    "CONTEXT_TRANSFER_DE": "Auf den Kontext von B2B-Teams in DACH uebertragen (SaaS, Tech, etablierte Dienstleister), ohne den Raum explizit zu betonen",
     "LANGUAGE_BANS_DE": """- Begriff "Mittelstand" niemals verwenden (klingt altbacken, passt nicht zum ICP)
 - Das Wort "DACH" maximal EINMAL im gesamten Post - nie als Label wie "DACH-Mittelstand", "DACH-Raum", "DACH-Unternehmen"
 - Kein "produzierende Unternehmen", "Industrie-", "traditionelle Firmen"
@@ -47,7 +47,7 @@ TOKENS = {
 
     # --- EN-Post-Prompt ---
     "PERSONA_EN": "You are Richard from Jolly Marketer (Fractional CMO / GTM as a Service for B2B).",
-    "AUDIENCE_EN": "founders, CEOs, CROs, CSOs, VPs of Sales and Heads of Sales at B2B SaaS and tech companies (5-250 employees), international.",
+    "AUDIENCE_EN": "founders, CEOs, owner-managers, CROs, CSOs, VPs of Sales and Heads of Sales at B2B SaaS and tech companies (5-250 employees) and established B2B firms without a predictable digital acquisition channel, international.",
     "WRITE_FOR_EN": "revenue decision-makers, not for marketers",
     "FOCUS_TOPICS_EN": "revenue relevance: pipeline, revenue, CAC, sales cycle, predictability",
     "FIRST_PERSON_ROLE_EN": "you are the fractional CMO speaking from practice",
@@ -140,15 +140,15 @@ LEAD_MAGNETS: list = []
 # Wortlaut-Entwurf, Freigabe Richard ausstehend.
 CONTENT_PERSONAS = [
     {
-        "id": "founder-ceo",
-        "label": "Founder / CEO",
+        "id": "founder-inhaber",
+        "label": "Founder, Inhaber, Geschaeftsfuehrer",
         "share": "dominant",
-        "pains": "Pipeline nicht planbar, Wachstum haengt am Gruender-Netzwerk, keine interne Rolle die das GTM-System denkt",
-        "kpis": "qualifizierte Meetings pro Monat, CAC, Forecast-Genauigkeit, Zeit bis zum ersten planbaren Kanal",
-        "vocabulary_use": "Planbarkeit, System, Engpass, Prioritaeten, Investition vs. Wette",
-        "vocabulary_avoid": "Marketing-Jargon (MQL, Attribution-Modelle), Tool-Namen als Loesung",
-        "scene_de": "ein Founder, der nach einem starken Quartal ploetzlich in einen leeren Pipeline-Monat laeuft",
-        "scene_en": "a founder who hits an empty-pipeline month right after a strong quarter",
+        "pains": "kein planbarer digitaler Akquise-Kanal obwohl die Firma seit Jahren am Markt ist; Neugeschaeft kommt aus Empfehlungen, Bestandskunden oder einzelnen Verkaeufern statt aus einem System; Pipeline schwankt und haengt an wenigen Quellen; keine interne Rolle und kein Marketing-Team, das das GTM-System denkt",
+        "kpis": "qualifizierte Meetings pro Monat, Anteil Neugeschaeft aus planbaren Kanaelen, CAC, Forecast-Genauigkeit, Zeit bis zum ersten planbaren Kanal",
+        "vocabulary_use": "Planbarkeit, System, Engpass, planbarer Kanal, Empfehlungsgeschaeft, Investition vs. Wette",
+        "vocabulary_avoid": "Marketing-Jargon (MQL, Attribution-Modelle), Tool-Namen als Loesung, Growth-Hacking-Sprech",
+        "scene_de": "ein Geschaeftsfuehrer, dessen Neugeschaeft seit Jahren aus Empfehlungen, Bestandskunden und dem eigenen Vertrieb kommt und dessen Anfragen-Eingang zum ersten Mal duenn wird",
+        "scene_en": "an owner-CEO whose new business has come from referrals, existing accounts and his own sales team for years, and whose inbound is thinning for the first time",
         "cta_style": "discovery",
     },
     {
