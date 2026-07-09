@@ -140,15 +140,15 @@ LEAD_MAGNETS: list = []
 # Wortlaut-Entwurf, Freigabe Richard ausstehend.
 CONTENT_PERSONAS = [
     {
-        "id": "founder-inhaber",
-        "label": "Founder, Inhaber, Geschaeftsfuehrer",
+        "id": "founder-gf",
+        "label": "Founder, CEO, Inhaber, Geschaeftsfuehrer",
         "share": "dominant",
-        "pains": "kein planbarer digitaler Akquise-Kanal obwohl die Firma seit Jahren am Markt ist; Neugeschaeft kommt aus Empfehlungen, Bestandskunden oder einzelnen Verkaeufern statt aus einem System; Pipeline schwankt und haengt an wenigen Quellen; keine interne Rolle und kein Marketing-Team, das das GTM-System denkt",
+        "pains": "Pipeline haengt an wenigen Quellen, die er nicht steuern kann: beim jungen Unternehmen am Gruender-Netzwerk und Einzel-Deals, bei der etablierten Firma an Empfehlungen, Bestandskunden und einzelnen Verkaeufern; kein planbarer digitaler Akquise-Kanal; keine interne Rolle und kein Marketing-Team, das das GTM-System denkt",
         "kpis": "qualifizierte Meetings pro Monat, Anteil Neugeschaeft aus planbaren Kanaelen, CAC, Forecast-Genauigkeit, Zeit bis zum ersten planbaren Kanal",
         "vocabulary_use": "Planbarkeit, System, Engpass, planbarer Kanal, Empfehlungsgeschaeft, Investition vs. Wette",
         "vocabulary_avoid": "Marketing-Jargon (MQL, Attribution-Modelle), Tool-Namen als Loesung, Growth-Hacking-Sprech",
-        "scene_de": "ein Geschaeftsfuehrer, dessen Neugeschaeft seit Jahren aus Empfehlungen, Bestandskunden und dem eigenen Vertrieb kommt und dessen Anfragen-Eingang zum ersten Mal duenn wird",
-        "scene_en": "an owner-CEO whose new business has come from referrals, existing accounts and his own sales team for years, and whose inbound is thinning for the first time",
+        "scene_de": "waehle pro Post genau EINE Situation: ein Founder, der nach einem starken Quartal in einen leeren Pipeline-Monat laeuft, ODER ein Geschaeftsfuehrer, dessen Neugeschaeft seit Jahren aus Empfehlungen, Bestandskunden und eigenem Vertrieb kommt und dessen Anfragen-Eingang duenn wird",
+        "scene_en": "pick exactly ONE situation per post: a founder hitting an empty-pipeline month right after a strong quarter, OR an owner-CEO whose new business has come from referrals, existing accounts and his own sales team for years and whose inbound is thinning",
         "cta_style": "discovery",
     },
     {
