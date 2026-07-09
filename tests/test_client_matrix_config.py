@@ -11,10 +11,24 @@ jolly = importlib.import_module("clients.jolly.config")
 lisocon = importlib.import_module("clients.lisocon.config")
 
 
-def test_jolly_declares_all_nine_but_assets_gate_three():
+def test_jolly_declares_all_nine_magnet_still_gated():
     assert len(jolly.MATRIX["boxes"]) == 9
-    # Assets leer bis Richard liefert -> 6 effektive Boxen.
-    assert len(cm.effective_boxes(jolly)) == 6
+    # PROOF_ASSETS + OFFERS gefuellt (Richard 2026-07-09), LEAD_MAGNETS bewusst
+    # leer -> 8 effektive Boxen, nur Promotion x Education bleibt zu.
+    eff = cm.effective_boxes(jolly)
+    assert len(eff) == 8
+    assert ("Proof", "Selection") in eff
+    assert ("Promotion", "Selection") in eff
+    assert ("Promotion", "Education") not in eff
+
+
+def test_jolly_proof_assets_pin_canonical_numbers():
+    metrics = " ".join(a["metric"] for a in jolly.PROOF_ASSETS)
+    assert "+70%" in metrics      # Styla SQL (Kanon Richard 2026-07-09)
+    assert "+200%" in metrics     # CLAAS aktive User (Kanon, nicht +300%)
+    assert "+140%" in metrics     # Buhl Reply-Rates
+    assert "8%" in metrics        # Aviloo Reply-Rate
+    assert len(jolly.PROOF_ASSETS) == 5 and len(jolly.OFFERS) == 1
 
 
 def test_lisocon_excludes_promotion_selection_by_policy():

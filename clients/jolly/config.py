@@ -127,13 +127,41 @@ MATRIX = {
               for stage in ("Awareness", "Education", "Selection")],
 }
 
-# Nur echte, von Richard freigegebene Zahlen. Leer = CaseProof bleibt aus.
-PROOF_ASSETS: list = []
+# Nur echte, von Richard freigegebene Zahlen (Auswahl + Kanon: 2026-07-09).
+# Guard: jede Zahl mit Einheit im CaseProof-Draft muss woertlich hieraus stammen.
+PROOF_ASSETS = [
+    {"id": "aviloo",
+     "claim": "Cold-Email-Outbound fuer E-Mobility-Tech (Batterie-Diagnostik, Aviloo)",
+     "metric": "25 SQL-Leads pro Monat aus nur einem Markt, 8% Reply-Rate",
+     "context": "Website-Zahl, freigegeben von Richard"},
+    {"id": "claas-365farmnet",
+     "claim": "Outbound und CRM fuer AgriTech-SaaS (CLAAS 365FarmNet)",
+     "metric": "aktive User +200%, CAC -50%",
+     "context": "kanonische Zahl laut Richard; Homepage-Variante +300% wird korrigiert"},
+    {"id": "styla",
+     "claim": "Demand Gen und Outbound fuer E-Commerce-SaaS (Styla)",
+     "metric": "SQL-Leads +70%, Sales +35%",
+     "context": "kanonische Zahl laut Richard"},
+    {"id": "buhl",
+     "claim": "Outbound-Neuaufbau fuer Buhl",
+     "metric": "Reply-Rates +140% gegenueber dem frueheren Outbound",
+     "context": "freigegeben von Richard 2026-07-09"},
+    {"id": "vr-banken",
+     "claim": "Cold Outreach fuer Volksbanken-Raiffeisenbanken",
+     "metric": "CAC -50% im Cold Outreach",
+     "context": "freigegeben von Richard 2026-07-09"},
+]
 
-# Aktuelle Angebote mit CTA-Wortlaut. Leer = Offer-Format bleibt aus.
-OFFERS: list = []
+# Aktuelle Angebote mit CTA-Wortlaut (Richard 2026-07-09). Keine Preise in Posts.
+OFFERS = [
+    {"id": "revenue-engine-sprint",
+     "name": "Revenue Engine (90-Tage-Sprint)",
+     "promise": "planbare B2B-Pipeline in 90 Tagen: Outbound plus Inbound plus CRM, mit Uebergabe ans Team",
+     "cta": "Kostenlosen Discovery Call buchen"},
+]
 
 # Existierende Artefakte (PDF, Checkliste, Template). Leer = Magnet bleibt aus.
+# Richard 2026-07-09: bewusst keine - Magnet-Box bleibt zu, bis Artefakte existieren.
 LEAD_MAGNETS: list = []
 
 # Content-Personas (v1: Generierungs-Linse + Notion-Tracking; Quota = Phase 2).
