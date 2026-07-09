@@ -181,7 +181,12 @@ EBENEN:
 [Label 2]: [Keyword 1], [Keyword 2], [Keyword 3]
 [Label 3]: [Keyword 1], [Keyword 2], [Keyword 3]
 TOOL-LOGOS: keine"""
-DACH_POST_PROMPT = apply_tokens(DACH_POST_PROMPT, _cfg)
+# PERSONA_DE wird erst zur Generierungszeit gefuellt: der Persona-Split kann
+# die Stimme wechseln (voice_de in CONTENT_PERSONAS, z.B. lisocon: Anwender-
+# Posts in Jaes Stimme). Ohne Override bleibt TOKENS["PERSONA_DE"].
+DACH_POST_PROMPT = apply_tokens(
+    DACH_POST_PROMPT.replace("[[PERSONA_DE]]", "{persona_voice}"), _cfg
+)
 
 EN_POST_PROMPT = """[[PERSONA_EN]]
 
@@ -465,10 +470,13 @@ def _recent_types_lines(recent_infographic_types) -> tuple[str, str]:
 def _format_prompts(post: dict, post_format: str = "Opinion",
                     recent_infographic_types=None,
                     assets_de: str = "", assets_en: str = "",
-                    persona_de: str = "", persona_en: str = "") -> tuple[str, str]:
+                    persona_de: str = "", persona_en: str = "",
+                    persona_voice_de: str = "") -> tuple[str, str]:
     """Pure builder: returns (de_prompt, en_prompt) with the format structure,
     the infographic anti-repeat line, and optional persona/asset blocks
-    injected. Unknown format keys fall back to Opinion. No API calls."""
+    injected. persona_voice_de overrides the DE author voice (Persona-Split);
+    empty falls back to TOKENS["PERSONA_DE"]. Unknown format keys fall back
+    to Opinion. No API calls."""
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
     de = DACH_POST_PROMPT.format(
@@ -479,6 +487,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         recent_types_line=de_recent,
         persona_block=persona_de,
         assets_block=assets_de,
+        persona_voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
     )
     en = EN_POST_PROMPT.format(
         context=CLIENT_CONTEXT,
@@ -1074,6 +1083,43 @@ def _append_cta(text: str, cta: str) -> str:
     return text.rstrip() + "\n\n" + cta
 
 
+GRAMMAR_CHECK_PROMPT = """Du bist ein praeziser deutscher Korrektor. Pruefe den folgenden LinkedIn-Post ausschliesslich auf Grammatik-, Rechtschreib-, Artikel- und Kasusfehler und korrigiere sie minimal-invasiv.
+
+HARTE REGELN:
+- Aendere NUR echte Fehler. Stil, Wortwahl, Tonalitaet, Satzbau, Emojis, Zeilenumbrueche, Sonderzeichen-Listen und Hashtags bleiben exakt unveraendert.
+- Englische Fachbegriffe im deutschen Text sind kein Fehler; korrigiere nur inkonsistente Artikel oder Deklination drumherum.
+- Wenn nichts zu korrigieren ist, gib den Text ZEICHENGENAU unveraendert zurueck.
+- Antworte NUR mit dem Text selbst: kein Kommentar, keine Erklaerung, kein Markdown.
+
+TEXT:
+{text}"""
+
+
+def grammar_check(text: str) -> str:
+    """Letzte Stufe der Texterstellung (FEATURES["grammar_check"], Kundenfeedback
+    lisocon 2026-07-09: Artikel-/Kasusfehler wie "Fehlender Tool Support").
+    Minimal-invasive LLM-Korrektur; non-fatal und mit Laengen-Guard, damit ein
+    ausufernder Umbau des Posts nie den Draft ersetzt."""
+    if not text or not _cfg.FEATURES.get("grammar_check"):
+        return text
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": GRAMMAR_CHECK_PROMPT.format(text=text)}],
+        )
+        fixed = resp.content[0].text.strip()
+    except Exception as e:
+        print(f"  Grammar-Check fehlgeschlagen (nicht kritisch): {e}", flush=True)
+        return text
+    if not fixed or abs(len(fixed) - len(text)) > max(80, int(len(text) * 0.15)):
+        print("  Grammar-Check verworfen (Laengen-Guard).", flush=True)
+        return text
+    if fixed != text:
+        print("  Grammar-Check: Korrekturen uebernommen.", flush=True)
+    return fixed
+
+
 def _parse_generation_response(raw: str) -> dict:
     """Zerlegt eine LLM-Antwort an den ===MARKER=== in ihre Teile.
     Gibt dict mit keys post, soundbyte, kontext, infografik zurueck.
@@ -1118,13 +1164,18 @@ def _parse_generation_response(raw: str) -> dict:
 def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    recent_infographic_types=None,
                                    assets_de: str = "", assets_en: str = "",
-                                   persona_de: str = "", persona_en: str = "") -> tuple[str, str, str, str, str, str]:
+                                   persona_de: str = "", persona_en: str = "",
+                                   persona_voice_de: str = "") -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
-    Das Bild wird aus den EN-Teilen (Soundbyte + Infografik) gebaut.
+    Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
+    EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
+    DE-Response (der DACH-Prompt liefert sie auf Deutsch), en_draft ist "".
+    Die Bild-Text-Sprache steuert IMAGE_LANGUAGE der Client-Config.
     post_format waehlt den Struktur-Block (Opinion/POV/Signature).
     recent_infographic_types steuert das Anti-Repeat des Infografik-Typs.
     assets_de/assets_en und persona_de/persona_en sind vorgefertigte Prompt-
     Bloecke (siehe assets_block/persona_block), Default "" bleibt wirkungslos.
+    persona_voice_de wechselt die DE-Autorenstimme (Persona-Split).
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton, soundbyte, kontext)
     zurueck. soundbyte/kontext speisen den Bild-Archetyp-Router (image_archetypes).
     """
@@ -1132,6 +1183,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         post, post_format, recent_infographic_types,
         assets_de=assets_de, assets_en=assets_en,
         persona_de=persona_de, persona_en=persona_en,
+        persona_voice_de=persona_voice_de,
     )
 
     de_resp = client.messages.create(
@@ -1139,29 +1191,34 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         max_tokens=2048,
         messages=[{"role": "user", "content": de_prompt}],
     )
-    de_draft = sanitize_generated_text(
-        _parse_generation_response(de_resp.content[0].text.strip())["post"]
-    )
+    de_parts = _parse_generation_response(de_resp.content[0].text.strip())
+    de_draft = grammar_check(sanitize_generated_text(de_parts["post"]))
     de_draft = _append_cta(de_draft, getattr(_cfg, "CTA_DE", ""))
 
-    en_resp = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2048,
-        messages=[{"role": "user", "content": en_prompt}],
-    )
-    en_parts = _parse_generation_response(en_resp.content[0].text.strip())
-    en_draft = _append_cta(sanitize_generated_text(en_parts["post"]),
-                           getattr(_cfg, "CTA_EN", ""))
-    sound_byte = sanitize_generated_text(en_parts["soundbyte"])
-    kontext = en_parts["kontext"]
-    infographic_skeleton = en_parts["infografik"]
+    if _cfg.FEATURES.get("en_draft", True):
+        en_resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": en_prompt}],
+        )
+        en_parts = _parse_generation_response(en_resp.content[0].text.strip())
+        en_draft = _append_cta(sanitize_generated_text(en_parts["post"]),
+                               getattr(_cfg, "CTA_EN", ""))
+        image_parts = en_parts
+    else:
+        en_draft = ""
+        image_parts = de_parts
+
+    sound_byte = sanitize_generated_text(image_parts["soundbyte"])
+    kontext = image_parts["kontext"]
+    infographic_skeleton = image_parts["infografik"]
 
     image_prompt = ""
     if sound_byte:
         image_prompt = IMAGE_PROMPT_TEMPLATE.format(
             core_message=sound_byte,
             context=kontext or _cfg.TOKENS["DEFAULT_AUDIENCE_IMAGE"],
-            language="English",
+            language=getattr(_cfg, "IMAGE_LANGUAGE", "English"),
         )
 
     return de_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext

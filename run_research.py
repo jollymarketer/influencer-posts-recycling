@@ -70,6 +70,7 @@ from tools.image_archetypes import (
     ARCHETYPES,
 )
 from tools.kieai_image import generate_image
+from tools.image_repair import repair_wrong_images
 from tools.supabase_db import upsert_posts
 from run_topic_mining import run_topic_mining
 from run_keyword_scrape import scrape_and_persist
@@ -77,6 +78,7 @@ from run_keyword_scrape import scrape_and_persist
 MIN_SCORE = 25
 
 _cfg = load_client()
+_EN_ENABLED = _cfg.FEATURES.get("en_draft", True)
 
 
 def persist_scraped_posts(linkedin_posts: list, substack_posts: list) -> None:
@@ -132,6 +134,15 @@ def run_daily():
     except Exception as e:
         print(f"  FEHLER - Notion-Verbindung: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # Schritt 1.5: "Image Wrong"-Eintraege reparieren (GTM-Call Jae 2026-07-09:
+    # Status = Bild falsch, Text ok -> nur das Bild neu generieren). Non-fatal.
+    try:
+        repaired = repair_wrong_images()
+        if repaired:
+            print(f"  Image-Repair: {repaired} Eintrag/Eintraege neu bebildert.")
+    except Exception as e:
+        print(f"  Image-Repair fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
 
     # Schritt 2: Neue Posts scrapen (LinkedIn + Substack)
     print("\nSchritt 2: Scrape neue Posts (LinkedIn + Substack) ...")
@@ -248,6 +259,16 @@ def run_daily():
         if dominant:
             persona = dominant
 
+    # Persona-Split (GTM-Call Jae 2026-07-09): Poster-Property fuer das
+    # Make-Routing plus Stimm-Wechsel im DE-Prompt (voice_de der Persona).
+    poster = ""
+    poster_map = getattr(_cfg, "POSTER_BY_PERSONA", None)
+    if poster_map:
+        poster = poster_map.get((persona or {}).get("id"),
+                                getattr(_cfg, "POSTER_DEFAULT", ""))
+        print(f"  Poster: {poster or 'unbekannt'}")
+    persona_voice_de = (persona or {}).get("voice_de", "")
+
     # Schritt 4.6: Zuletzt genutzte Infografik-Typen laden (Anti-Repeat gegen die
     # Eisberg-Monotonie). Non-fatal: fehlt die Property, laeuft der Run ohne Hinweis.
     try:
@@ -277,6 +298,7 @@ def run_daily():
             assets_en=assets_block(post_format, chosen_asset, "en"),
             persona_de=persona_block(persona, "de"),
             persona_en=persona_block(persona, "en"),
+            persona_voice_de=persona_voice_de,
         )
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
@@ -286,7 +308,7 @@ def run_daily():
         print("  FEHLER: Leerer DE-Draft. Kein Notion-Update.", file=sys.stderr)
         sys.exit(1)
 
-    if not en_draft:
+    if _EN_ENABLED and not en_draft:
         en_draft = "[EN-Generierung fehlgeschlagen - manuell nachziehen]"
         print("  WARNUNG: Leerer EN-Draft. Platzhalter gesetzt, DE wird gespeichert.", file=sys.stderr)
 
@@ -324,12 +346,13 @@ def run_daily():
             print(f"  FEHLER bei Guard-Regenerierung: {e}", file=sys.stderr)
             sys.exit(1)
 
-    if not en_draft:
+    if _EN_ENABLED and not en_draft:
         en_draft = "[EN-Generierung fehlgeschlagen - manuell nachziehen]"
         print("  WARNUNG: Leerer EN-Draft nach Guard-Regenerierung. Platzhalter gesetzt.", file=sys.stderr)
 
     print(f"  DE-Draft: {len(linkedin_draft)} Zeichen")
-    print(f"  EN-Draft: {len(en_draft)} Zeichen")
+    if _EN_ENABLED:
+        print(f"  EN-Draft: {len(en_draft)} Zeichen")
     print(f"  Bild-Prompt: {'OK' if image_prompt else 'leer'}")
     print(f"  Infografik-Skelett: {'OK' if infographic_skeleton else 'leer'}")
 
@@ -356,7 +379,7 @@ def run_daily():
         soundbyte=sound_byte,
         kontext=kontext,
         skeleton=infographic_skeleton,
-        language="English",
+        language=getattr(_cfg, "IMAGE_LANGUAGE", "English"),
     )
     gen_label = ARCHETYPES[gen_archetype]["label"]
     if gen_archetype != chosen_archetype:
@@ -408,6 +431,7 @@ def run_daily():
             matrix_job=matrix_box[0],
             matrix_stage=matrix_box[1],
             persona=(persona or {}).get("id", ""),
+            poster=poster,
             asset_id=(chosen_asset or {}).get("id", ""),
             post_text=winner["post_text"],
             post_url=winner["post_url"],

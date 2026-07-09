@@ -1,7 +1,9 @@
 """lisocon (InTO) — Mandanten-Config.
 
-Stimmen (Richard 2026-07-06): DE-Post = Reinhard Lindner (Gründer/CEO),
-EN-Post = Jae Hyun Kim (Sales & Marketing).
+Stimmen (GTM-Call Jae 2026-07-09, ersetzt den DE/EN-Split vom 06.07):
+100% Deutsch, kein EN-Draft mehr. Persona-Split statt Sprach-Split:
+Reinhard Lindner postet Käufer/Entscheider-Posts, Jae Hyun Kim die
+Anwender-Posts (beide auf Deutsch, Stimme wechselt mit der Persona).
 Quellen: Full_Social_Media_Strategy_InTO.txt, playbook-lisocon.md,
 InTo brand-guide_v2.json (warm-ivory premium-editorial, Montserrat+Poppins).
 
@@ -124,7 +126,23 @@ FEATURES = {
     "keyword_scrape": False,
     "topic_mining": False,
     "keyword_source_daily": True,  # Schritt 2b: Keyword-Suche als Daily-Quelle
+    # GTM-Call Jae 2026-07-09: 100% Deutsch, kein EN-Draft; Bild-Inputs
+    # (Soundbyte/Skelett) kommen aus dem DE-Response.
+    "en_draft": False,
+    # Grammatikpruefung als letzte Stufe der Texterstellung (Anlass:
+    # Artikel-/Kasusfehler wie "Fehlender Tool Support", Reinhard 09.07).
+    "grammar_check": True,
 }
+
+# GTM-Call Jae 2026-07-09: auch Bild-Texte auf Deutsch (Default: English).
+IMAGE_LANGUAGE = "German"
+
+# Persona-Split (GTM-Call Jae 2026-07-09): Reinhard postet Kaeufer/Entscheider,
+# Jae die Anwender-Posts. Steuert die Notion-Property "Poster" (Make routet
+# den Post auf den jeweiligen LinkedIn-Account) und den Stimm-Wechsel im
+# DE-Prompt (voice_de in CONTENT_PERSONAS).
+POSTER_BY_PERSONA = {"kaeufer": "Reinhard", "anwender": "Jae"}
+POSTER_DEFAULT = "Reinhard"
 
 # Keyword-Suche als zusaetzliche Daily-Quelle (Richard 2026-07-06, ~4 EUR/Monat Apify):
 # LinkedIn-weite Suche nach InTO-Kernthemen, konkurriert im selben Scoring-Pool wie
@@ -228,5 +246,7 @@ CONTENT_PERSONAS = [
         "scene_de": "eine Designerin, die zum dritten Mal denselben Umbruch in zwölf Sprachversionen fixt",
         "scene_en": "a designer fixing the same line break in twelve language versions for the third time",
         "cta_style": "reply",
+        # Anwender-Posts postet Jae — der DE-Prompt wechselt auf seine Stimme.
+        "voice_de": "Du bist Jae Hyun Kim, Sales & Marketing bei lisocon (InTO: Übersetzung von InDesign-Dokumenten direkt im Original-Layout). Du arbeitest täglich mit Marketing-, Übersetzungs- und Doku-Teams, die in mehrsprachiger DTP-Nacharbeit versinken.",
     },
 ]

@@ -292,8 +292,12 @@ def _rebuild_page_body(page_id: str, image_url: str, de_draft: str, en_draft: st
                      {"object": "block", "type": "image",
                       "image": {"type": "external", "external": {"url": image_url}}},
                      _DIVIDER_BLOCK]
-    children += [_h2_block("LinkedIn Draft DE (Slot: Vormittag)"), *_para_blocks(de_draft), _DIVIDER_BLOCK]
-    children += [_h2_block("LinkedIn Draft EN (Slot: Nachmittag)"), *_para_blocks(en_draft), _DIVIDER_BLOCK]
+    # Ohne EN-Draft (FEATURES["en_draft"]=False) entfaellt die EN-Sektion und
+    # das Slot-Label (Vormittag/Nachmittag-Modell gilt nur im DE+EN-Betrieb).
+    de_heading = "LinkedIn Draft DE (Slot: Vormittag)" if en_draft else "LinkedIn Draft DE"
+    children += [_h2_block(de_heading), *_para_blocks(de_draft), _DIVIDER_BLOCK]
+    if en_draft:
+        children += [_h2_block("LinkedIn Draft EN (Slot: Nachmittag)"), *_para_blocks(en_draft), _DIVIDER_BLOCK]
     children += [_h2_block("Original Post"),
                  {"object": "block", "type": "bookmark", "bookmark": {"url": post_url}},
                  _h2_block("Post Text (Original)"), *_para_blocks(post_text)]
@@ -319,16 +323,18 @@ def _append_draft_blocks(page_id: str, de_draft: str, en_draft: str) -> None:
             for c in chunks
         ]
 
+    de_heading = "LinkedIn Draft DE (Slot: Vormittag)" if en_draft else "LinkedIn Draft DE"
     children = [{"object": "block", "type": "divider", "divider": {}},
                 {"object": "block", "type": "heading_2",
                  "heading_2": {"rich_text": [{"type": "text",
-                  "text": {"content": "LinkedIn Draft DE (Slot: Vormittag)"}}]}}]
+                  "text": {"content": de_heading}}]}}]
     children += text_blocks(de_draft)
-    children += [{"object": "block", "type": "divider", "divider": {}},
-                 {"object": "block", "type": "heading_2",
-                  "heading_2": {"rich_text": [{"type": "text",
-                   "text": {"content": "LinkedIn Draft EN (Slot: Nachmittag)"}}]}}]
-    children += text_blocks(en_draft)
+    if en_draft:
+        children += [{"object": "block", "type": "divider", "divider": {}},
+                     {"object": "block", "type": "heading_2",
+                      "heading_2": {"rich_text": [{"type": "text",
+                       "text": {"content": "LinkedIn Draft EN (Slot: Nachmittag)"}}]}}]
+        children += text_blocks(en_draft)
 
     resp = _notion_request(
         "PATCH",
@@ -385,6 +391,7 @@ def update_with_draft(
     matrix_job: str = "",
     matrix_stage: str = "",
     persona: str = "",
+    poster: str = "",
     asset_id: str = "",
     post_text: str = "",
     post_url: str = "",
@@ -488,6 +495,9 @@ def update_with_draft(
     _patch_select_nonfatal(page_id, "Matrix-Job", matrix_job)
     _patch_select_nonfatal(page_id, "Matrix-Stage", matrix_stage)
     _patch_select_nonfatal(page_id, "Persona", persona)
+    # Poster (Persona-Split, GTM-Call Jae 2026-07-09): wer den Post published;
+    # Make routet darueber auf den jeweiligen LinkedIn-Account.
+    _patch_select_nonfatal(page_id, "Poster", poster)
     _patch_select_nonfatal(page_id, "Asset", asset_id)
 
     # Make-Webhook feuern → E-Mail-Alert an Richard.
