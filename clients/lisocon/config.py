@@ -144,6 +144,11 @@ IMAGE_LANGUAGE = "German"
 POSTER_BY_PERSONA = {"kaeufer": "Reinhard", "anwender": "Jae"}
 POSTER_DEFAULT = "Reinhard"
 
+# Poster-Balance (Richard 2026-07-10): gleich viel Content fuer Jae und
+# Reinhard. Zaehlt die Poster der letzten 8 Eintraege; wer zurueckliegt,
+# bekommt den naechsten Post (siehe pick_persona in tools/post_scorer.py).
+PERSONA_BALANCE_WINDOW = 8
+
 # Keyword-Suche als zusaetzliche Daily-Quelle (Richard 2026-07-06, ~4 EUR/Monat Apify):
 # LinkedIn-weite Suche nach InTO-Kernthemen, konkurriert im selben Scoring-Pool wie
 # die Influencer-Posts. Bewusst enge Begriffe (Doku x Mehrsprachigkeit x Layout);

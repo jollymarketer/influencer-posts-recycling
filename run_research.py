@@ -50,6 +50,7 @@ from tools.post_scorer import (
     normalize_infographic_type,
     rank_box_fit,
     pick_persona,
+    persona_window,
     persona_block,
     assets_block,
 )
@@ -228,7 +229,7 @@ def run_daily():
     # Persona-Linse (v1: Best-Fit + dominant-Fallback; leerer Block -> None).
     persona = None
     try:
-        persona = pick_persona(winner, _cfg, get_recent_personas())
+        persona = pick_persona(winner, _cfg, get_recent_personas(persona_window(_cfg)))
     except Exception as e:
         print(f"  Persona-Pick fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if persona:

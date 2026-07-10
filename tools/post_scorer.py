@@ -738,10 +738,22 @@ Regel: Waehle die Persona, deren Schmerzpunkte der Quell-Post am direktesten tri
 Antworte NUR mit der id, nichts sonst."""
 
 
+def persona_window(cfg) -> int:
+    """Fenstergroesse fuer get_recent_personas: Balance-Fenster des Mandanten
+    (PERSONA_BALANCE_WINDOW) oder 2 fuer die Nie-2x-Regel."""
+    return max(int(getattr(cfg, "PERSONA_BALANCE_WINDOW", 0) or 0), 2)
+
+
 def pick_persona(post: dict, cfg, recent_personas: list):
     """v1-Persona-Wahl: Best-Fit zum Quell-Post, im Zweifel dominante Persona,
     dieselbe Sekundaer-Persona nie zweimal hintereinander. Wirft nie.
-    Mandant ohne CONTENT_PERSONAS -> None (statische Audience-Tokens gelten)."""
+    Mandant ohne CONTENT_PERSONAS -> None (statische Audience-Tokens gelten).
+
+    Poster-Balance (Richard 2026-07-10): mit PERSONA_BALANCE_WINDOW +
+    POSTER_BY_PERSONA in der Config bekommt jeder Poster gleich viel Content.
+    Liegt ein Poster im Fenster zurueck, wird seine Persona deterministisch
+    gewaehlt (kein LLM-Call, schlaegt auch die Nie-2x-Regel); Gleichstand
+    faellt auf den Best-Fit-Pfad zurueck."""
     personas = getattr(cfg, "CONTENT_PERSONAS", None) or []
     if not personas:
         return None
@@ -749,6 +761,17 @@ def pick_persona(post: dict, cfg, recent_personas: list):
     dominant = next((p for p in personas if p.get("share") == "dominant"), personas[0])
     if len(personas) == 1:
         return dominant
+
+    balance_window = int(getattr(cfg, "PERSONA_BALANCE_WINDOW", 0) or 0)
+    poster_map = getattr(cfg, "POSTER_BY_PERSONA", None)
+    if balance_window and poster_map:
+        window = recent_personas[:balance_window]
+        counts = {p["id"]: sum(1 for pid in window
+                               if poster_map.get(pid) == poster_map.get(p["id"]))
+                  for p in personas}
+        laggards = [pid for pid, c in counts.items() if c == min(counts.values())]
+        if len(laggards) == 1:
+            return by_id[laggards[0]]
 
     choice_id = dominant["id"]
     try:
