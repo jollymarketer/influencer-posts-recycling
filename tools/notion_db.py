@@ -142,6 +142,7 @@ def create_post_entry(
     linkedin_draft: str = "",
     image_prompt: str = "",
     image_url: str = "",
+    title_hook: str = "",
 ) -> str:
     """
     Erstellt einen vollstaendigen Eintrag in der Notion DB.
@@ -153,7 +154,14 @@ def create_post_entry(
     image_prompt = _sanitize(image_prompt)
     influencer = _sanitize(influencer)
 
-    title = f"{influencer} – {post_text[:60].strip()}..."
+    # Titel NIE aus Influencer-Name oder Original-Text bauen (Leak 2026-07-10):
+    # der Notion-Titel wurde in Make als LinkedIn-Bild-Medien-Titel gemappt und
+    # hat Original-Autor + Original-Wortlaut unsichtbar in Notification-Kacheln
+    # und den LinkedIn-Suchindex geleakt. Nur der eigene Draft-Hook (ohnehin
+    # oeffentlicher Post-Text) oder ein neutraler Fallback sind erlaubt; die
+    # Quelle steht weiterhin in der Influencer-Property.
+    hook = _sanitize(title_hook).strip().splitlines()[0] if title_hook.strip() else ""
+    title = f"{hook[:60].strip()}..." if hook else f"Recycling-Post {post_date}"
     excerpt = post_text[:300]
 
     def text_blocks(text):

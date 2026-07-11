@@ -152,6 +152,23 @@ update_with_draft(
 2. Bild über `Image URL` herunterladen (URL verfällt nach 24h!)
 3. Post auf LinkedIn veröffentlichen (manuell oder via Buffer)
 
+## HARTE REGEL: LinkedIn-Medien-Felder (Make-Publisher)
+
+NIEMALS dynamische Notion-Felder (Title, Influencer, Post Excerpt) in die Felder
+`title`, `altText` oder `fileName` des `linkedin:ShareImage`-Moduls mappen
+(Make 8912831 + alle Klone wie Lisocon 9506674). LinkedIn speichert den
+Medien-Titel unsichtbar am Post, rendert ihn in Notification-Kacheln und
+indexiert ihn in der Suche. Verifiziert 2026-07-11: Alle Posts bis 10.07. trugen
+"{Influencer} – {Original-Excerpt}" als Medien-Titel und waren über den
+Wortlaut der Original-Posts auffindbar (Plagiats-Optik). Nur statische
+Brand-Strings verwenden ("Jolly Marketer" / "Jolly Marketer Infographic").
+
+Code-Backstop (mandanten-uebergreifend, seit 2026-07-11): `create_post_entry`
+baut den Notion-Titel nur noch aus dem eigenen Draft-Hook oder einem neutralen
+Fallback - nie aus Influencer-Name oder Original-Text. Selbst ein falsches
+Make-Mapping kann damit keine Original-Autoren mehr leaken.
+Pin-Tests: `tests/test_notion_db_title.py`.
+
 ## Self-Improvement Log
 
 ### 2026-06-24 — kie.ai gpt-image-2 Server-Ausfall + Nano-Banana-Fallback

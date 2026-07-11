@@ -413,6 +413,7 @@ def run_daily():
             post_text=winner["post_text"],
             post_date=winner["date"],
             status="New",
+            title_hook=linkedin_draft,
         )
         matrix_box = FORMAT_TO_BOX.get(post_format, ("", ""))
         update_with_draft(
