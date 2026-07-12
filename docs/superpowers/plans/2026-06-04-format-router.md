@@ -642,7 +642,7 @@ Create `scripts/add_format_property.py`:
 
 ```python
 """One-time idempotent: adds a 'Format' select property (Opinion/POV/Signature)
-to the Influencer Posts Recycling Notion DB. Safe to run repeatedly."""
+to the Jolly Influencer Post Recycling Notion DB. Safe to run repeatedly."""
 import os
 import sys
 

@@ -1,4 +1,4 @@
-# Influencer Posts Recycling — Prozessübersicht
+# Jolly Influencer Post Recycling — Prozessübersicht
 
 > **Ziel:** Täglich die besten LinkedIn-Posts von 20 GTM/RevOps-Influencern sammeln, den besten auswählen und daraus einen eigenen Thought-Leadership-Post mit Infografik recyceln.
 

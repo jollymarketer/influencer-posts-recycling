@@ -1,5 +1,5 @@
 """
-Influencer Posts Recycling — Vollautomatischer Daily Pipeline
+Jolly Influencer Post Recycling — Vollautomatischer Daily Pipeline
 Railway Cron: Mo-Fr 07:00 UTC (täglich ein Winner, postet am selben Tag.
 Mo-Pool = neue Posts von Fr-Nachmittag bis So; Score-Gate filtert Schwaches.)
 
@@ -125,7 +125,7 @@ def scrape_daily_keyword_posts(existing_urls: set, new_posts: list) -> list:
 
 def run_daily():
     start_time = datetime.now(timezone.utc)
-    print(f"=== Influencer Posts Recycling - Daily Run (Client: {_cfg.NAME}) ===")
+    print(f"=== Jolly Influencer Post Recycling - Daily Run (Client: {_cfg.NAME}) ===")
     print(f"Start: {start_time.strftime('%Y-%m-%d %H:%M UTC')}")
     print()
 

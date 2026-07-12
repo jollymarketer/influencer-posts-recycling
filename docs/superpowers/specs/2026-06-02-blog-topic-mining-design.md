@@ -1,7 +1,7 @@
 # Design: Blog-Topic-Mining aus Influencer-Scrape (Option A)
 
 Date: 2026-06-02
-Project: Influencer Posts Recycling
+Project: Jolly Influencer Post Recycling
 Status: Approved (design), pending implementation plan
 
 ## Problem
@@ -35,7 +35,7 @@ already-paid-for influencer scrape, with zero additional Apify cost.
 
 ## Architecture
 
-All changes live in the Influencer Posts Recycling repo (own git). Two parts.
+All changes live in the Jolly Influencer Post Recycling repo (own git). Two parts.
 
 ### Part A — Persist all scraped posts (every daily run)
 

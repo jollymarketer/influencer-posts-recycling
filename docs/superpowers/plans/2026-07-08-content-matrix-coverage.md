@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Repo root: `C:\Users\richa\Jolly_Claude_Code\Jolly Automations\Influencer Posts Recycling` (path contains spaces — always quote). The `.links` alias serves stale reads; work on this path only.
+- Repo root: `C:\Users\richa\Jolly_Claude_Code\Jolly Automations\Jolly Influencer Post Recycling` (path contains spaces — always quote). The `.links` alias serves stale reads; work on this path only.
 - **Auto-deploy: every push to `master` is go-live.** Run the full suite before every push. Commit locally per task; pushing may be batched, final task pushes.
 - Run tests as: `python -m pytest tests/ -q` from the repo root (conftest handles sys.path). Run one-off scripts as `PYTHONPATH="$(pwd)" python scripts/<name>.py`.
 - `clients.apply_tokens` RAISES on any unresolved `[[TOKEN]]`. Every new `[[TOKEN]]` used in a template MUST be added to BOTH `clients/jolly/config.py` AND `clients/lisocon/config.py` in the same task, or module import crashes.

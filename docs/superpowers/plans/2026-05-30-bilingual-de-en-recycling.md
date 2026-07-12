@@ -77,7 +77,7 @@ def test_post_without_kontext_still_parses_soundbyte_and_infografik():
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -m pytest tests/test_parse_generation.py -v`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -m pytest tests/test_parse_generation.py -v`
 Expected: FAIL with `ImportError: cannot import name '_parse_generation_response'`
 
 - [ ] **Step 3: Add the helper function**
@@ -127,7 +127,7 @@ def _parse_generation_response(raw: str) -> dict:
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -m pytest tests/test_parse_generation.py -v`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -m pytest tests/test_parse_generation.py -v`
 Expected: PASS (3 passed)
 
 - [ ] **Step 5: Commit**
@@ -264,7 +264,7 @@ TOOL-LOGOS: [tool names or "none"]"""
 
 - [ ] **Step 2: Verify the module still imports**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -c "from tools.post_scorer import EN_POST_PROMPT; print(len(EN_POST_PROMPT))"`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -c "from tools.post_scorer import EN_POST_PROMPT; print(len(EN_POST_PROMPT))"`
 Expected: prints an integer > 1000, no exception.
 
 - [ ] **Step 3: Commit**
@@ -338,7 +338,7 @@ def generate_post_and_image_prompt(post: dict) -> tuple[str, str, str, str]:
 
 - [ ] **Step 2: Verify import + signature**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -c "import inspect; from tools.post_scorer import generate_post_and_image_prompt as f; print(inspect.signature(f))"`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -c "import inspect; from tools.post_scorer import generate_post_and_image_prompt as f; print(inspect.signature(f))"`
 Expected: prints `(post: dict) -> tuple[str, str, str, str]`, no exception.
 
 - [ ] **Step 3: Commit**
@@ -453,7 +453,7 @@ Insert this block immediately BEFORE it:
 
 - [ ] **Step 4: Verify import + signature**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -c "import inspect; from tools.notion_db import update_with_draft as f; print('en_draft' in inspect.signature(f).parameters)"`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -c "import inspect; from tools.notion_db import update_with_draft as f; print('en_draft' in inspect.signature(f).parameters)"`
 Expected: prints `True`, no exception.
 
 - [ ] **Step 5: Commit**
@@ -566,12 +566,12 @@ to:
 
 - [ ] **Step 4: Verify the module compiles**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -c "import ast; ast.parse(open('run_research.py', encoding='utf-8').read()); print('OK')"`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -c "import ast; ast.parse(open('run_research.py', encoding='utf-8').read()); print('OK')"`
 Expected: prints `OK`, no SyntaxError.
 
 - [ ] **Step 5: Run the parser test suite again (regression)**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python -m pytest tests/ -v`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python -m pytest tests/ -v`
 Expected: PASS (3 passed)
 
 - [ ] **Step 6: Commit**
@@ -596,7 +596,7 @@ Wait for explicit yes.
 
 - [ ] **Step 2: Run the pipeline once**
 
-Run: `cd "Jolly Automations/Influencer Posts Recycling" && python run_research.py`
+Run: `cd "Jolly Automations/Jolly Influencer Post Recycling" && python run_research.py`
 Expected: completes through "=== DONE ===". Watch for non-empty DE-Draft and EN-Draft character counts in the log.
 
 - [ ] **Step 3: Verify the Notion entry**

@@ -4,7 +4,7 @@
 
 **Goal:** Persist all scraped influencer posts to Supabase and mine weekly blog-topic candidates from them into a Topic-Ideas Notion DB, reusing the existing daily scrape at zero extra Apify cost.
 
-**Architecture:** Two additions to the Influencer Posts Recycling repo. (A) A daily persistence hook upserts every scraped post (winners + losers) into Supabase schema `blog_content_mining`. (B) On Fridays the daily entrypoint runs a single-pass Claude clustering job that reads the last 7 days from Supabase, scores themes, and writes the top candidates (score >= 70, Top-5) to a decoupled Topic-Ideas Notion DB for manual review.
+**Architecture:** Two additions to the Jolly Influencer Post Recycling repo. (A) A daily persistence hook upserts every scraped post (winners + losers) into Supabase schema `blog_content_mining`. (B) On Fridays the daily entrypoint runs a single-pass Claude clustering job that reads the last 7 days from Supabase, scores themes, and writes the top candidates (score >= 70, Top-5) to a decoupled Topic-Ideas Notion DB for manual review.
 
 **Tech Stack:** Python 3.11, `requests` (Supabase PostgREST + Notion REST), `anthropic` (Claude Sonnet `claude-sonnet-4-6`), pytest + `unittest.mock`.
 

@@ -18,7 +18,7 @@
 
 Run:
 ```bash
-cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Influencer Posts Recycling" && PYTHONIOENCODING=utf-8 python -c "
+cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Jolly Influencer Post Recycling" && PYTHONIOENCODING=utf-8 python -c "
 import os, requests
 from dotenv import load_dotenv
 load_dotenv()
@@ -81,7 +81,7 @@ def test_empty_en_draft_omits_property(monkeypatch):
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Influencer Posts Recycling" && python -m pytest tests/test_notion_db_drafts.py -v`
+Run: `cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Jolly Influencer Post Recycling" && python -m pytest tests/test_notion_db_drafts.py -v`
 Expected: FAIL — `test_en_draft_written_to_own_property` KeyError on `LinkedIn Draft EN`; `test_de_and_en_truncate_at_3000` asserts 2000 != 3000.
 
 - [ ] **Step 3: Edit `update_with_draft`**
@@ -107,12 +107,12 @@ with:
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Influencer Posts Recycling" && python -m pytest tests/test_notion_db_drafts.py -v`
+Run: `cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Jolly Influencer Post Recycling" && python -m pytest tests/test_notion_db_drafts.py -v`
 Expected: PASS (3 passed).
 
 - [ ] **Step 5: Run full suite (no regressions)**
 
-Run: `cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Influencer Posts Recycling" && python -m pytest -q`
+Run: `cd "C:/Users/richa/Jolly_Claude_Code/JollyAutomations/Jolly Influencer Post Recycling" && python -m pytest -q`
 Expected: all pass.
 
 - [ ] **Step 6: Commit**

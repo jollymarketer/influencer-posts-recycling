@@ -1,7 +1,7 @@
 # Design: Bilingual DE + EN Post Recycling
 
 Date: 2026-05-30
-Project: Influencer Posts Recycling
+Project: Jolly Influencer Post Recycling
 Status: Approved (brainstorming complete)
 
 ## Problem

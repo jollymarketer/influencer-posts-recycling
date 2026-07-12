@@ -1,5 +1,5 @@
 """One-time idempotent: adds an 'Infografik-Typ' select property to the
-Influencer Posts Recycling Notion DB. Drives the anti-repeat that breaks the
+Jolly Influencer Post Recycling Notion DB. Drives the anti-repeat that breaks the
 iceberg monotony (get_recent_infographic_types reads this). Safe to run
 repeatedly. Notion auto-adds new select options on first write, so the option
 list here is just a seed for sensible colors."""

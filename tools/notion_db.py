@@ -1,5 +1,5 @@
 """
-Notion DB Interface für Influencer Posts Recycling.
+Notion DB Interface für Jolly Influencer Post Recycling.
 DB-ID kommt aus NOTION_DB_ID (Env) oder dem Default des aktiven Clients.
 Direkte Notion API (kein MCP) — für Python-Scripts und Railway.
 """
