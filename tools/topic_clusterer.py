@@ -60,14 +60,14 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
         "Extract 15-25 HYPER-SPECIFIC, ULTRA-LONG-TAIL blog-post topics for jollymarketer.com.\n"
         "Each must be ONE single concrete buyer question - the kind someone types verbatim into Google "
         "or ChatGPT when they have exactly that problem. Anchor every topic to at least one concrete "
-        "specific: a NUMBER or threshold, a NAMED tool (HubSpot, Smartlead, Apollo, n8n, Claude), "
+        "specific: a NUMBER or threshold, a NAMED tool (Smartlead, Apollo, n8n, Claude), "
         "a specific CHANNEL, a specific ROLE/segment, or a specific SCENARIO. 6-10 word keyword. "
         "Do not stop at the topic level - go one level deeper into the exact sub-question.\n"
         "Apply this three-level transformation and always output LEVEL 3:\n"
         "  L1 head 'Cold email deliverability'\n"
         "  L2 long-tail 'Warum B2B Cold Emails im Spam landen: SPF, DKIM, DMARC setzen'\n"
         "  L3 ULTRA 'Wie viele Cold Emails pro Domain und Tag 2026, ohne im Spam zu landen?'\n"
-        "  L1 'RevOps process design' -> L3 'Ab wie vielen Pflichtfeldern im HubSpot-Deal kippt die "
+        "  L1 'RevOps process design' -> L3 'Ab wie vielen Pflichtfeldern im CRM-Deal kippt die "
         "Datenqualitaet (und welche 5 reichen)?'\n"
         "  L1 'GTM engineering' -> L3 'Ab welchem ARR lohnt sich der erste GTM Engineer statt eines "
         "zweiten SDR im DACH-SaaS?'\n"
@@ -75,6 +75,9 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
         f"AVOID topics that duplicate any of these recently-suggested titles: {avoid}.\n\n"
         "Jolly no longer uses or promotes Clay: DE-PRIORITIZE any topic whose core hook is the Clay "
         "tool specifically (cap its blog_score at 40). Passing mentions are fine; stay tool-agnostic.\n\n"
+        "EXCLUDE any topic whose core hook is the HubSpot tool (Richard 2026-07-12: no HubSpot-centric "
+        "blog topics). Do not propose them at all; a passing HubSpot mention inside a broader "
+        "RevOps/CRM topic is fine.\n\n"
         "For each topic return an object with EXACTLY these keys:\n"
         "  theme_label (string = short internal label), support_count (int = how many posts back it), "
         "sample_influencers (array of strings), blog_score (int 0-100 weighing long-tail search "
@@ -128,14 +131,27 @@ def _norm(s: str) -> str:
 CLAY_SCORE_CAP = 40
 _CLAY_RE = re.compile(r"\bclay\b", re.IGNORECASE)
 
+# Hard ban (Richard 2026-07-12): no HubSpot-hook blog topics at all. The prompt
+# excludes them; this filter is the deterministic backstop. Unlike the Clay cap
+# (de-prioritise), a HubSpot hook drops the candidate outright at ANY threshold.
+_HUBSPOT_RE = re.compile(r"\bhubspot\b", re.IGNORECASE)
+
+
+def _hook_fields(c: ThemeCandidate) -> tuple:
+    return (c.theme_label, c.suggested_title_en, c.suggested_title_de,
+            c.keyword_en, c.keyword_de)
+
 
 def _cap_clay_topics(candidates: list[ThemeCandidate]) -> list[ThemeCandidate]:
     for c in candidates:
-        hook_fields = (c.theme_label, c.suggested_title_en, c.suggested_title_de,
-                       c.keyword_en, c.keyword_de)
-        if any(_CLAY_RE.search(f or "") for f in hook_fields):
+        if any(_CLAY_RE.search(f or "") for f in _hook_fields(c)):
             c.blog_score = min(c.blog_score, CLAY_SCORE_CAP)
     return candidates
+
+
+def _drop_hubspot_topics(candidates: list[ThemeCandidate]) -> list[ThemeCandidate]:
+    return [c for c in candidates
+            if not any(_HUBSPOT_RE.search(f or "") for f in _hook_fields(c))]
 
 
 def filter_candidates(
@@ -147,7 +163,9 @@ def filter_candidates(
 ) -> list[ThemeCandidate]:
     """Drop below-threshold themes, dedup against recent titles (case-insensitive
     normalized substring either direction), sort by score desc, cap at top_n.
-    Clay-hook themes are clamped to CLAY_SCORE_CAP first."""
+    HubSpot-hook themes are dropped outright; Clay-hook themes are clamped to
+    CLAY_SCORE_CAP first."""
+    candidates = _drop_hubspot_topics(candidates)
     candidates = _cap_clay_topics(candidates)
     recent_norm = [_norm(t) for t in recent_titles if t]
 

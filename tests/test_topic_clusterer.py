@@ -169,7 +169,16 @@ def test_build_user_prompt_pins_clay_policy():
     # Clay de-emphasis policy is prompt text; this pins it against silent refactor loss.
     prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}], recent_titles=[])
     assert "DE-PRIORITIZE any topic whose core hook is the Clay" in prompt
-    assert "a NAMED tool (HubSpot, Smartlead, Apollo, n8n, Claude)" in prompt
+    assert "a NAMED tool (Smartlead, Apollo, n8n, Claude)" in prompt
+
+
+def test_build_user_prompt_pins_hubspot_ban():
+    # HubSpot ban (Richard 2026-07-12): prompt must exclude HubSpot-hook topics and
+    # must not seed HubSpot via the tool-anchor example list or the L3 examples.
+    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}], recent_titles=[])
+    assert "EXCLUDE any topic whose core hook is the HubSpot tool" in prompt
+    assert "HubSpot-Deal" not in prompt
+    assert "(HubSpot," not in prompt
 
 
 def test_jolly_context_pins_clay_policy():
@@ -194,6 +203,36 @@ def test_filter_candidates_clay_cap_keeps_topic_below_low_threshold():
     out = filter_candidates(cands, threshold=30, top_n=5, recent_titles=[])
     assert len(out) == 1
     assert out[0].blog_score == 40
+
+
+def test_filter_candidates_drops_hubspot_hook_at_any_threshold():
+    # Ban, not cap: a HubSpot-hook theme scored 85 is dropped even at threshold 30.
+    t = _clay_theme(
+        theme_label="HubSpot data model for churn",
+        suggested_title_en="Which HubSpot data model changes you need before measuring churn",
+        suggested_title_de="Welche HubSpot-Datenmodell-Aenderungen du brauchst",
+        keyword_en="hubspot data model churn",
+        keyword_de="hubspot datenmodell churn",
+    )
+    cands = _parse_clusters(_raw([t, SAMPLE[0]]))
+    out = filter_candidates(cands, threshold=30, top_n=5, recent_titles=[])
+    labels = [c.theme_label for c in out]
+    assert "HubSpot data model for churn" not in labels
+    assert "AI SDR adoption" in labels
+
+
+def test_filter_candidates_hubspot_ban_word_boundary():
+    # Only a real HubSpot hook triggers the ban; other CRM topics pass.
+    t = _clay_theme(
+        theme_label="CRM data quality fields",
+        suggested_title_en="How many required CRM deal fields before data quality tips",
+        suggested_title_de="Ab wie vielen Pflichtfeldern im CRM-Deal kippt die Datenqualitaet",
+        keyword_en="crm deal fields data quality",
+        keyword_de="crm pflichtfelder datenqualitaet",
+    )
+    cands = _parse_clusters(_raw([t]))
+    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
+    assert len(out) == 1
 
 
 def test_filter_candidates_clay_cap_word_boundary_spares_claude():
