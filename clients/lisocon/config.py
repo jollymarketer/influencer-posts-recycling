@@ -15,6 +15,12 @@ Content-Säulen ein, Schreibweisen InTO / lisocon strikt.
 Content-Strategie-Quelle (Richard 2026-07-06): 5 Themen-Säulen + Persona-Split +
 Feindbild-Leitplanke, siehe project_lisocon_content_strategy.md /
 project_lisocon_into_positioning_objection_battlecard.md.
+
+VoC-Härtung (Richard 2026-07-12): Pains, Szenen, Vokabular und rote Linien aus
+dem VoC Pain Hunt Run 1 (2026-07-10, 105 verifizierte Praktiker-Zitate),
+Quelle: Clients\\Lisocon\\Research\\voc-run-1\\ (voc-report.md, mapping.md).
+Verbatim-Zitate aus dem Korpus bleiben dem separaten, kuratierten
+"Receipt"-Format vorbehalten und gehören NICHT in diese automatisierte Pipeline.
 """
 import os
 
@@ -30,6 +36,15 @@ Marketingleiter/MarCom-Direktoren, Lokalisierungsverantwortliche und Leiter Tech
 
 KERN-THEMEN die den ICP interessieren:
 Versteckte Lokalisierungs-/DTP-Kosten, Time-to-Market mehrsprachiger Materialien, Terminologie-Konsistenz, Translation Management, Technische Redaktion und Dokumentation, CCMS und strukturierter Content, InDesign-/Publishing-Automatisierung, AI in Übersetzung und Dokumentation, EU-Maschinenverordnung 2027, globale Content Operations, Abgrenzung der Ebenen: KI-Übersetzung (DeepL, Google, Plugins, Portale) löst Text, nicht Layout.
+
+VOC-EVIDENZ (Pain Hunt Run 1, 2026-07-10, 105 verifizierte Praktiker-Zitate — diese Schmerzen sind real belegt; Posts, die einen davon treffen, sind nachweislich relevanter):
+- Copy-Paste-Hölle (Anwender): übersetzte Texte werden Rahmen für Rahmen von Hand zurück ins InDesign-Layout gesetzt — pro Sprache, pro Version, jedes Jahr wieder. Der stärkste Recognition-Hook des Korpus.
+- Versteckte DTP-Kostenlinie (Käufer): Layout-Nacharbeit ist bezahlte Facharbeit, multipliziert sich mit jeder Zielsprache und steht in keinem Budget-Posten. ROI-Logik immer: Stunden x Sprachen x Korrekturrunden.
+- PDF-Korrekturschleife: Korrekturen laufen als PDF-Kommentar, manuelle Umsetzung in InDesign, Re-Export, Re-Check — meistens 3 bis 4 Runden pro Dokument. Guter zweiter Beat nach dem Copy-Paste-Hook, nicht als Standalone-Aufhänger.
+- Textexpansion: Deutsch läuft nach der Übersetzung bis zu einem Drittel länger, Layouts brechen in jeder Zielsprache neu. Emotional stärkstes Thema — aber NIE als von InTO "gelöst" darstellen (siehe harte Regeln).
+- Tool-Stack-Blindspot: Trados, Phrase oder DeepL sind da, und das Layout bleibt trotzdem Handarbeit. Beste Antwort-Munition auf "KI übersetzt doch schon".
+- Post-AI-Klammer (stärkster aktueller Winkel): Teams übersetzen längst mit ChatGPT/DeepL — und setzen den Text trotzdem von Hand zurück ins Layout. KI hat die Übersetzung entwertet, nicht die Wiedereinsetzung.
+Content-Franchise-Dach: "Die teure Hälfte" (direkt aus der Kernbotschaft; Käufer hört "teuer", Anwender hört "Hälfte"). Anwender-Fachbegriff mit Insider-Signal: "Fremdsprachensatz".
 
 CONTENT-SÄULEN (jeder Post zahlt klar auf EINE dieser 5 Säulen ein; höherer Säulen-Bezug = besserer Score):
 1. Versteckte Lokalisierungskosten — die teure DTP-Nacharbeit, die niemand budgetiert (Money-Säule, Persona Käufer).
@@ -57,7 +72,7 @@ HARTE REGELN:
 TOKENS = {
     # --- Scoring ---
     "SCORING_ROLE": "Du bist Content-Stratege bei lisocon (Produkt: InTO, Layout-Automatisierung für mehrsprachige Dokumente).",
-    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations?",
+    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'.",
     "ICP_RELEVANZ_QUESTION": "Würde ein Marketingleiter, Lokalisierungsverantwortlicher oder Leiter Technische Dokumentation in einem produzierenden Unternehmen (500-10.000 MA) diesen Inhalt wollen?",
 
     # --- DE-Post-Prompt (Stimme: Reinhard Lindner) ---
@@ -70,7 +85,11 @@ TOKENS = {
     "LANGUAGE_BANS_DE": """- Niemals Preise, Lizenzkosten oder Budget-Größenordnungen nennen (auch keine ungefähren Zahlen)
 - InTO nie als Übersetzungstool, DeepL-Alternative oder Trados-Konkurrent bezeichnen
 - InTO höchstens EINMAL beiläufig erwähnen, nie als Held des Posts; kein Produkt-Pitch, kein Demo-CTA
-- Schreibweisen strikt: "InTO" (großes I, T, O), "lisocon" (immer klein)""",
+- Schreibweisen strikt: "InTO" (großes I, T, O), "lisocon" (immer klein)
+- Nie behaupten, Textexpansion werde verhindert oder Copyfitting automatisiert; erlaubt ist nur: im gerenderten Layout sofort sichtbar und in einer Runde korrigierbar
+- Einzelfall-Zahlen nie als Marktfakt: keine 400.000 EUR/Jahr, keine 55-150 EUR/h, keine 20-35%, kein 2-4x, kein 10x; Textexpansion höchstens als "bis zu einem Drittel länger" und als Praktiker-Schätzung gekennzeichnet
+- Den Copy-Paste-Schmerz nie als "das löst niemand" framen (günstige Tools lösen den nackten Schritt); Differenzierung nur über das, was danach übrig bleibt: manueller Layout-Pass pro Sprache, stille Fehler, Korrekturschleifen
+- Nie ein Adobe-Bordmittel schlechtreden oder ein konkretes Tool-Problem als aktuellen Bug zitieren""",
     "HASHTAG_LINE_DE": "Am Ende des Posts: 4-6 relevante Hashtags (#TechnischeDokumentation, #Lokalisierung, #Übersetzung, #Terminologie, #InDesign, #ContentOperations, #Maschinenbau oder ähnlich).",
 
     # --- EN-Post-Prompt (Stimme: Jae Hyun Kim) ---
@@ -154,6 +173,8 @@ PERSONA_BALANCE_WINDOW = 8
 # die Influencer-Posts. Bewusst enge Begriffe (Doku x Mehrsprachigkeit x Layout);
 # breite Begriffe wie "technical documentation" abgelehnt (zu viel Rauschen).
 # posted_limit "week" = gleicher 7-Tage-Pool wie SCRAPE (Verlierer konkurrieren erneut).
+# VoC-Härtung 2026-07-12: zwei Kaeufer-Achse-Begriffe ergaenzt (T5 versteckte
+# DTP-Kostenlinie war in den Keywords bisher gar nicht abgedeckt).
 DAILY_KEYWORD_SEARCH = {
     "keywords": [
         "multilingual technical documentation",
@@ -165,6 +186,8 @@ DAILY_KEYWORD_SEARCH = {
         "Fremdsprachensatz",
         "mehrsprachige Dokumentation",
         "Redaktionssystem",
+        "localization costs",
+        "DTP Nacharbeit",
     ],
     "max_posts": 10,
     "posted_limit": "week",
@@ -232,9 +255,9 @@ CONTENT_PERSONAS = [
         "id": "kaeufer",
         "label": "Käufer/Entscheider (Marketing-/MarCom-/Doku-Leitung)",
         "share": "dominant",
-        "pains": "versteckte DTP-Nacharbeit sprengt Budget und Timeline, niemand budgetiert die Layout-Kosten nach der Übersetzung",
-        "kpis": "Kosten pro Sprachversion, Time-to-Market mehrsprachiger Materialien, Reklamationen wegen Layout-Fehlern",
-        "vocabulary_use": "versteckte Kosten, Durchlaufzeit, ROI, Prozesskette, druckfertig",
+        "pains": "versteckte DTP-Nacharbeit sprengt Budget und Timeline; Layout-Nacharbeit multipliziert sich mit jeder Zielsprache und steht in keinem Budget-Posten; Übersetzung läuft im Unternehmen nebenbei mit, unkoordiniert und unbudgetiert (VoC-verifiziert)",
+        "kpis": "Kosten pro Sprachversion (Stunden x Sprachen x Korrekturrunden), Time-to-Market mehrsprachiger Materialien, Reklamationen wegen Layout-Fehlern",
+        "vocabulary_use": "versteckte Kosten, DTP-Nacharbeit, Durchlaufzeit, ROI, Prozesskette, druckfertig, direkt im Layout",
         "vocabulary_avoid": "Toolbedienung, Feature-Details, Übersetzungsqualität als Thema",
         "scene_de": "ein Marketingleiter, der die Agentur-Rechnung liest und die DTP-Position zum ersten Mal hinterfragt",
         "scene_en": "a head of marketing reading the agency invoice and questioning the DTP line item for the first time",
@@ -244,9 +267,9 @@ CONTENT_PERSONAS = [
         "id": "anwender",
         "label": "Anwender (Translation-Manager, Designer)",
         "share": "secondary",
-        "pains": "Copy-Paste-Korrekturen in InDesign über Dutzende Sprachversionen, Versionschaos zwischen Übersetzern und Layout",
+        "pains": "übersetzte Texte Rahmen für Rahmen von Hand zurück ins Layout setzen (pro Sprache, pro Version, jedes Jahr wieder); PDF-Kommentar-Korrekturschleifen mit 3-4 Runden pro Dokument; Versionschaos zwischen Übersetzern und Layout (VoC-verifiziert)",
         "kpis": "Korrekturschleifen pro Dokument, Stunden Nacharbeit pro Sprache, Fehler nach Freigabe",
-        "vocabulary_use": "Korrekturlauf, Lektorat im Browser, Versionen, Layout-Erhalt",
+        "vocabulary_use": "Korrekturlauf, Lektorat im Browser, Versionen, Layout-Erhalt, Rahmen für Rahmen, Fremdsprachensatz",
         "vocabulary_avoid": "Budget- und ROI-Argumente (Käufer-Achse), Preise",
         "scene_de": "eine Designerin, die zum dritten Mal denselben Umbruch in zwölf Sprachversionen fixt",
         "scene_en": "a designer fixing the same line break in twelve language versions for the third time",
