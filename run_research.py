@@ -76,6 +76,7 @@ from tools.image_repair import repair_wrong_images
 from tools.supabase_db import upsert_posts
 from run_topic_mining import run_topic_mining
 from run_keyword_scrape import scrape_and_persist
+from tools.topic_decisions_db import sync_topic_decisions
 
 MIN_SCORE = 25
 
@@ -479,6 +480,16 @@ def main(now=None):
             run_topic_mining()
         except Exception as e:
             print(f"  Topic-Mining fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    # Taste-Loop: Richards Notion-Entscheidungen taeglich nach Supabase spiegeln
+    # (frische Kandidaten als pending, Flips als picked/rejected). Nach dem
+    # Mining platziert, damit Freitags-Kandidaten im selben Lauf erfasst werden.
+    if _cfg.FEATURES.get("topic_mining"):
+        print("\n=== Topic-Decisions-Sync (Taste-Loop) ===")
+        try:
+            n = sync_topic_decisions()
+            print(f"  {n} Zeilen gesynct.")
+        except Exception as e:
+            print(f"  Decisions-Sync fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if daily_exit:
         sys.exit(daily_exit)
 

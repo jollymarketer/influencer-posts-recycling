@@ -172,6 +172,22 @@ def test_build_user_prompt_pins_clay_policy():
     assert "a NAMED tool (Smartlead, Apollo, n8n, Claude)" in prompt
 
 
+def test_build_user_prompt_injects_taste_block():
+    taste = {"picked": ["ABM ab 20k Accounts"], "rejected": ["HubSpot Datenmodell"]}
+    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}],
+                                recent_titles=[], taste=taste)
+    assert "RICHARD'S REVEALED TASTE" in prompt
+    assert "ABM ab 20k Accounts" in prompt
+    assert "HubSpot Datenmodell" in prompt
+
+
+def test_build_user_prompt_no_taste_block_when_empty():
+    for taste in (None, {"picked": [], "rejected": []}):
+        prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}],
+                                    recent_titles=[], taste=taste)
+        assert "RICHARD'S REVEALED TASTE" not in prompt
+
+
 def test_build_user_prompt_pins_hubspot_ban():
     # HubSpot ban (Richard 2026-07-12): prompt must exclude HubSpot-hook topics and
     # must not seed HubSpot via the tool-anchor example list or the L3 examples.

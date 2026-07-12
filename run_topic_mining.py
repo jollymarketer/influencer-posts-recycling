@@ -13,6 +13,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from tools.supabase_db import get_posts_since
 from tools.topic_clusterer import cluster_topics, filter_candidates
+from tools.topic_decisions_db import get_taste_corpus
 from tools.topic_ideas_db import get_recent_idea_titles, write_candidates
 
 WINDOW_DAYS = 7
@@ -31,7 +32,15 @@ def run_topic_mining(window_days: int = WINDOW_DAYS, top_n: int = TOP_N) -> None
         return
     # 60 statt 30: bei Top-10/Woche entspricht das weiter ~6 Wochen Dedup-Horizont.
     recent_titles = get_recent_idea_titles(limit=60)
-    candidates = cluster_topics(posts, recent_titles=recent_titles)
+    # Taste-Loop: Richards echte Picks/Rejects als Few-Shot. Non-fatal — ohne
+    # Korpus laeuft das Mining wie bisher.
+    try:
+        taste = get_taste_corpus()
+        print(f"  Taste-Korpus: {len(taste['picked'])} picked / {len(taste['rejected'])} rejected.")
+    except Exception as e:
+        print(f"  Taste-Korpus nicht ladbar (nicht kritisch): {e}")
+        taste = None
+    candidates = cluster_topics(posts, recent_titles=recent_titles, taste=taste)
     print(f"  Claude lieferte {len(candidates)} Long-Tail-Kandidaten.")
     top = filter_candidates(
         candidates, threshold=SCORE_THRESHOLD, top_n=top_n, recent_titles=recent_titles

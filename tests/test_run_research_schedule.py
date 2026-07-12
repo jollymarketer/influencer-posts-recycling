@@ -15,7 +15,8 @@ MONDAY = dt.datetime(2026, 6, 8, tzinfo=dt.timezone.utc)     # weekday 0
 def _run(now):
     with patch.object(run_research, "run_daily") as rd, \
          patch.object(run_research, "scrape_and_persist") as ks, \
-         patch.object(run_research, "run_topic_mining") as tm:
+         patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "sync_topic_decisions"):
         run_research.main(now=now)
         return rd, ks, tm
 
@@ -46,7 +47,8 @@ def test_daily_sysexit_does_not_kill_friday_mining():
     exit code is re-raised AFTER the weekly jobs (keeps Railway ON_FAILURE retry)."""
     with patch.object(run_research, "run_daily", side_effect=SystemExit(1)), \
          patch.object(run_research, "scrape_and_persist") as ks, \
-         patch.object(run_research, "run_topic_mining") as tm:
+         patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "sync_topic_decisions"):
         with pytest.raises(SystemExit) as exc:
             run_research.main(now=FRIDAY)
     tm.assert_called_once()
@@ -56,11 +58,21 @@ def test_daily_sysexit_does_not_kill_friday_mining():
 
 def test_daily_crash_does_not_kill_friday_mining():
     with patch.object(run_research, "run_daily", side_effect=RuntimeError("boom")), \
-         patch.object(run_research, "run_topic_mining") as tm:
+         patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "sync_topic_decisions"):
         with pytest.raises(SystemExit) as exc:
             run_research.main(now=FRIDAY)
     tm.assert_called_once()
     assert exc.value.code == 1
+
+
+def test_decisions_sync_runs_daily_and_is_nonfatal():
+    """Sync runs on any weekday (topic_mining feature on) and must never raise."""
+    with patch.object(run_research, "run_daily"), \
+         patch.object(run_research, "sync_topic_decisions",
+                      side_effect=RuntimeError("supabase down")) as sync:
+        run_research.main(now=MONDAY)  # must not raise
+    sync.assert_called_once()
 
 
 def test_daily_ok_exits_cleanly():

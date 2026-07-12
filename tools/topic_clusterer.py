@@ -41,7 +41,8 @@ SYSTEM_PROMPT = (
 )
 
 
-def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
+def _build_user_prompt(posts: list[dict], recent_titles: list[str],
+                       taste: dict | None = None) -> str:
     lines = []
     for p in posts:
         eng = p.get("engagement") or {}
@@ -55,7 +56,21 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str]) -> str:
         )
     posts_block = "\n".join(lines)
     avoid = "; ".join(recent_titles) if recent_titles else "(none)"
+    # Richard's revealed taste (from his real picks/rejects in the Blog Pipeline);
+    # shapes topic generation AND blog_score calibration. Hard rules (Clay cap,
+    # HubSpot ban) stay as deterministic filters regardless of this block.
+    taste_block = ""
+    if taste and (taste.get("picked") or taste.get("rejected")):
+        liked = "; ".join(taste.get("picked") or []) or "(none yet)"
+        disliked = "; ".join(taste.get("rejected") or []) or "(none yet)"
+        taste_block = (
+            "RICHARD'S REVEALED TASTE — learned from his real approve/reject decisions "
+            "on past candidates. Weigh this heavily in topic choice and blog_score:\n"
+            f"He APPROVED these (generate topics matching this taste): {liked}\n"
+            f"He REJECTED these (do NOT propose similar angles): {disliked}\n\n"
+        )
     return (
+        taste_block +
         f"Here are recent, high-engagement B2B LinkedIn/Substack posts:\n\n{posts_block}\n\n"
         "Extract 15-25 HYPER-SPECIFIC, ULTRA-LONG-TAIL blog-post topics for jollymarketer.com.\n"
         "Each must be ONE single concrete buyer question - the kind someone types verbatim into Google "
@@ -185,7 +200,8 @@ def filter_candidates(
     return kept[:top_n]
 
 
-def cluster_topics(posts: list[dict], recent_titles: list[str]) -> list[ThemeCandidate]:
+def cluster_topics(posts: list[dict], recent_titles: list[str],
+                   taste: dict | None = None) -> list[ThemeCandidate]:
     """One Claude call clustering posts into theme candidates. Returns [] if too
     few posts or on unparseable output. Caller applies filter_candidates()."""
     if len(posts) < MIN_POSTS:
@@ -194,7 +210,7 @@ def cluster_topics(posts: list[dict], recent_titles: list[str]) -> list[ThemeCan
         model=MODEL,
         max_tokens=MAX_TOKENS,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": _build_user_prompt(posts, recent_titles)}],
+        messages=[{"role": "user", "content": _build_user_prompt(posts, recent_titles, taste=taste)}],
     )
     raw = resp.content[0].text if resp.content else ""
     return _parse_clusters(raw)
