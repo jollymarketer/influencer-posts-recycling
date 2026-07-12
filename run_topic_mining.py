@@ -16,8 +16,10 @@ from tools.topic_clusterer import cluster_topics, filter_candidates
 from tools.topic_ideas_db import get_recent_idea_titles, write_candidates
 
 WINDOW_DAYS = 7
-SCORE_THRESHOLD = 70
-TOP_N = 5
+# 2026-07-12 (Richard): mehr Auswahl in der Pick-Queue — Threshold 70->60,
+# Top-5 -> Top-10. Clay-Cap (40) bleibt unter dem Threshold wirksam.
+SCORE_THRESHOLD = 60
+TOP_N = 10
 
 
 def run_topic_mining(window_days: int = WINDOW_DAYS, top_n: int = TOP_N) -> None:
@@ -27,7 +29,8 @@ def run_topic_mining(window_days: int = WINDOW_DAYS, top_n: int = TOP_N) -> None
     if len(posts) < 2:
         print("  Zu wenige Posts (<2). Skip.")
         return
-    recent_titles = get_recent_idea_titles(limit=30)
+    # 60 statt 30: bei Top-10/Woche entspricht das weiter ~6 Wochen Dedup-Horizont.
+    recent_titles = get_recent_idea_titles(limit=60)
     candidates = cluster_topics(posts, recent_titles=recent_titles)
     print(f"  Claude lieferte {len(candidates)} Long-Tail-Kandidaten.")
     top = filter_candidates(

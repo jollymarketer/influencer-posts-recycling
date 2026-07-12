@@ -3,6 +3,8 @@ other days -> neither. run_daily always runs. Side-effect functions are mocked (
 import datetime as dt
 from unittest.mock import patch
 
+import pytest
+
 import run_research
 
 THURSDAY = dt.datetime(2026, 6, 11, tzinfo=dt.timezone.utc)  # weekday 3
@@ -37,3 +39,31 @@ def test_other_day_runs_neither_extra():
     rd.assert_called_once()
     ks.assert_not_called()
     tm.assert_not_called()
+
+
+def test_daily_sysexit_does_not_kill_friday_mining():
+    """run_daily's sys.exit(1) paths must not eat the Friday mining; the daily
+    exit code is re-raised AFTER the weekly jobs (keeps Railway ON_FAILURE retry)."""
+    with patch.object(run_research, "run_daily", side_effect=SystemExit(1)), \
+         patch.object(run_research, "scrape_and_persist") as ks, \
+         patch.object(run_research, "run_topic_mining") as tm:
+        with pytest.raises(SystemExit) as exc:
+            run_research.main(now=FRIDAY)
+    tm.assert_called_once()
+    ks.assert_not_called()
+    assert exc.value.code == 1
+
+
+def test_daily_crash_does_not_kill_friday_mining():
+    with patch.object(run_research, "run_daily", side_effect=RuntimeError("boom")), \
+         patch.object(run_research, "run_topic_mining") as tm:
+        with pytest.raises(SystemExit) as exc:
+            run_research.main(now=FRIDAY)
+    tm.assert_called_once()
+    assert exc.value.code == 1
+
+
+def test_daily_ok_exits_cleanly():
+    rd, ks, tm = _run(FRIDAY)  # run_daily mocked = success; must NOT raise SystemExit
+    rd.assert_called_once()
+    tm.assert_called_once()

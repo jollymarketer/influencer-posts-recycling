@@ -17,6 +17,7 @@ Nur 1 Post pro Tag in Notion. Verlierer werden nicht gespeichert.
 
 import os
 import sys
+import traceback
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -450,7 +451,21 @@ def run_daily():
 
 
 def main(now=None):
-    run_daily()
+    # Wochen-Jobs (Do-Keyword-Scrape, Fr-Mining) duerfen NICHT am Erfolg des
+    # Daily-Laufs haengen: run_daily() beendet den Prozess bei harten Fehlern
+    # via sys.exit(1) und hat so das Freitag-Mining wochenweise still gefressen
+    # (leere Freitage 2026-06-26 + 2026-07-03). Exit-Code wird gemerkt und NACH
+    # den Wochen-Jobs re-raised, damit Railways ON_FAILURE-Retry erhalten bleibt.
+    daily_exit = 0
+    try:
+        run_daily()
+    except SystemExit as e:
+        daily_exit = e.code if isinstance(e.code, int) else 1
+        print(f"Daily-Run Exit {daily_exit} — Wochen-Jobs laufen trotzdem.", file=sys.stderr)
+    except Exception:
+        daily_exit = 1
+        print(f"Daily-Run crashte — Wochen-Jobs laufen trotzdem:\n{traceback.format_exc()}",
+              file=sys.stderr)
     weekday = (now or datetime.now(timezone.utc)).weekday()
     if weekday == 3 and _cfg.FEATURES.get("keyword_scrape"):  # Thursday, UTC: keyword scrape feeds Friday's 7-day clustering window
         print("\n=== Donnerstag: starte Keyword-Scrape ===")
@@ -464,6 +479,8 @@ def main(now=None):
             run_topic_mining()
         except Exception as e:
             print(f"  Topic-Mining fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    if daily_exit:
+        sys.exit(daily_exit)
 
 
 if __name__ == "__main__":
