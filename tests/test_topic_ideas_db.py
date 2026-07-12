@@ -34,7 +34,8 @@ def test_write_candidates_maps_properties(monkeypatch):
     assert n == 1
     payload = mock_post.call_args.kwargs["json"]
     props = payload["properties"]
-    assert props["Title"]["title"][0]["text"]["content"] == "AI SDR adoption"
+    # Page title = readable DE article title (not the internal snake_case theme_label).
+    assert props["Title"]["title"][0]["text"]["content"] == "Warum AI-SDRs ohne RevOps scheitern"
     assert props["Suggested Title EN"]["rich_text"][0]["text"]["content"] == "Why AI SDRs Fail Without RevOps"
     assert props["Blog Score"]["number"] == 82
     assert props["Cluster Size"]["number"] == 4
@@ -44,6 +45,21 @@ def test_write_candidates_maps_properties(monkeypatch):
     assert props["Language EN"]["checkbox"] is True
     assert props["Deep Research"]["checkbox"] is True
     assert "https://x/1" in props["Supporting Posts"]["rich_text"][0]["text"]["content"]
+
+
+def test_write_candidates_title_falls_back_to_theme_label(monkeypatch):
+    monkeypatch.setenv("NOTION_TOKEN", "tok")
+    monkeypatch.setenv("TOPIC_IDEAS_DB_ID", "db123")
+    c = _cand()
+    c.suggested_title_de = ""
+    c.suggested_title_en = ""
+    resp = MagicMock(status_code=200)
+    resp.json.return_value = {"id": "p"}
+    resp.ok = True
+    with patch("tools.topic_ideas_db.requests.post", return_value=resp) as mock_post:
+        topic_ideas_db.write_candidates([c])
+    props = mock_post.call_args.kwargs["json"]["properties"]
+    assert props["Title"]["title"][0]["text"]["content"] == "AI SDR adoption"
 
 
 def test_write_candidates_empty_is_noop(monkeypatch):

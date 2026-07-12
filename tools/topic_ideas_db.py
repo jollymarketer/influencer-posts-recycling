@@ -49,8 +49,12 @@ def write_candidates(candidates: list[ThemeCandidate]) -> int:
         return 0
     written = 0
     for c in candidates:
+        # Page title = human-readable article title (was the internal snake_case
+        # theme_label) so the Notion pick-view is legible; theme_label is the
+        # fallback only when a candidate has no suggested title.
+        display_title = c.suggested_title_de or c.suggested_title_en or c.theme_label
         props = {
-            "Title": {"title": [{"text": {"content": _utf16_truncate(c.theme_label, 1990)}}]},
+            "Title": {"title": [{"text": {"content": _utf16_truncate(display_title, 1990)}}]},
             "Suggested Title EN": _rt(c.suggested_title_en),
             "Suggested Title DE": _rt(c.suggested_title_de),
             "Keyword EN": _rt(c.keyword_en),
