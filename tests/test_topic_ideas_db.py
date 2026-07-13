@@ -87,3 +87,18 @@ def test_get_recent_idea_titles_extracts_titles(monkeypatch):
         titles = topic_ideas_db.get_recent_idea_titles(limit=20)
     assert "Theme A" in titles
     assert "Title A" in titles
+
+
+def test_write_candidates_writes_evidence_quote(monkeypatch):
+    monkeypatch.setenv("NOTION_TOKEN", "tok")
+    monkeypatch.setenv("TOPIC_IDEAS_DB_ID", "db123")
+    resp = MagicMock(status_code=200, ok=True)
+    resp.json.return_value = {"id": "page1"}
+    cand = _cand()
+    cand.evidence_quote = "Der verbatim Quellsatz mit 20.000 EUR."
+    with patch("tools.topic_ideas_db.requests.post", return_value=resp) as mock_post:
+        topic_ideas_db.write_candidates([cand])
+    props = mock_post.call_args.kwargs["json"]["properties"]
+    assert props["Evidence Quote"]["rich_text"][0]["text"]["content"] == (
+        "Der verbatim Quellsatz mit 20.000 EUR."
+    )

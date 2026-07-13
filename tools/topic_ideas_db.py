@@ -63,6 +63,8 @@ def write_candidates(candidates: list[ThemeCandidate]) -> int:
             "Cluster Size": {"number": c.support_count},
             "Source Influencers": _rt(", ".join(c.sample_influencers)),
             "Supporting Posts": _rt("\n".join(c.supporting_post_urls)),
+            # Verbatim source sentence backing any title number (Gate A provenance).
+            "Evidence Quote": _rt(c.evidence_quote),
             "Status": {"select": {"name": "Hub needed"}},
             "Type": {"select": {"name": "Spoke"}},
             "Language DE": {"checkbox": True},

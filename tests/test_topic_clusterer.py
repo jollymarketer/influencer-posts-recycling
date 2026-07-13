@@ -264,3 +264,109 @@ def test_filter_candidates_clay_cap_word_boundary_spares_claude():
     out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
     assert len(out) == 1
     assert out[0].blog_score == 85
+
+
+# --- Gate A: number provenance (2026-07-13, 46313 post-mortem) ---------------
+# The mining prompt used to DEMAND "a NUMBER or threshold" per topic; Claude
+# invented thresholds no source stated ("TAM unter 20.000 Accounts"). Numbers
+# in titles now require a verbatim evidence sentence from a source post, and a
+# deterministic filter drops candidates whose big/unit-bearing title numbers do
+# not appear in that evidence.
+
+from tools.topic_clusterer import _extract_claim_numbers, _has_unbacked_number
+
+
+def test_extract_claim_numbers_thresholds_and_currency():
+    nums = _extract_claim_numbers(
+        "Wann ABM: TAM unter 20.000 Accounts und ACV über 50.000 € als Schwelle"
+    )
+    assert nums == {"20000", "50000"}
+
+
+def test_extract_claim_numbers_percent_is_claim():
+    assert _extract_claim_numbers("40 % höhere Pipeline in 9 Monaten") == {"40"}
+
+
+def test_extract_claim_numbers_exempts_years_and_small_counts():
+    assert _extract_claim_numbers("Cold Email 2026: Die 5 Pflichtfelder im CRM") == set()
+
+
+def test_extract_claim_numbers_separated_thousand_is_not_year():
+    assert _extract_claim_numbers("Ab 2.000 Leads pro Monat") == {"2000"}
+
+
+def test_unbacked_number_candidate_is_dropped():
+    c = ThemeCandidate(
+        theme_label="abm_tam",
+        support_count=3,
+        sample_influencers=["Maja"],
+        blog_score=86,
+        suggested_title_en="ABM only under 20,000 accounts TAM",
+        suggested_title_de="ABM nur bei TAM unter 20.000 Accounts",
+        keyword_en="abm tam threshold",
+        keyword_de="abm tam schwelle",
+        evidence_quote="ABM lohnt sich ab 50.000 € Kundenwert.",
+    )
+    out = filter_candidates([c], threshold=60, top_n=10, recent_titles=[])
+    assert out == []
+
+
+def test_backed_number_candidate_survives():
+    c = ThemeCandidate(
+        theme_label="acv_threshold",
+        support_count=3,
+        sample_influencers=["Maja"],
+        blog_score=86,
+        suggested_title_en="ABM pays off above €50,000 ACV",
+        suggested_title_de="ABM lohnt sich ab 50.000 € ACV",
+        keyword_en="abm acv threshold",
+        keyword_de="abm acv schwelle",
+        evidence_quote="Waehle ABM, wenn dein durchschnittlicher Kundenwert 50.000 € uebersteigt.",
+    )
+    out = filter_candidates([c], threshold=60, top_n=10, recent_titles=[])
+    assert len(out) == 1
+
+
+def test_k_suffix_in_evidence_backs_dotted_title_number():
+    c = ThemeCandidate(
+        theme_label="k_suffix",
+        support_count=2,
+        sample_influencers=["Dan"],
+        blog_score=75,
+        suggested_title_en="Why 20,000 emails per month break your domain",
+        suggested_title_de="Warum 20.000 Mails pro Monat die Domain killen",
+        keyword_en="email volume domain",
+        keyword_de="mail volumen domain",
+        evidence_quote="We sent 20k emails per month and deliverability died.",
+    )
+    assert _has_unbacked_number(c) is False
+
+
+def test_number_free_candidate_needs_no_evidence():
+    c = ThemeCandidate(
+        theme_label="icp_clarity",
+        support_count=2,
+        sample_influencers=["Brigitta"],
+        blog_score=70,
+        suggested_title_en="Why ICP clarity beats tooling",
+        suggested_title_de="Warum ICP-Klarheit vor Tooling kommt",
+        keyword_en="icp clarity",
+        keyword_de="icp klarheit",
+        evidence_quote="",
+    )
+    out = filter_candidates([c], threshold=60, top_n=10, recent_titles=[])
+    assert len(out) == 1
+
+
+def test_parse_clusters_reads_evidence_quote():
+    themes = [dict(SAMPLE[0], evidence_quote="Der Quellsatz mit 20.000 €.")]
+    out = _parse_clusters(_raw(themes))
+    assert out[0].evidence_quote == "Der Quellsatz mit 20.000 €."
+
+
+def test_prompt_requires_evidence_quote_and_conditions_numbers():
+    prompt = _build_user_prompt(
+        [{"influencer": "X", "post_text": "t", "engagement": {}}], recent_titles=[]
+    )
+    assert "evidence_quote" in prompt
+    assert "NUMBER" in prompt
