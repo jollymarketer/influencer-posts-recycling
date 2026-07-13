@@ -133,6 +133,14 @@ def _utf16_truncate(text: str, limit: int = 2000) -> str:
     return _utf16_chunks(text, limit)[0]
 
 
+def _rich_text_prop(text: str) -> list:
+    # Notion erlaubt max 2000 UTF-16 Units PRO text-Element, aber mehrere
+    # Elemente pro rich_text-Property. Frueher wurde hart truncated -> Drafts
+    # >2000 Zeichen verloren CTA + Satzende in der Property (Client-Feedback
+    # Buettner 2026-07-13, 2x Disapproved). Jetzt chunken statt abschneiden.
+    return [{"text": {"content": chunk}} for chunk in _utf16_chunks(text, 2000)]
+
+
 def create_post_entry(
     influencer: str,
     post_url: str,
@@ -206,8 +214,8 @@ def create_post_entry(
             "Post Excerpt": {"rich_text": [{"text": {"content": excerpt}}]},
             "Status": {"select": {"name": status}},
             "Date Scraped": {"date": {"start": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")}},
-            "LinkedIn Draft": {"rich_text": [{"text": {"content": _utf16_truncate(linkedin_draft)}}]} if linkedin_draft else {},
-            "Image Prompt": {"rich_text": [{"text": {"content": _utf16_truncate(image_prompt)}}]} if image_prompt else {},
+            "LinkedIn Draft": {"rich_text": _rich_text_prop(linkedin_draft)} if linkedin_draft else {},
+            "Image Prompt": {"rich_text": _rich_text_prop(image_prompt)} if image_prompt else {},
             "Image": {"files": [{"name": "featured-image.jpg", "type": "external", "external": {"url": image_url}}]} if image_url else {},
         },
         "children": page_children,
@@ -422,11 +430,11 @@ def update_with_draft(
     }
     if linkedin_draft:
         properties["LinkedIn Draft"] = {
-            "rich_text": [{"text": {"content": _utf16_truncate(linkedin_draft)}}]
+            "rich_text": _rich_text_prop(linkedin_draft)
         }
     if en_draft:
         properties["LinkedIn Draft EN"] = {
-            "rich_text": [{"text": {"content": _utf16_truncate(en_draft)}}]
+            "rich_text": _rich_text_prop(en_draft)
         }
     if image_prompt:
         # Bei Image-Failure haengen wir die letzte Fehlermeldung an, damit
@@ -435,7 +443,7 @@ def update_with_draft(
         if image_failed and image_error:
             prompt_payload = f"[IMAGE FAILED] {image_error[:400]}\n\n{image_prompt}"
         properties["Image Prompt"] = {
-            "rich_text": [{"text": {"content": _utf16_truncate(prompt_payload)}}]
+            "rich_text": _rich_text_prop(prompt_payload)
         }
     if image_url:
         properties["Image"] = {

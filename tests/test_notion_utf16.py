@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from tools.notion_db import _utf16_chunks, _utf16_len, _utf16_truncate
+from tools.notion_db import _rich_text_prop, _utf16_chunks, _utf16_len, _utf16_truncate
 
 # Astral-Zeichen (Mathematical Bold 𝗮, U+1D5EE): 1 Python-Codepoint, 2 UTF-16 Units
 BOLD_A = "\U0001d5ee"
@@ -36,3 +36,17 @@ def test_truncate_respects_utf16_limit():
     out = _utf16_truncate(text, limit=2000)
     assert _utf16_len(out) <= 2000
     assert _utf16_truncate("short", limit=2000) == "short"
+
+
+def test_rich_text_prop_keeps_full_draft():
+    # Regression (Client-Feedback 2026-07-13): Drafts >2000 Zeichen wurden in
+    # der Property hart abgeschnitten -> CTA fehlte, Satz brach mitten ab.
+    # Jetzt: mehrere text-Elemente, jedes <= 2000 UTF-16 Units, nichts verloren.
+    text = "x" * 1990 + "Interessant? Besuchen Sie uns auf www.in2go.io"
+    prop = _rich_text_prop(text)
+    assert "".join(e["text"]["content"] for e in prop) == text
+    assert all(_utf16_len(e["text"]["content"]) <= 2000 for e in prop)
+    assert len(prop) == 2
+
+    short = _rich_text_prop("kurz")
+    assert short == [{"text": {"content": "kurz"}}]

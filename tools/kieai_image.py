@@ -421,7 +421,17 @@ def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model
             upload_bytes = final_bytes if final_bytes is not None else requests.get(image_url, timeout=30).content
             filename = f"generated_{task_id[:8]}.png"
 
-            # Versuch 1: catbox.moe (kostenlos, permanent, kein Account noetig)
+            # Versuch 1: GitHub (public repo -> raw.githubusercontent.com).
+            # catbox.moe steht auf der CUII-Sperrliste deutscher ISPs: Client
+            # (Buettner, 2026-07-13) sah in Notion nur Mini-Thumbnails, Bild
+            # selbst lud nicht ("Image Failed"). Daher GitHub zuerst.
+            try:
+                permanent_url = _upload_to_github(upload_bytes, filename)
+                return permanent_url
+            except Exception as e:
+                print(f"  GitHub Upload fehlgeschlagen: {e} — versuche catbox.moe ...", flush=True)
+
+            # Versuch 2: catbox.moe (kostenlos, permanent, aber in DE teils gesperrt)
             try:
                 resp_catbox = requests.post(
                     "https://catbox.moe/user/api.php",
@@ -434,18 +444,11 @@ def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model
                     print(f"  catbox.moe Upload: {body}", flush=True)
                     return body
                 print(
-                    f"  catbox.moe abgelehnt (HTTP {resp_catbox.status_code}): {body[:200]} — versuche GitHub ...",
+                    f"  catbox.moe abgelehnt (HTTP {resp_catbox.status_code}): {body[:200]}",
                     flush=True,
                 )
-            except Exception as e:
-                print(f"  catbox.moe Exception: {e} — versuche GitHub ...", flush=True)
-
-            # Versuch 2: GitHub (nur fuer oeffentliche Repos)
-            try:
-                permanent_url = _upload_to_github(upload_bytes, filename)
-                return permanent_url
             except Exception as e2:
-                print(f"  GitHub Upload fehlgeschlagen: {e2}", flush=True)
+                print(f"  catbox.moe Exception: {e2}", flush=True)
 
             # Letzter Fallback: kie.ai URL (kein Logo, laeuft ab)
             print(f"  Fallback: kie.ai URL (kein Logo, laeuft ab)", flush=True)
