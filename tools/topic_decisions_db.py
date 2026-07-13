@@ -28,7 +28,7 @@ LEARN_CUTOFF = "2026-07-10"
 
 # Notion Status -> decision. Error counts as picked: the failure happened
 # AFTER Richard's Ready-flip, so the taste signal (he chose it) stands.
-_PICKED = {"Ready for Generation", "Generating", "Draft", "Published", "Promoted", "Error"}
+_PICKED = {"Ready for Generation", "Generating", "Draft", "Review needed", "Published", "Promoted", "Error"}
 _REJECTED = {"Rejected"}
 
 

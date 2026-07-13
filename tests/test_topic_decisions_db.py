@@ -108,3 +108,10 @@ def test_taste_corpus_queries_and_falls_back_to_en(monkeypatch):
     assert picked_params["limit"] == "7"
     # Auto-classifier rejects are policy, not taste — only Richard's rejects count.
     assert rejected_params["decision_source"] == "eq.richard"
+
+
+def test_review_needed_status_counts_as_picked():
+    # "Review needed" (JBA Gate D) happens AFTER Richard's Ready-flip, so the
+    # taste signal (he chose the topic) stands -- same logic as Error.
+    from tools.topic_decisions_db import _PICKED
+    assert "Review needed" in _PICKED
