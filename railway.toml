@@ -5,4 +5,7 @@ builder = "NIXPACKS"
 startCommand = "python run_research.py"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-cronSchedule = "0 7 * * 1-5"
+# 05:25 UTC = 07:25 CEST. Lauf dauert 16-26 Min, damit liegen Notion-Draft und
+# Review-Mail vor 08:00 Ortszeit vor. Cron ist UTC: bei der Umstellung auf CET
+# (25.10.2026) auf "25 6 * * 1-5" anheben, sonst startet er 06:25 Ortszeit.
+cronSchedule = "25 5 * * 1-5"
