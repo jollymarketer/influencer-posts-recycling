@@ -1,0 +1,99 @@
+"""Slate-Notion-Layer: Themenvorschlag-Zeilen, Status-Getter, Archiv."""
+import os
+import sys
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from tools import notion_db
+
+_CAND = {
+    "post_url": "https://x.com/p/1",
+    "influencer": "Alice",
+    "post_text": "Original body text",
+    "topic_angle_de": "Warum jede Sprachversion ein zweites Budget frisst",
+    "persona": "kaeufer",
+    "voc_hit": "versteckte DTP-Kostenlinie",
+    "matrix_job": "Perspective",
+    "matrix_stage": "Awareness",
+    "score_total": 41,
+}
+
+_LISOCON_CFG = SimpleNamespace(
+    POSTER_BY_PERSONA={"kaeufer": "Reinhard", "anwender": "Jae"},
+    POSTER_DEFAULT="Reinhard",
+)
+
+
+def _resp(payload, status=200):
+    r = MagicMock(status_code=status)
+    r.json.return_value = payload
+    r.raise_for_status = MagicMock()
+    return r
+
+
+def test_create_slate_entry_status_and_title(monkeypatch):
+    monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
+    monkeypatch.setattr(notion_db, "_cfg", _LISOCON_CFG)
+    with patch.object(notion_db, "_notion_request",
+                      return_value=_resp({"id": "page-1"})) as req:
+        page_id = notion_db.create_slate_entry(_CAND, matrix_prio=True)
+    assert page_id == "page-1"
+    body = req.call_args.kwargs["json"]
+    props = body["properties"]
+    assert props["Status"]["select"]["name"] == "Themenvorschlag"
+    title = props["Title"]["title"][0]["text"]["content"]
+    assert title.startswith("Warum jede")
+    assert "Alice" not in title  # leak rule
+    assert props["Score"]["number"] == 41
+    assert props["Matrix-Prio"]["checkbox"] is True
+    assert props["Poster"]["select"]["name"] == "Reinhard"  # kaeufer -> Reinhard
+
+
+def test_create_slate_entry_title_fallback(monkeypatch):
+    monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
+    monkeypatch.setattr(notion_db, "_cfg", _LISOCON_CFG)
+    cand = {**_CAND, "topic_angle_de": ""}
+    with patch.object(notion_db, "_notion_request",
+                      return_value=_resp({"id": "p"})) as req:
+        notion_db.create_slate_entry(cand)
+    title = req.call_args.kwargs["json"]["properties"]["Title"]["title"][0]["text"]["content"]
+    assert title == "Themenvorschlag"
+
+
+def test_get_pages_by_status_extracts_fields(monkeypatch):
+    monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
+    payload = {"results": [{
+        "id": "page-1",
+        "properties": {
+            "LinkedIn Post URL": {"url": "https://x.com/p/1"},
+            "Persona": {"select": {"name": "kaeufer"}},
+            "Poster": {"select": {"name": "Reinhard"}},
+            "Matrix-Job": {"select": {"name": "Proof"}},
+            "Matrix-Stage": {"select": {"name": "Education"}},
+        }}], "has_more": False}
+    with patch.object(notion_db, "_notion_request", return_value=_resp(payload)) as req:
+        rows = notion_db.get_pages_by_status("Topic Approved")
+    assert rows == [{"page_id": "page-1", "post_url": "https://x.com/p/1",
+                     "persona": "kaeufer", "poster": "Reinhard",
+                     "matrix_job": "Proof", "matrix_stage": "Education"}]
+    flt = req.call_args.kwargs["json"]["filter"]
+    assert flt == {"property": "Status", "select": {"equals": "Topic Approved"}}
+
+
+def test_get_approved_missing_image_filter(monkeypatch):
+    monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
+    payload = {"results": [], "has_more": False}
+    with patch.object(notion_db, "_notion_request", return_value=_resp(payload)) as req:
+        notion_db.get_approved_missing_image()
+    flt = req.call_args.kwargs["json"]["filter"]
+    assert {"property": "Status", "select": {"equals": "Approved"}} in flt["and"]
+    assert {"property": "Image", "files": {"is_empty": True}} in flt["and"]
+
+
+def test_archive_page(monkeypatch):
+    with patch.object(notion_db, "_notion_request", return_value=_resp({})) as req:
+        notion_db.archive_page("page-1")
+    assert req.call_args.args[0] == "PATCH"
+    assert req.call_args.kwargs["json"] == {"archived": True}

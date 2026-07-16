@@ -772,6 +772,108 @@ def get_recent_personas(limit: int = 2) -> list[str]:
     return _get_recent_select("Persona", limit)
 
 
+def create_slate_entry(candidate: dict, matrix_prio: bool = False) -> str:
+    """Themenvorschlag-Zeile fuer den Slate-Modus (spec 2026-07-16).
+    Nur Thema-Felder, kein Draft, kein Bild. Titel-Leak-Regel: NIE
+    Influencer-Name oder Original-Text — nur der eigene Themen-Winkel."""
+    angle = _sanitize(candidate.get("topic_angle_de", "")).strip()
+    title = angle[:60] if angle else "Themenvorschlag"
+    persona = candidate.get("persona", "")
+    poster_map = getattr(_cfg, "POSTER_BY_PERSONA", None) or {}
+    poster = poster_map.get(persona, getattr(_cfg, "POSTER_DEFAULT", ""))
+    excerpt = _sanitize(candidate.get("post_text", ""))[:300]
+
+    props = {
+        "Title": {"title": [{"text": {"content": title}}]},
+        "Status": {"select": {"name": "Themenvorschlag"}},
+        "Influencer": {"rich_text": _rich_text_prop(_sanitize(candidate.get("influencer", "")))},
+        "LinkedIn Post URL": {"url": candidate["post_url"]},
+        "Post Excerpt": {"rich_text": _rich_text_prop(excerpt)},
+        "Date Scraped": {"date": {"start": datetime.now(timezone.utc).isoformat()}},
+        "Score": {"number": int(candidate.get("score_total", 0))},
+        "VoC-Treffer": {"rich_text": _rich_text_prop(_sanitize(candidate.get("voc_hit", "")))},
+        "Themen-Winkel": {"rich_text": _rich_text_prop(angle)},
+        "Matrix-Prio": {"checkbox": bool(matrix_prio)},
+    }
+    for prop, value in (("Persona", persona), ("Poster", poster),
+                        ("Matrix-Job", candidate.get("matrix_job", "")),
+                        ("Matrix-Stage", candidate.get("matrix_stage", ""))):
+        if value:
+            props[prop] = {"select": {"name": value}}
+
+    children = [
+        _h2_block("Original Post"),
+        {"object": "block", "type": "bookmark",
+         "bookmark": {"url": candidate["post_url"]}},
+        _h2_block("Post Text (Original)"),
+    ] + _para_blocks(excerpt)
+
+    resp = _notion_request(
+        "POST", f"{NOTION_API}/pages", headers=_headers(),
+        json={"parent": {"database_id": NOTION_DB_ID},
+              "properties": props, "children": children})
+    resp.raise_for_status()
+    return resp.json()["id"]
+
+
+def _query_db(filter_: dict) -> list[dict]:
+    results, cursor = [], None
+    while True:
+        body = {"filter": filter_, "page_size": 100}
+        if cursor:
+            body["start_cursor"] = cursor
+        resp = _notion_request(
+            "POST", f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+            headers=_headers(), json=body)
+        resp.raise_for_status()
+        data = resp.json()
+        results.extend(data["results"])
+        if not data.get("has_more"):
+            break
+        cursor = data["next_cursor"]
+    return results
+
+
+def _select_name(props: dict, name: str) -> str:
+    return ((props.get(name) or {}).get("select") or {}).get("name", "") or ""
+
+
+def get_pages_by_status(status: str) -> list[dict]:
+    """Slate-Modus: Seiten in einem Status inkl. der Routing-Felder."""
+    pages = _query_db({"property": "Status", "select": {"equals": status}})
+    rows = []
+    for page in pages:
+        props = page.get("properties", {})
+        rows.append({
+            "page_id": page["id"],
+            "post_url": (props.get("LinkedIn Post URL") or {}).get("url") or "",
+            "persona": _select_name(props, "Persona"),
+            "poster": _select_name(props, "Poster"),
+            "matrix_job": _select_name(props, "Matrix-Job"),
+            "matrix_stage": _select_name(props, "Matrix-Stage"),
+        })
+    return rows
+
+
+def get_approved_missing_image() -> list[dict]:
+    """Phase A des Slate-Modus: text-freigegebene Zeilen ohne Bild."""
+    pages = _query_db({"and": [
+        {"property": "Status", "select": {"equals": "Approved"}},
+        {"property": "Image", "files": {"is_empty": True}},
+    ]})
+    return [{"page_id": p["id"],
+             "post_url": ((p.get("properties", {}).get("LinkedIn Post URL") or {})
+                          .get("url") or "")}
+            for p in pages]
+
+
+def archive_page(page_id: str) -> None:
+    """Archiviert eine Notion-Seite (Slate-Aufraeumen beim naechsten Slate-Bau)."""
+    resp = _notion_request("PATCH", f"{NOTION_API}/pages/{page_id}",
+                           headers=_headers(), json={"archived": True})
+    resp.raise_for_status()
+
+
 def get_entry_by_url(post_url: str) -> dict | None:
     """Gibt den Notion-Eintrag für eine bestimmte Post-URL zurück."""
     payload = {
