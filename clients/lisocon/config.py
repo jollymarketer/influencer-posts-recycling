@@ -151,6 +151,8 @@ FEATURES = {
     # Grammatikpruefung als letzte Stufe der Texterstellung (Anlass:
     # Artikel-/Kasusfehler wie "Fehlender Tool Support", Reinhard 09.07).
     "grammar_check": True,
+    # Slate-Modus (spec 2026-07-16): 3-Phasen-Pipeline statt Winner-Flow.
+    "slate_mode": True,
 }
 
 # GTM-Call Jae 2026-07-09: auch Bild-Texte auf Deutsch (Default: English).
@@ -159,6 +161,16 @@ IMAGE_LANGUAGE = "German"
 # Scoring-Modell (Richard 2026-07-16): Slate-Klassifikation (Persona, VoC,
 # Themen-Winkel) braucht mehr Praezision als Haiku liefert.
 SCORING_MODEL = "claude-sonnet-4-6"
+
+# Slate-Modus (spec 2026-07-16): 2 Slates/Woche (Mo+Do), 10 Kandidaten,
+# hart quotiert 5 kaeufer + 5 anwender. Jae pickt fuer beide Poster.
+SLATE = {
+    "days": (0, 3),          # Mo, Do (weekday())
+    "size": 10,
+    "per_persona": 5,
+    "max_age_days": 60,
+    "max_times_slated": 3,
+}
 
 # Persona-Split (GTM-Call Jae 2026-07-09): Reinhard postet Kaeufer/Entscheider,
 # Jae die Anwender-Posts. Steuert die Notion-Property "Poster" (Make routet
