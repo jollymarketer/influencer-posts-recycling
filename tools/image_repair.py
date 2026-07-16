@@ -17,6 +17,8 @@ from tools.notion_db import (
     _headers,
     _notion_request,
     _rebuild_page_body,
+    get_approved_missing_image,
+    set_post_status,
 )
 
 # Bild-Regeln: LinkedIn-Square immer 1:1 (siehe memory feedback_image_generation).
@@ -106,10 +108,12 @@ def _archetype_of(page: dict) -> str:
     return sel.get("name", "")
 
 
-def regenerate_page_image(page_id: str, sections: dict, strip_marks: bool = True) -> str:
+def regenerate_page_image(page_id: str, sections: dict, strip_marks: bool = True,
+                          status: str = "Ready to Review") -> str:
     """Generiert das Bild aus dem gespeicherten Image Prompt neu, baut den Body
     mit unveraenderten Texten wieder auf und setzt Image-Property + Status
-    'Ready to Review'. Gibt die neue Bild-URL zurueck.
+    (Default 'Ready to Review'; Phase A des Slate-Modus uebergibt 'Approved',
+    damit die Text-Freigabe erhalten bleibt). Gibt die neue Bild-URL zurueck.
     Raises wenn kein Image Prompt vorhanden ist oder die Generierung scheitert."""
     prompt = sections["image_prompt"].strip()
     if not prompt:
@@ -125,13 +129,37 @@ def regenerate_page_image(page_id: str, sections: dict, strip_marks: bool = True
     resp = _notion_request(
         "PATCH", f"{NOTION_API}/pages/{page_id}", headers=_headers(),
         json={"properties": {
-            "Status": {"select": {"name": "Ready to Review"}},
+            "Status": {"select": {"name": status}},
             "Image": {"files": [{"name": "featured-image.jpg", "type": "external",
                                  "external": {"url": image_url}}]},
         }},
     )
     resp.raise_for_status()
     return image_url
+
+
+def fill_missing_images() -> int:
+    """Phase A des Slate-Modus (spec 2026-07-16): Status=Approved ohne Bild
+    -> Bild generieren. Bild ist der teuerste Schritt und laeuft deshalb
+    erst NACH der Text-Freigabe. Status bleibt Approved (Publish-Filter
+    verlangt Image non-empty). Fehler pro Zeile -> Status 'Image Failed'."""
+    done = 0
+    for row in get_approved_missing_image():
+        page_id = row["page_id"]
+        try:
+            sections = extract_body_sections(page_id)
+            strip = row.get("archetype", "") not in _NO_STRIP_ARCHETYPES
+            url = regenerate_page_image(page_id, sections, strip_marks=strip,
+                                        status="Approved")
+            print(f"  Bild generiert: {page_id} -> {url}", flush=True)
+            done += 1
+        except Exception as e:
+            print(f"  Bild fuer {page_id} fehlgeschlagen: {e}", file=sys.stderr, flush=True)
+            try:
+                set_post_status(page_id, "Image Failed")
+            except Exception as e2:
+                print(f"  Status-Setzen fehlgeschlagen: {e2}", file=sys.stderr, flush=True)
+    return done
 
 
 def repair_wrong_images(statuses: tuple = ("Image wrong",)) -> int:

@@ -140,3 +140,15 @@ def test_phase_drafts_skips_page_without_pool_row():
     with patch.multiple(run_slate, **mocks):
         run_slate.phase_drafts(cfg)  # darf nicht raisen
     mocks["update_with_draft"].assert_not_called()
+
+
+def test_phase_images_nonfatal():
+    with patch.object(run_slate, "fill_missing_images",
+                      MagicMock(side_effect=RuntimeError("kie down"))):
+        run_slate.phase_images(CFG)  # darf nicht raisen
+
+
+def test_phase_images_reports_count(capsys):
+    with patch.object(run_slate, "fill_missing_images", MagicMock(return_value=2)):
+        run_slate.phase_images(CFG)
+    assert "2" in capsys.readouterr().out

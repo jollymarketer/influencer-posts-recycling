@@ -863,7 +863,8 @@ def get_approved_missing_image() -> list[dict]:
     ]})
     return [{"page_id": p["id"],
              "post_url": ((p.get("properties", {}).get("LinkedIn Post URL") or {})
-                          .get("url") or "")}
+                          .get("url") or ""),
+             "archetype": _select_name(p.get("properties", {}), "Bild-Variante")}
             for p in pages]
 
 

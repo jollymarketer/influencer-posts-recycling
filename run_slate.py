@@ -60,6 +60,7 @@ from tools.image_archetypes import (
     build_archetype_prompt,
     skeleton_signals,
 )
+from tools.image_repair import fill_missing_images
 from tools.linkedin_scraper import scrape_new_posts
 from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.substack_scraper import scrape_substack_posts
@@ -249,6 +250,15 @@ def phase_slate(cfg, now) -> None:
     except Exception as e:
         print(f"  FEHLER - Pool-Writeback: {e}", file=sys.stderr)
     print(f"  Slate geschrieben: {len(written)}/{len(slate)} Zeilen.")
+
+
+def phase_images(cfg) -> None:
+    print("\nPhase A: Bilder fuer freigegebene Texte ...")
+    try:
+        n = fill_missing_images()
+        print(f"  {n} Bild(er) generiert.")
+    except Exception as e:
+        print(f"  FEHLER - Phase A: {e}", file=sys.stderr)
 
 
 def _persona_by_id(cfg, persona_id: str) -> dict | None:
