@@ -452,6 +452,13 @@ def run_daily():
 
 
 def main(now=None):
+    # Slate-Modus (spec 2026-07-16): lisocon faehrt die 3-Phasen-Pipeline,
+    # der Winner-Flow inkl. Wochen-Jobs bleibt Jolly-only.
+    if _cfg.FEATURES.get("slate_mode"):
+        import run_slate
+        run_slate.run_slate_mode(_cfg, now=now or datetime.now(timezone.utc))
+        return
+
     # Wochen-Jobs (Do-Keyword-Scrape, Fr-Mining) duerfen NICHT am Erfolg des
     # Daily-Laufs haengen: run_daily() beendet den Prozess bei harten Fehlern
     # via sys.exit(1) und hat so das Freitag-Mining wochenweise still gefressen

@@ -152,3 +152,28 @@ def test_phase_images_reports_count(capsys):
     with patch.object(run_slate, "fill_missing_images", MagicMock(return_value=2)):
         run_slate.phase_images(CFG)
     assert "2" in capsys.readouterr().out
+
+
+def test_run_slate_mode_weekday_gating():
+    thu = datetime(2026, 7, 23, 7, 0, tzinfo=timezone.utc)   # Donnerstag
+    tue = datetime(2026, 7, 21, 7, 0, tzinfo=timezone.utc)   # Dienstag
+    with patch.object(run_slate, "phase_images") as pi, \
+         patch.object(run_slate, "phase_drafts") as pd, \
+         patch.object(run_slate, "phase_slate") as ps:
+        run_slate.run_slate_mode(CFG, now=thu)
+        run_slate.run_slate_mode(CFG, now=tue)
+    assert pi.call_count == 2 and pd.call_count == 2
+    ps.assert_called_once()          # nur Donnerstag
+    assert ps.call_args.args[1] == thu
+
+
+def test_run_research_dispatches_to_slate_mode(monkeypatch):
+    import run_research
+    monkeypatch.setattr(run_research._cfg, "FEATURES",
+                        {**run_research._cfg.FEATURES, "slate_mode": True},
+                        raising=False)
+    called = {}
+    monkeypatch.setattr(run_slate, "run_slate_mode",
+                        lambda cfg, now=None: called.setdefault("yes", True))
+    run_research.main(now=datetime(2026, 7, 21, 7, 0, tzinfo=timezone.utc))
+    assert called.get("yes") is True

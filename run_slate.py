@@ -252,6 +252,17 @@ def phase_slate(cfg, now) -> None:
     print(f"  Slate geschrieben: {len(written)}/{len(slate)} Zeilen.")
 
 
+def run_slate_mode(cfg, now=None) -> None:
+    now = now or datetime.now(timezone.utc)
+    print(f"=== Slate-Modus (Client: {cfg.NAME}) — {now.strftime('%Y-%m-%d %H:%M UTC')} ===")
+    phase_images(cfg)
+    phase_drafts(cfg)
+    if now.weekday() in tuple(cfg.SLATE.get("days", (0, 3))):
+        phase_slate(cfg, now)
+    else:
+        print(f"\nKein Slate-Tag (weekday {now.weekday()}).")
+
+
 def phase_images(cfg) -> None:
     print("\nPhase A: Bilder fuer freigegebene Texte ...")
     try:
