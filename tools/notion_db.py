@@ -790,7 +790,8 @@ def create_slate_entry(candidate: dict, matrix_prio: bool = False) -> str:
         "LinkedIn Post URL": {"url": candidate["post_url"]},
         "Post Excerpt": {"rich_text": _rich_text_prop(excerpt)},
         "Date Scraped": {"date": {"start": datetime.now(timezone.utc).isoformat()}},
-        "Score": {"number": int(candidate.get("score_total", 0))},
+        # Frisch gescorte Kandidaten tragen "score", Pool-Zeilen "score_total".
+        "Score": {"number": int(candidate.get("score_total") or candidate.get("score") or 0)},
         "VoC-Treffer": {"rich_text": _rich_text_prop(_sanitize(candidate.get("voc_hit", "")))},
         "Themen-Winkel": {"rich_text": _rich_text_prop(angle)},
         "Matrix-Prio": {"checkbox": bool(matrix_prio)},

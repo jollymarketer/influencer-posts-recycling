@@ -51,6 +51,18 @@ def test_create_slate_entry_status_and_title(monkeypatch):
     assert props["Poster"]["select"]["name"] == "Reinhard"  # kaeufer -> Reinhard
 
 
+def test_create_slate_entry_score_falls_back_to_fresh_score(monkeypatch):
+    """Frisch gescorte Kandidaten tragen 'score' statt 'score_total' (Bug 16.07)."""
+    monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
+    monkeypatch.setattr(notion_db, "_cfg", _LISOCON_CFG)
+    cand = {k: v for k, v in _CAND.items() if k != "score_total"}
+    cand["score"] = 38
+    with patch.object(notion_db, "_notion_request",
+                      return_value=_resp({"id": "p"})) as req:
+        notion_db.create_slate_entry(cand)
+    assert req.call_args.kwargs["json"]["properties"]["Score"]["number"] == 38
+
+
 def test_create_slate_entry_title_fallback(monkeypatch):
     monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
     monkeypatch.setattr(notion_db, "_cfg", _LISOCON_CFG)
