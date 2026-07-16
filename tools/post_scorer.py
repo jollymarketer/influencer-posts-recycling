@@ -22,6 +22,10 @@ _cfg = load_client()
 
 CLIENT_CONTEXT = _cfg.CONTEXT
 
+# Scoring-Modell pro Mandant (Richard 2026-07-16): lisocon scored mit Sonnet,
+# jolly bleibt auf Haiku (keine stille Kostenerhoehung beim Fremd-Mandanten).
+SCORING_MODEL = getattr(_cfg, "SCORING_MODEL", "claude-haiku-4-5-20251001")
+
 SCORING_PROMPT = """[[SCORING_ROLE]]
 
 KONTEXT:
@@ -49,6 +53,28 @@ Bewertungskriterien:
 Antworte NUR mit validem JSON (kein Markdown, kein Text davor/danach):
 {{"topic_fit": X, "icp_relevanz": X, "recyclierbarkeit": X, "einzigartigkeit": X, "themen_diversitaet": X, "reasoning": "1-2 Saetze warum dieser Score"}}"""
 SCORING_PROMPT = apply_tokens(SCORING_PROMPT, _cfg)
+
+# Klassifikations-Zusatz fuer den Slate-Modus (spec 2026-07-16): Persona,
+# VoC-Treffer, Themen-Winkel und Matrix-Box werden beim Einlagern in den
+# Kandidaten-Pool miterhoben. Nur aktiv bei score_posts(classify=True);
+# der Jolly-Pfad (classify=False) bleibt byte-identisch.
+CLASSIFY_SECTION = """
+Zusaetzlich klassifiziere den Post (Felder im selben JSON):
+- "persona": genau eine von [[CLASSIFY_PERSONA_IDS]] — wen adressiert ein daraus
+  gemachter Post staerker?
+- "voc_hit": trifft das Thema einen der im KONTEXT belegten VoC-Schmerzen?
+  Dann benenne ihn kurz woertlich, sonst leerer String.
+- "topic_angle_de": EIN deutscher Satz — worueber unser Post gehen wuerde
+  (eigenstaendiger Blickwinkel, kein Zitat des Originals).
+- "matrix_job": genau eine von Perspective, Proof, Promotion.
+- "matrix_stage": genau eine von Awareness, Education, Selection."""
+
+_CLASSIFY_FIELDS = ("persona", "voc_hit", "topic_angle_de", "matrix_job", "matrix_stage")
+
+
+def _classify_section() -> str:
+    ids = ", ".join(p.get("id", "") for p in getattr(_cfg, "CONTENT_PERSONAS", []) or [])
+    return CLASSIFY_SECTION.replace("[[CLASSIFY_PERSONA_IDS]]", ids or "kaeufer, anwender")
 
 DACH_POST_PROMPT = """[[PERSONA_DE]]
 
@@ -1014,7 +1040,8 @@ def calculate_virality_score(engagement: dict) -> int:
     return score
 
 
-def score_posts(posts: list, recent_drafts: list[str] | None = None) -> list:
+def score_posts(posts: list, recent_drafts: list[str] | None = None,
+                classify: bool = False) -> list:
     """
     Bewertet Posts nach 6 Dimensionen: 5 inhaltliche (KI) + Viralitaet (Metriken).
     Dimension 5: Themen-Diversitaet — bevorzugt Themen die kuerzlich nicht gepostet wurden.
@@ -1047,9 +1074,11 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
                 shares=engagement.get("shares", 0),
                 diversity_section=diversity_section,
             )
+            if classify:
+                prompt += _classify_section()
             response = client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=300,
+                model=SCORING_MODEL,
+                max_tokens=500 if classify else 300,
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = response.content[0].text.strip()
@@ -1067,8 +1096,12 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
                 + scores.get("themen_diversitaet", 8)
             )
             total = content_total + virality_score
+            extra = {}
+            if classify:
+                extra = {f: str(scores.get(f, "") or "") for f in _CLASSIFY_FIELDS}
             scored.append({
                 **post,
+                **extra,
                 "score": total,
                 "score_details": {**scores, "viralitaet": virality_score},
                 "reasoning": scores.get("reasoning", ""),

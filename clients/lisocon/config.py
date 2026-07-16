@@ -156,6 +156,10 @@ FEATURES = {
 # GTM-Call Jae 2026-07-09: auch Bild-Texte auf Deutsch (Default: English).
 IMAGE_LANGUAGE = "German"
 
+# Scoring-Modell (Richard 2026-07-16): Slate-Klassifikation (Persona, VoC,
+# Themen-Winkel) braucht mehr Praezision als Haiku liefert.
+SCORING_MODEL = "claude-sonnet-4-6"
+
 # Persona-Split (GTM-Call Jae 2026-07-09): Reinhard postet Kaeufer/Entscheider,
 # Jae die Anwender-Posts. Steuert die Notion-Property "Poster" (Make routet
 # den Post auf den jeweiligen LinkedIn-Account) und den Stimm-Wechsel im
