@@ -209,10 +209,10 @@ DAILY_KEYWORD_SEARCH = {
     "posted_limit": "week",
 }
 
-# Kadenz (Richard 2026-07-06): 4 Winner/Woche aus einem 7-Tage-Content-Pool.
-# Cron beim Scharfstellen: "0 7 * * 2-5" (Di-Fr 07:00 UTC, Montag-Skip wie Jolly).
-# Verlierer werden nicht persistiert und bleiben im Pool: sie konkurrieren in den
-# Folge-Laeufen erneut, nur Winner sind via Notion-URL-Dedup gesperrt.
+# Kadenz (Richard 2026-07-16, Slate-Modus): Cron "0 7 * * 1-5" (Mo-Fr 07:00 UTC).
+# Taeglich Phasen A (Bilder) + B (Drafts); Scrape + Slate nur Mo+Do (SLATE["days"]).
+# Nicht gepickte Kandidaten persistieren in Supabase (topic_candidates) und
+# konkurrieren in Folge-Slates erneut; Winner/Picks sind via Notion-URL-Dedup gesperrt.
 # max_posts 5 (Richard 2026-07-06, Kosten ~7 USD/Monat statt ~13 bei 10):
 # deckt die 5 neuesten Posts pro Profil im 7-Tage-Pool, Vielposter verlieren etwas Tiefe.
 SCRAPE = {
