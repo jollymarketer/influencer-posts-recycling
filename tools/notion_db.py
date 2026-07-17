@@ -772,10 +772,13 @@ def get_recent_personas(limit: int = 2) -> list[str]:
     return _get_recent_select("Persona", limit)
 
 
-def create_slate_entry(candidate: dict, matrix_prio: bool = False) -> str:
-    """Themenvorschlag-Zeile fuer den Slate-Modus (spec 2026-07-16).
-    Nur Thema-Felder, kein Draft, kein Bild. Titel-Leak-Regel: NIE
-    Influencer-Name oder Original-Text — nur der eigene Themen-Winkel."""
+def create_slate_entry(candidate: dict, matrix_prio: bool = False,
+                       draft: dict | None = None) -> str:
+    """Themenvorschlag-Zeile fuer den Slate-Modus (spec 2026-07-16, Amendment
+    2026-07-17: Draft entsteht schon im Slate-Bau, Pick = Approved).
+    Titel-Leak-Regel: NIE Influencer-Name oder Original-Text — nur der
+    eigene Themen-Winkel. `draft` (optional) traegt linkedin_draft,
+    image_prompt, skeleton, post_format, infographic_type, archetype."""
     angle = _sanitize(candidate.get("topic_angle_de", "")).strip()
     title = angle[:60] if angle else "Themenvorschlag"
     persona = candidate.get("persona", "")
@@ -802,19 +805,42 @@ def create_slate_entry(candidate: dict, matrix_prio: bool = False) -> str:
         if value:
             props[prop] = {"select": {"name": value}}
 
-    children = [
-        _h2_block("Original Post"),
-        {"object": "block", "type": "bookmark",
-         "bookmark": {"url": candidate["post_url"]}},
-        _h2_block("Post Text (Original)"),
-    ] + _para_blocks(excerpt)
+    if draft:
+        props["LinkedIn Draft"] = {"rich_text": _rich_text_prop(_sanitize(draft["linkedin_draft"]))}
+        if draft.get("image_prompt"):
+            props["Image Prompt"] = {"rich_text": _rich_text_prop(draft["image_prompt"])}
+        body = {"parent": {"database_id": NOTION_DB_ID}, "properties": props}
+    else:
+        children = [
+            _h2_block("Original Post"),
+            {"object": "block", "type": "bookmark",
+             "bookmark": {"url": candidate["post_url"]}},
+            _h2_block("Post Text (Original)"),
+        ] + _para_blocks(excerpt)
+        body = {"parent": {"database_id": NOTION_DB_ID},
+                "properties": props, "children": children}
 
-    resp = _notion_request(
-        "POST", f"{NOTION_API}/pages", headers=_headers(),
-        json={"parent": {"database_id": NOTION_DB_ID},
-              "properties": props, "children": children})
+    resp = _notion_request("POST", f"{NOTION_API}/pages", headers=_headers(), json=body)
     resp.raise_for_status()
-    return resp.json()["id"]
+    page_id = resp.json()["id"]
+
+    if draft:
+        # Body in Review-Template-Reihenfolge (Phase A liest den Image Prompt
+        # aus dem Body zurueck — die Property ist auf 2000 UTF-16-Units gekappt).
+        _rebuild_page_body(page_id, image_url="",
+                           de_draft=_sanitize(draft["linkedin_draft"]), en_draft="",
+                           post_text=_sanitize(candidate.get("post_text", "")),
+                           post_url=candidate["post_url"],
+                           skeleton=draft.get("skeleton", ""),
+                           image_prompt=draft.get("image_prompt", ""))
+        # Anti-Repeat-Selects non-fatal (Konvention: fehlende Property darf
+        # den Slate-Bau nicht killen).
+        for prop, value in (("Format", draft.get("post_format", "")),
+                            ("Infografik-Typ", draft.get("infographic_type", "")),
+                            ("Bild-Variante", draft.get("archetype", ""))):
+            if value:
+                _patch_select_nonfatal(page_id, prop, value)
+    return page_id
 
 
 def _query_db(filter_: dict) -> list[dict]:

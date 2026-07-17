@@ -74,6 +74,36 @@ def test_create_slate_entry_title_fallback(monkeypatch):
     assert title == "Themenvorschlag"
 
 
+def test_create_slate_entry_with_draft_writes_props_and_body(monkeypatch):
+    """Slate-mit-Draft-Modell (Richard 2026-07-17): Draft entsteht im Slate-Bau,
+    Pick = Approved. Draft-Property + Image Prompt + Body via _rebuild_page_body."""
+    monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
+    monkeypatch.setattr(notion_db, "_cfg", _LISOCON_CFG)
+    draft = {"linkedin_draft": "DE Draft Text", "image_prompt": "img prompt",
+             "skeleton": "skelett", "post_format": "POV",
+             "infographic_type": "Iceberg", "archetype": "stat_hero"}
+    with patch.object(notion_db, "_notion_request",
+                      return_value=_resp({"id": "page-1"})) as req, \
+         patch.object(notion_db, "_rebuild_page_body") as body_mock, \
+         patch.object(notion_db, "_patch_select_nonfatal") as sel_mock:
+        page_id = notion_db.create_slate_entry(_CAND, matrix_prio=False, draft=draft)
+    assert page_id == "page-1"
+    props = req.call_args.kwargs["json"]["properties"]
+    assert props["Status"]["select"]["name"] == "Themenvorschlag"
+    assert props["LinkedIn Draft"]["rich_text"][0]["text"]["content"].startswith("DE Draft")
+    assert props["Image Prompt"]["rich_text"][0]["text"]["content"] == "img prompt"
+    assert "children" not in req.call_args.kwargs["json"]  # Body kommt aus dem Rebuild
+    kwargs = body_mock.call_args.kwargs
+    assert kwargs["image_url"] == ""
+    assert kwargs["de_draft"] == "DE Draft Text"
+    assert kwargs["image_prompt"] == "img prompt"
+    assert kwargs["skeleton"] == "skelett"
+    patched = {c.args[1]: c.args[2] for c in sel_mock.call_args_list}
+    assert patched["Format"] == "POV"
+    assert patched["Infografik-Typ"] == "Iceberg"
+    assert patched["Bild-Variante"] == "stat_hero"
+
+
 def test_get_pages_by_status_extracts_fields(monkeypatch):
     monkeypatch.setattr(notion_db, "NOTION_DB_ID", "db")
     payload = {"results": [{

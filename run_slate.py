@@ -1,10 +1,13 @@
 """
-Lisocon Slate-Modus (spec docs/superpowers/specs/2026-07-16-lisocon-topic-slate-pool-design.md).
+Lisocon Slate-Modus (spec docs/superpowers/specs/2026-07-16-lisocon-topic-slate-pool-design.md,
+Amendment 2026-07-17: Drafts entstehen schon im Slate-Bau, Pick = Approved).
 
-Drei Phasen pro Cron-Lauf (Mo-Fr 07:00 UTC):
-  A (immer):  Status=Approved ohne Bild -> Bild generieren
-  B (immer):  Status=Topic Approved -> Draft schreiben -> Ready to Review
-  C (Mo+Do):  Scrape -> Pool -> Re-Score -> 10er-Slate nach Notion
+Zwei Phasen pro Cron-Lauf (Mo-Fr 07:00 UTC):
+  A (immer):  Status=Approved ohne Bild -> Bild generieren (teuerster Schritt,
+              laeuft erst nach dem menschlichen Pick)
+  C (Mo+Do):  Scrape -> Pool -> Re-Score -> 10er-Slate MIT fertigen Drafts
+              nach Notion. Jae liest den Post beim Picken; der Approved-Flip
+              ist die einzige menschliche Geste.
 
 Nur aktiv bei FEATURES["slate_mode"] (lisocon). Jolly: run_research.run_daily.
 """
@@ -25,7 +28,6 @@ from tools.notion_db import (
     get_pages_by_status,
     create_slate_entry,
     archive_page,
-    update_with_draft,
 )
 from tools.topic_pool import (
     upsert_candidates,
@@ -166,10 +168,16 @@ def phase_slate(cfg, now) -> None:
 
     try:
         prev = get_pages_by_status("Themenvorschlag")
+        prev_urls = {r["post_url"] for r in prev if r["post_url"]}
+        # Gepickte Slate-Zeilen sind nicht mehr Themenvorschlag (Approved/
+        # Posted) -> Pool-State picked, bevor die Verbliebenen gestriked werden.
+        picked = [r["post_url"] for r in get_candidates(cfg.NAME, ["slated"])
+                  if r["post_url"] not in prev_urls]
+        if picked:
+            set_state(picked, "picked")
         for row in prev:
             archive_page(row["page_id"])
-        unslate_and_strike([r["post_url"] for r in prev if r["post_url"]],
-                           slate_cfg["max_times_slated"])
+        unslate_and_strike(sorted(prev_urls), slate_cfg["max_times_slated"])
         retired = retire_aged(cfg.NAME, slate_cfg["max_age_days"])
         if retired:
             print(f"  {retired} Kandidat(en) altersbedingt retired.")
@@ -222,13 +230,35 @@ def phase_slate(cfg, now) -> None:
     except Exception as e:
         print(f"  Matrix-Coverage nicht lesbar (nicht kritisch): {e}", file=sys.stderr)
 
+    # Anti-Repeat-Kontext: Seed aus Notion (Posted/Approved), waechst im Lauf
+    # mit jedem generierten Draft (20 Drafts sehen sonst denselben Stand und
+    # klumpen auf ein Format / einen Infografik-Typ / einen Bild-Stil).
+    recents = {"formats": [], "infographic_types": [], "archetypes": []}
+    for key, getter in (("formats", get_recent_formats),
+                        ("infographic_types", get_recent_infographic_types),
+                        ("archetypes", get_recent_archetypes)):
+        try:
+            recents[key] = getter()
+        except Exception:
+            pass
+
     written = []
     for cand in slate:
         prio = bool(target_box) and (cand.get("matrix_job", ""),
                                      cand.get("matrix_stage", "")) == target_box
+        box = (cand.get("matrix_job", ""), cand.get("matrix_stage", ""))
         try:
-            create_slate_entry(cand, prio)
+            draft = draft_candidate(cfg, cand, cand.get("persona", ""), box, recents)
+            if not draft:
+                print(f"  Kein Draft fuer {cand['post_url']} - Skip.", file=sys.stderr)
+                continue
+            create_slate_entry(cand, matrix_prio=prio, draft=draft)
             written.append(cand["post_url"])
+            for key, field in (("formats", "post_format"),
+                               ("infographic_types", "infographic_type"),
+                               ("archetypes", "archetype")):
+                if draft.get(field):
+                    recents[key].insert(0, draft[field])
         except Exception as e:
             print(f"  FEHLER - Slate-Zeile {cand['post_url']}: {e}", file=sys.stderr)
 
@@ -256,7 +286,6 @@ def run_slate_mode(cfg, now=None) -> None:
     now = now or datetime.now(timezone.utc)
     print(f"=== Slate-Modus (Client: {cfg.NAME}) — {now.strftime('%Y-%m-%d %H:%M UTC')} ===")
     phase_images(cfg)
-    phase_drafts(cfg)
     if now.weekday() in tuple(cfg.SLATE.get("days", (0, 3))):
         phase_slate(cfg, now)
     else:
@@ -280,45 +309,15 @@ def _persona_by_id(cfg, persona_id: str) -> dict | None:
     return next((p for p in personas if p.get("share") == "dominant"), None)
 
 
-def phase_drafts(cfg) -> None:
-    print("\nPhase B: Drafts fuer gepickte Themen ...")
-    try:
-        picked = get_pages_by_status("Topic Approved")
-    except Exception as e:
-        print(f"  FEHLER - Notion nicht lesbar: {e}", file=sys.stderr)
-        return
-    if not picked:
-        print("  Keine Picks.")
-        return
-    try:
-        pool = {r["post_url"]: r
-                for r in get_candidates(cfg.NAME, ["slated", "picked", "pool"])}
-    except Exception as e:
-        print(f"  FEHLER - Pool nicht lesbar: {e}", file=sys.stderr)
-        return
-
-    for page in picked:
-        try:
-            _draft_one(cfg, page, pool)
-        except Exception as e:
-            print(f"  FEHLER - Draft fuer {page['post_url']}: {e}", file=sys.stderr)
-
-
-def _draft_one(cfg, page: dict, pool: dict) -> None:
-    row = pool.get(page["post_url"])
-    if not row:
-        print(f"  Kein Pool-Kandidat fuer {page['post_url']} - Skip.", file=sys.stderr)
-        return
-    winner = _pool_row_to_post(row)
-
-    persona = _persona_by_id(cfg, page.get("persona", ""))
-    try:
-        recent_formats = get_recent_formats()
-    except Exception:
-        recent_formats = []
-    box = (page.get("matrix_job", ""), page.get("matrix_stage", ""))
+def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dict) -> dict | None:
+    """Erzeugt Draft + Bild-Prompt fuer einen Slate-Kandidaten (Amendment
+    2026-07-17). Kein Notion-Zugriff: Anti-Repeat-Kontext kommt als `recents`
+    ({"formats", "infographic_types", "archetypes"}) vom Aufrufer und waechst
+    dort pro Lauf. Rueckgabe-Dict fuer create_slate_entry(draft=...), None bei
+    leerem Draft."""
+    persona = _persona_by_id(cfg, persona_id)
     candidates = formats_for_box(box, cfg) if all(box) else free_formats(cfg)
-    post_format = pick_format(winner, recent_formats, candidates=candidates)
+    post_format = pick_format(winner, recents["formats"], candidates=candidates)
 
     chosen_asset = None
     try:
@@ -326,26 +325,16 @@ def _draft_one(cfg, page: dict, pool: dict) -> None:
     except Exception as e:
         print(f"  Asset-Wahl fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if post_format in FORMAT_ASSET_ATTR and not chosen_asset:
-        post_format = pick_format(winner, recent_formats, candidates=free_formats(cfg))
+        post_format = pick_format(winner, recents["formats"], candidates=free_formats(cfg))
     if persona and post_format in FORMAT_ASSET_ATTR:
         personas = getattr(cfg, "CONTENT_PERSONAS", None) or []
         dominant = next((p for p in personas if p.get("share") == "dominant"), None)
         if dominant:
             persona = dominant
 
-    try:
-        recent_infographic_types = get_recent_infographic_types()
-    except Exception:
-        recent_infographic_types = []
-    try:
-        recent_archetypes = get_recent_archetypes()
-    except Exception:
-        recent_archetypes = []
-
-    linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext = \
-        generate_post_and_image_prompt(
+    linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext =         generate_post_and_image_prompt(
             winner, post_format,
-            recent_infographic_types=recent_infographic_types,
+            recent_infographic_types=recents["infographic_types"],
             assets_de=assets_block(post_format, chosen_asset, "de"),
             assets_en=assets_block(post_format, chosen_asset, "en"),
             persona_de=persona_block(persona, "de"),
@@ -353,8 +342,7 @@ def _draft_one(cfg, page: dict, pool: dict) -> None:
             persona_voice_de=(persona or {}).get("voice_de", ""),
         )
     if not linkedin_draft:
-        print(f"  Leerer Draft fuer {page['post_url']} - Skip.", file=sys.stderr)
-        return
+        return None
 
     if post_format == "CaseProof" and chosen_asset:
         for attempt in ("retry", "downgrade"):
@@ -362,10 +350,9 @@ def _draft_one(cfg, page: dict, pool: dict) -> None:
                 break
             if attempt == "retry":
                 print("  Zahlen-Guard verletzt - ein Retry.", file=sys.stderr)
-                linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext = \
-                    generate_post_and_image_prompt(
+                linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext =                     generate_post_and_image_prompt(
                         winner, post_format,
-                        recent_infographic_types=recent_infographic_types,
+                        recent_infographic_types=recents["infographic_types"],
                         assets_de=assets_block(post_format, chosen_asset, "de"),
                         assets_en=assets_block(post_format, chosen_asset, "en"),
                         persona_de=persona_block(persona, "de"),
@@ -375,50 +362,30 @@ def _draft_one(cfg, page: dict, pool: dict) -> None:
                 print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
                 post_format = "Method"
                 chosen_asset = None
-                linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext = \
-                    generate_post_and_image_prompt(
+                linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext =                     generate_post_and_image_prompt(
                         winner, post_format,
-                        recent_infographic_types=recent_infographic_types,
+                        recent_infographic_types=recents["infographic_types"],
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
                     )
         if not linkedin_draft:
-            print(f"  Leerer Draft nach Guard fuer {page['post_url']} - Skip.",
-                  file=sys.stderr)
-            return
+            return None
 
     infographic_type = normalize_infographic_type(parse_infographic_type(skeleton))
     sig = skeleton_signals(skeleton, sound_byte)
     chosen_archetype = select_archetype(
         post_format=post_format, infographic_type=infographic_type,
         layers_count=sig["layers_count"], has_metaphor=sig["has_metaphor"],
-        has_stat=sig["has_stat"], recent_archetypes=recent_archetypes)
+        has_stat=sig["has_stat"], recent_archetypes=recents["archetypes"])
     gen_archetype, gen_prompt, gen_ratio, gen_strip = build_archetype_prompt(
         chosen_archetype, soundbyte=sound_byte, kontext=kontext, skeleton=skeleton,
         language=getattr(cfg, "IMAGE_LANGUAGE", "English"))
 
-    matrix_box = FORMAT_TO_BOX.get(post_format, ("", ""))
-    update_with_draft(
-        page_id=page["page_id"],
-        linkedin_draft=linkedin_draft,
-        en_draft="",
-        image_prompt=gen_prompt,
-        image_url="",
-        title=winner.get("post_excerpt", "")[:60],
-        influencer=winner["influencer"],
-        image_failed=False,
-        image_error="",
-        infographic_skeleton=skeleton,
-        post_format=post_format,
-        infographic_type=infographic_type,
-        archetype=gen_archetype,
-        matrix_job=matrix_box[0],
-        matrix_stage=matrix_box[1],
-        persona=(persona or {}).get("id", ""),
-        poster=page.get("poster", ""),
-        asset_id=(chosen_asset or {}).get("id", ""),
-        post_text=winner["post_text"],
-        post_url=winner["post_url"],
-    )
-    set_state([page["post_url"]], "picked")
-    print(f"  Draft geschrieben: {page['post_url']} ({post_format})")
+    return {
+        "linkedin_draft": linkedin_draft,
+        "image_prompt": gen_prompt,
+        "skeleton": skeleton,
+        "post_format": post_format,
+        "infographic_type": infographic_type,
+        "archetype": gen_archetype,
+    }
