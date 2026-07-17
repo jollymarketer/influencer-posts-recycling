@@ -317,6 +317,11 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
     leerem Draft."""
     persona = _persona_by_id(cfg, persona_id)
     candidates = formats_for_box(box, cfg) if all(box) else free_formats(cfg)
+    # Klumpen-Clamp (Befund 17.07: 9x Opinion): Ein-Format-Boxen umgehen das
+    # pick_format-Anti-Repeat ("Quota schlaegt Wiederholung"). Steht das
+    # erzwungene Format schon 2x in Folge im Lauf-Kontext, freie Wahl.
+    if len(candidates) == 1 and recents["formats"][:2] == [candidates[0]] * 2:
+        candidates = free_formats(cfg)
     post_format = pick_format(winner, recents["formats"], candidates=candidates)
 
     chosen_asset = None

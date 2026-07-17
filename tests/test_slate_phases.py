@@ -188,6 +188,63 @@ def test_in_run_anti_repeat_grows_recents():
     assert seen[1][2][0] == "stat_hero"     # Archetyp
 
 
+def test_single_format_box_breaks_clump_after_two_in_a_row():
+    """Ein-Format-Boxen (z.B. Perspective x Awareness -> nur Opinion) umgehen
+    das pick_format-Anti-Repeat. Clamp: steht das erzwungene Format schon 2x
+    in Folge im Lauf-Kontext, faellt die Wahl auf free_formats zurueck
+    (Befund Slate-Lauf 17.07: 9x Opinion)."""
+    winner = _scored("u1")
+    recents = {"formats": ["Opinion", "Opinion", "POV"],
+               "infographic_types": [], "archetypes": []}
+    captured = {}
+
+    def fake_pick_format(w, recent, candidates=None):
+        captured["candidates"] = list(candidates)
+        return "Story"
+
+    with patch.object(run_slate, "formats_for_box", return_value=["Opinion"]), \
+         patch.object(run_slate, "free_formats", return_value=["Opinion", "POV", "Story"]) as ff, \
+         patch.object(run_slate, "pick_format", side_effect=fake_pick_format), \
+         patch.object(run_slate, "asset_for_format", return_value=None), \
+         patch.object(run_slate, "get_recent_assets", return_value=[]), \
+         patch.object(run_slate, "generate_post_and_image_prompt",
+                      return_value=("Draft", "", "prompt", "skelett", "sb", "ktx")), \
+         patch.object(run_slate, "normalize_infographic_type", return_value="Iceberg"), \
+         patch.object(run_slate, "parse_infographic_type", return_value="Iceberg"), \
+         patch.object(run_slate, "skeleton_signals",
+                      return_value={"layers_count": 0, "has_metaphor": False, "has_stat": False}), \
+         patch.object(run_slate, "select_archetype", return_value="stat_hero"), \
+         patch.object(run_slate, "build_archetype_prompt",
+                      return_value=("stat_hero", "prompt", "1:1", True)):
+        result = run_slate.draft_candidate(CFG, winner, "kaeufer",
+                                           ("Perspective", "Awareness"), recents)
+    ff.assert_called()
+    assert captured["candidates"] == ["Opinion", "POV", "Story"]
+    assert result["post_format"] == "Story"
+
+
+def test_single_format_box_respected_when_not_clumped():
+    """Erste/zweite Nutzung der Ein-Format-Box: Quota schlaegt Anti-Repeat."""
+    winner = _scored("u1")
+    recents = {"formats": ["Opinion", "POV"], "infographic_types": [], "archetypes": []}
+    with patch.object(run_slate, "formats_for_box", return_value=["Opinion"]), \
+         patch.object(run_slate, "pick_format", side_effect=lambda w, r, candidates: candidates[0]), \
+         patch.object(run_slate, "asset_for_format", return_value=None), \
+         patch.object(run_slate, "get_recent_assets", return_value=[]), \
+         patch.object(run_slate, "generate_post_and_image_prompt",
+                      return_value=("Draft", "", "prompt", "skelett", "sb", "ktx")), \
+         patch.object(run_slate, "normalize_infographic_type", return_value="Iceberg"), \
+         patch.object(run_slate, "parse_infographic_type", return_value="Iceberg"), \
+         patch.object(run_slate, "skeleton_signals",
+                      return_value={"layers_count": 0, "has_metaphor": False, "has_stat": False}), \
+         patch.object(run_slate, "select_archetype", return_value="stat_hero"), \
+         patch.object(run_slate, "build_archetype_prompt",
+                      return_value=("stat_hero", "prompt", "1:1", True)):
+        result = run_slate.draft_candidate(CFG, winner, "kaeufer",
+                                           ("Perspective", "Awareness"), recents)
+    assert result["post_format"] == "Opinion"
+
+
 def test_phase_images_nonfatal():
     with patch.object(run_slate, "fill_missing_images",
                       MagicMock(side_effect=RuntimeError("kie down"))):
