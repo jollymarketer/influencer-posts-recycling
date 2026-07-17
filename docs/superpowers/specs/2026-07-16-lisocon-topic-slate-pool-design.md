@@ -1,7 +1,34 @@
 # Lisocon Topic Slate + Persistent Candidate Pool
 
 Date: 2026-07-16
-Status: approved by Richard (chat, 2026-07-16)
+Status: approved by Richard (chat, 2026-07-16); amended 2026-07-17 (see Amendment below)
+
+## Amendment 2026-07-17: drafts at slate build, pick = approve
+
+Richard, 2026-07-17: the topic-pick -> draft -> text-approval chain is one step
+too many. Superseding the "Model A" decision below:
+
+- Phase C generates the full German draft (+ grammar check + numbers guard),
+  image prompt, and skeleton for every slate candidate. Slate rows carry the
+  draft in the "LinkedIn Draft" property and the full body (Phase A reads the
+  image prompt back from the body).
+- Jae reads the finished post while picking; flipping a Themenvorschlag to
+  **Approved** is the only human gesture. "Topic Approved" and "Ready to
+  Review" leave the lisocon flow (options remain in Notion, unused).
+- Phase B is removed. Phase A (image after approval) and the publish leg are
+  unchanged — the image, the most expensive step, still runs only for picks.
+- Anti-repeat: the 10 drafts of one build share a rolling in-run context
+  (formats, infographic types, archetypes seeded from Posted/Approved rows)
+  so a single build cannot clump on one format/visual.
+- Picked detection: at the next slate build, pool candidates in state
+  `slated` whose URL is no longer a Themenvorschlag row are set to `picked`
+  before the remaining rows are archived and striked.
+- Cost delta: ~12 extra draft pipelines/week (~1 USD/week, total ~22-30
+  USD/month). Draft caching for re-slated candidates was considered and
+  rejected (simplicity first).
+- Accepted risk (Richard, 2026-07-17): one accidental Approved click makes a
+  row publishable; the image runs at the next 07:00 UTC run and the post goes
+  out in the following slot, leaving a >= 1 day correction window.
 Tenant: lisocon only, feature-gated. Jolly keeps the existing winner-per-run flow byte-identically.
 
 ## Problem
