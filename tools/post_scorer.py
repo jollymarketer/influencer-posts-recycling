@@ -126,7 +126,6 @@ Formatierung:
   * Emoji-Liste (mind. 3 gleichwertige Punkte): z.B. 📍 fuer Befunde, 👉 fuer Empfehlungen
   * Nummerierte Liste mit Unicode: ➊ ➋ ➌
   * GROSSBUCHSTABEN-Label fuer einen zentralen Abschnitt
-  * ASCII-Box fuer einen Merksatz: ┌─────┐ │ Merksatz │ └─────┘
 - Eine zugespitzte, eigenstaendige Zitat-Zeile auf eine eigene Zeile setzen (Screenshot- und Repost-faehig)
 - Laenge: ca. 200 Woerter, max. 3.000 Zeichen
 
@@ -260,7 +259,6 @@ Formatting:
   * Emoji list (at least 3 equal items): e.g. 📍 for findings, 👉 for recommendations
   * Numbered list with Unicode: ➊ ➋ ➌
   * ALL-CAPS label for one central section
-  * ASCII box for a key takeaway: ┌─────┐ │ takeaway │ └─────┘
 - Put one sharp, standalone quote line on its own line (screenshot- and repost-friendly).
 - Length: ~200 words, max 3,000 characters.
 
@@ -1124,11 +1122,18 @@ def sanitize_generated_text(text: str) -> str:
     - Markdown-Sternchen: LinkedIn rendert kein Markdown, **fett** erscheint woertlich
     - Em/En-Dash als Gedankenstrich liest als KI-Signal -> Komma;
       Zahlenbereiche behalten einen normalen Bindestrich, Strich-Bullets werden "- "
+    - Box-Drawing-Zeichen (ASCII-Boxen): LinkedIn rendert proportional, die
+      Box zerbricht beim Posten (Kundenfeedback lisocon 2026-07-17). Zeichen
+      werden gestrippt, der Merksatz-Text bleibt stehen.
     """
     text = text.replace("**", "")
     text = re.sub(r"(?m)^([ \t]*)[—–][ \t]+", r"\1- ", text)
     text = re.sub(r"(?<=\d)[ \t]*[—–][ \t]*(?=\d)", "-", text)
     text = re.sub(r"[ \t]*[—–][ \t]*", ", ", text)
+    if re.search(r"[─-╿]", text):
+        text = re.sub(r"(?m)^[ \t─-╿]+$\n?", "", text)   # reine Rahmen-Zeilen
+        text = re.sub(r"[─-╿]", "", text)                # Restzeichen inline
+        text = re.sub(r"(?m)^[ \t]+|[ \t]+$", "", text)            # Einrueckung der Box-Inhalte
     return text
 
 
