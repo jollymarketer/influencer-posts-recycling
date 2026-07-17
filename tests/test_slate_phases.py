@@ -245,6 +245,28 @@ def test_single_format_box_respected_when_not_clumped():
     assert result["post_format"] == "Opinion"
 
 
+def test_slate_notify_fires_webhook(monkeypatch):
+    monkeypatch.setenv("MAKE_SLATE_WEBHOOK", "https://hook.example/x")
+    cfg = SimpleNamespace(SLATE_VIEW_URL="https://notion.so/view")
+    resp = MagicMock(status_code=200)
+    with patch.object(run_slate.requests, "post", return_value=resp) as post:
+        run_slate._notify_slate(cfg, 10, "2026-07-20")
+    payload = post.call_args.kwargs["json"]
+    assert payload == {"count": 10, "date": "2026-07-20",
+                       "view_url": "https://notion.so/view"}
+
+
+def test_slate_notify_skips_without_env_and_never_raises(monkeypatch):
+    monkeypatch.delenv("MAKE_SLATE_WEBHOOK", raising=False)
+    cfg = SimpleNamespace(SLATE_VIEW_URL="https://notion.so/view")
+    with patch.object(run_slate.requests, "post") as post:
+        run_slate._notify_slate(cfg, 10, "2026-07-20")  # kein Env -> kein Call
+    post.assert_not_called()
+    monkeypatch.setenv("MAKE_SLATE_WEBHOOK", "https://hook.example/x")
+    with patch.object(run_slate.requests, "post", side_effect=RuntimeError("down")):
+        run_slate._notify_slate(cfg, 10, "2026-07-20")  # darf nicht raisen
+
+
 def test_phase_images_nonfatal():
     with patch.object(run_slate, "fill_missing_images",
                       MagicMock(side_effect=RuntimeError("kie down"))):

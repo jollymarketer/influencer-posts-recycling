@@ -162,6 +162,10 @@ IMAGE_LANGUAGE = "German"
 # Themen-Winkel) braucht mehr Praezision als Haiku liefert.
 SCORING_MODEL = "claude-sonnet-4-6"
 
+# Slate-Ready-Mail (17.07.2026): Link auf die Notion-View "Themen-Slate",
+# geht via MAKE_SLATE_WEBHOOK (Env) + Make-Szenario 9537326 an Jae.
+SLATE_VIEW_URL = "https://www.notion.so/3951617b1baf819e97a5d01a4765f606?v=39f1617b1baf81fab0cd000c9b527cac"
+
 # Slate-Modus (spec 2026-07-16): 2 Slates/Woche (Mo+Do), 10 Kandidaten,
 # hart quotiert 5 kaeufer + 5 anwender. Jae pickt fuer beide Poster.
 SLATE = {

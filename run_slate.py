@@ -15,6 +15,8 @@ import os
 import sys
 from datetime import datetime, timezone
 
+import requests
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from tools.notion_db import (
@@ -280,6 +282,26 @@ def phase_slate(cfg, now) -> None:
     except Exception as e:
         print(f"  FEHLER - Pool-Writeback: {e}", file=sys.stderr)
     print(f"  Slate geschrieben: {len(written)}/{len(slate)} Zeilen.")
+    if written:
+        _notify_slate(cfg, len(written), today)
+
+
+def _notify_slate(cfg, count: int, date: str) -> None:
+    """Slate-Ready-Mail an Jae via Make (Szenario 9537326). Non-fatal;
+    ohne MAKE_SLATE_WEBHOOK-Env stiller Skip."""
+    url = os.environ.get("MAKE_SLATE_WEBHOOK", "")
+    if not url:
+        print("  Slate-Benachrichtigung uebersprungen: MAKE_SLATE_WEBHOOK nicht gesetzt.")
+        return
+    try:
+        requests.post(url, json={
+            "count": count,
+            "date": date,
+            "view_url": getattr(cfg, "SLATE_VIEW_URL", ""),
+        }, timeout=15)
+        print("  Slate-Benachrichtigung an Make gefeuert.")
+    except Exception as e:
+        print(f"  Slate-Benachrichtigung fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
 
 
 def run_slate_mode(cfg, now=None) -> None:
