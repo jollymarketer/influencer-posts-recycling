@@ -35,9 +35,11 @@ def test_dash_bullet_becomes_hyphen_bullet():
     )
 
 
-def test_ascii_box_untouched():
+def test_ascii_box_stripped_keeps_text():
+    """Umgedreht am 17.07.2026 (Kundenfeedback lisocon): Boxen zerbrechen auf
+    LinkedIn, Rahmen wird gestrippt, der Merksatz bleibt."""
     box = "┌─────┐\n│ Merksatz │\n└─────┘"
-    assert sanitize_generated_text(box) == box
+    assert sanitize_generated_text(box) == "Merksatz\n"
 
 
 def test_append_cta_adds_line_at_bottom():
@@ -59,3 +61,23 @@ def test_lisocon_config_has_logo_and_cta():
     logo = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                         "Resources", lisocon.LOGO_FILE)
     assert os.path.isfile(logo)
+
+
+def test_sanitize_strips_ascii_box_keeps_takeaway():
+    """Kundenfeedback lisocon 2026-07-17: ASCII-Boxen zerbrechen auf LinkedIn
+    (proportionale Schrift). Rahmen weg, Merksatz-Text bleibt."""
+    text = ("Absatz davor.\n\n"
+            "┌─────┐\n"
+            "│ Fremdsprachensatz ist dann gut, wenn der Leser │\n"
+            "│ vergisst, dass er uebersetzt liest. │\n"
+            "└─────┘\n\n"
+            "Absatz danach.")
+    out = sanitize_generated_text(text)
+    assert "┌" not in out and "│" not in out and "─" not in out
+    assert "Fremdsprachensatz ist dann gut" in out
+    assert "Absatz davor." in out and "Absatz danach." in out
+
+
+def test_sanitize_no_box_chars_untouched():
+    text = "Normaler Text mit Zahlen 10-20 und - Bullet.\n\nZweiter Absatz."
+    assert sanitize_generated_text(text) == text

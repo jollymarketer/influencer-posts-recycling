@@ -33,7 +33,7 @@ def _created_title(monkeypatch, **kw):
             **kw,
         )
     payload = m.call_args.kwargs["json"]
-    return payload["properties"]["Title"]["title"][0]["text"]["content"]
+    return payload["properties"]["title"]["title"][0]["text"]["content"]
 
 
 def test_title_contains_no_influencer_name(monkeypatch):

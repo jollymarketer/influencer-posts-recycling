@@ -208,7 +208,9 @@ def create_post_entry(
     payload = {
         "parent": {"database_id": NOTION_DB_ID},
         "properties": {
-            "Title": {"title": [{"text": {"content": title}}]},
+            # Key "title" = Property-ID (rename-sicher; lisocon-DB zeigt
+            # die Spalte seit 17.07 als "Ansatz" an).
+            "title": {"title": [{"text": {"content": title}}]},
             "Influencer": {"rich_text": [{"text": {"content": influencer}}]},
             "LinkedIn Post URL": {"url": post_url},
             "Post Excerpt": {"rich_text": [{"text": {"content": excerpt}}]},
@@ -780,14 +782,17 @@ def create_slate_entry(candidate: dict, matrix_prio: bool = False,
     eigene Themen-Winkel. `draft` (optional) traegt linkedin_draft,
     image_prompt, skeleton, post_format, infographic_type, archetype."""
     angle = _sanitize(candidate.get("topic_angle_de", "")).strip()
-    title = angle[:60] if angle else "Themenvorschlag"
+    # Voller Winkel als "Ansatz" (Feedback Jae 17.07: gekappte Titel wirkten
+    # wie abgebrochene Post-Titel; der Ansatz beschreibt den Post nur).
+    title = angle[:250] if angle else "Themenvorschlag"
     persona = candidate.get("persona", "")
     poster_map = getattr(_cfg, "POSTER_BY_PERSONA", None) or {}
     poster = poster_map.get(persona, getattr(_cfg, "POSTER_DEFAULT", ""))
     excerpt = _sanitize(candidate.get("post_text", ""))[:300]
 
     props = {
-        "Title": {"title": [{"text": {"content": title}}]},
+        # Key "title" = Property-ID (rename-sicher; Anzeigename "Ansatz").
+        "title": {"title": [{"text": {"content": title}}]},
         "Status": {"select": {"name": "Themenvorschlag"}},
         "Influencer": {"rich_text": _rich_text_prop(_sanitize(candidate.get("influencer", "")))},
         "LinkedIn Post URL": {"url": candidate["post_url"]},

@@ -43,7 +43,7 @@ def test_create_slate_entry_status_and_title(monkeypatch):
     body = req.call_args.kwargs["json"]
     props = body["properties"]
     assert props["Status"]["select"]["name"] == "Themenvorschlag"
-    title = props["Title"]["title"][0]["text"]["content"]
+    title = props["title"]["title"][0]["text"]["content"]
     assert title.startswith("Warum jede")
     assert "Alice" not in title  # leak rule
     assert props["Score"]["number"] == 41
@@ -70,7 +70,7 @@ def test_create_slate_entry_title_fallback(monkeypatch):
     with patch.object(notion_db, "_notion_request",
                       return_value=_resp({"id": "p"})) as req:
         notion_db.create_slate_entry(cand)
-    title = req.call_args.kwargs["json"]["properties"]["Title"]["title"][0]["text"]["content"]
+    title = req.call_args.kwargs["json"]["properties"]["title"]["title"][0]["text"]["content"]
     assert title == "Themenvorschlag"
 
 
