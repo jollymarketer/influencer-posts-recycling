@@ -38,6 +38,7 @@ from tools.topic_pool import (
     set_state,
     unslate_and_strike,
     retire_aged,
+    revive_picked,
     get_meta,
     set_meta,
 )
@@ -183,6 +184,11 @@ def phase_slate(cfg, now) -> None:
         retired = retire_aged(cfg.NAME, slate_cfg["max_age_days"])
         if retired:
             print(f"  {retired} Kandidat(en) altersbedingt retired.")
+        revive_days = slate_cfg.get("revive_picked_days")
+        if revive_days:
+            revived = revive_picked(cfg.NAME, revive_days)
+            if revived:
+                print(f"  {revived} gepickte(r) Kandidat(en) fuer Winner-Repeat zurueck im Pool.")
     except Exception as e:
         print(f"  FEHLER - Pool/Archiv nicht erreichbar, Abbruch (kein Slate ohne Pool): {e}",
               file=sys.stderr)

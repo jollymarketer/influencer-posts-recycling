@@ -174,6 +174,10 @@ SLATE = {
     "per_persona": 5,
     "max_age_days": 60,
     "max_times_slated": 3,
+    # Winner-Repeat (Richard 2026-07-17, ColdIQ-Masterclass): gepickte Themen
+    # nach 6 Wochen zurueck in den Pool - bewaehrte Winkel werden neu gescored
+    # und als frischer Draft wieder angeboten, niemand merkt Wiederholungen.
+    "revive_picked_days": 42,
 }
 
 # Persona-Split (GTM-Call Jae 2026-07-09): Reinhard postet Kaeufer/Entscheider,

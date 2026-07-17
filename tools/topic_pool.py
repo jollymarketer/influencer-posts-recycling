@@ -147,6 +147,30 @@ def retire_aged(client: str, max_age_days: int) -> int:
         return 0
 
 
+def revive_picked(client: str, min_age_days: int) -> int:
+    """Winner-Repeat: gepickte Kandidaten nach N Tagen zurueck in den Pool
+    (bewaehrte Themen erneut anbieten statt nur Neuware). Frischer Zyklus
+    (times_slated=0, first_seen_at=jetzt), damit weder 3-Strikes noch das
+    Alters-Retirement den Rueckkehrer sofort wieder entfernen."""
+    now = datetime.now(timezone.utc)
+    cutoff = (now - timedelta(days=min_age_days)).isoformat()
+    url = f"{_base_url()}/rest/v1/{TABLE}"
+    params = {
+        "client": f"eq.{client}",
+        "state": "eq.picked",
+        "last_slated_at": f"lt.{cutoff}",
+    }
+    resp = requests.patch(url, headers=_headers_patch(), params=params,
+                          json={"state": "pool", "times_slated": 0,
+                                "first_seen_at": now.isoformat()},
+                          timeout=TIMEOUT)
+    _check(resp)
+    try:
+        return len(resp.json())
+    except Exception:
+        return 0
+
+
 def get_meta(key: str) -> str:
     url = f"{_base_url()}/rest/v1/{META_TABLE}"
     params = {"select": "key,value", "key": f"eq.{key}"}

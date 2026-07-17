@@ -87,6 +87,23 @@ def test_retire_aged_uses_cutoff_and_active_states(monkeypatch):
     assert mock_patch.call_args.kwargs["json"] == {"state": "retired"}
 
 
+def test_revive_picked_resets_cycle(monkeypatch):
+    _env(monkeypatch)
+    resp = MagicMock(status_code=200)
+    resp.json.return_value = [{"post_url": "u"}]
+    with patch("tools.topic_pool.requests.patch", return_value=resp) as mock_patch:
+        n = topic_pool.revive_picked("lisocon", min_age_days=42)
+    assert n == 1
+    params = mock_patch.call_args.kwargs["params"]
+    assert params["client"] == "eq.lisocon"
+    assert params["state"] == "eq.picked"
+    assert params["last_slated_at"].startswith("lt.")
+    body = mock_patch.call_args.kwargs["json"]
+    assert body["state"] == "pool"
+    assert body["times_slated"] == 0
+    assert "first_seen_at" in body
+
+
 def test_meta_roundtrip(monkeypatch):
     _env(monkeypatch)
     get_resp = MagicMock(status_code=200)

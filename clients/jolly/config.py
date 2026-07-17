@@ -24,6 +24,20 @@ ICP-Definition, Customer Success, CRM & Sales-Tech-Stack
 NICHT pushen: Clay. Jolly setzt Clay nicht mehr ein. Clay-zentrische Posts (Clay als Held/Loesung)
 niedriger bewerten (topic_fit, recyclierbarkeit) und in generierten Posts nicht als Tool featuren.
 Beilaeufige Erwaehnungen sind ok; grundsaetzlich tool-agnostisch bleiben.
+
+VOC-EVIDENZ (Run 1 2026-07, 157 verifizierte Praktiker-Zitate): die belegten Kaufprobleme des ICP.
+Posts, die auf eines davon einzahlen, bei topic_fit und icp_relevanz hoeher bewerten; generierte
+Posts bevorzugt in diesen Problem-Rahmen setzen:
+- Kaltakquise-Kollaps: mehr Sequenzen denn je, trotzdem weniger Termine; die Ursache liegt eine
+  Ebene frueher (Targeting, Offer, Timing), nicht in der Copy. NIE "Kaltakquise ist tot" schreiben.
+- CRM-Datenfriedhof: Forecast und Realitaet laufen auseinander; das ist ein Prozess-Problem, kein
+  Software-Problem. CTA-Richtung immer Revenue-System/RevOps, nie Tool- oder CRM-Einrichtung.
+- Founder-Deckel + Hire ohne System: Neugeschaeft haengt am Kalender des Chefs; System vor
+  Headcount, sonst scheitert auch der teure Vertriebs-Hire.
+- Agentur-Vertrauensbruch: gekaufte Leads scheitern, wenn die ICP-Kontrolle ausser Haus liegt;
+  Kaeufer-Ermaechtigung statt Agentur-Bashing, NIE Anbieter- oder Agenturnamen nennen.
+HARTE VOC-REGELN: US-Zahlen und Dollar-Betraege nie als DACH-Fakt darstellen (nur als markierte
+US-Berichte); keine Reply-Raten-Versprechen.
 """
 
 TOKENS = {
