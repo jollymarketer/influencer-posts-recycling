@@ -18,7 +18,7 @@ project_lisocon_into_positioning_objection_battlecard.md.
 
 VoC-Härtung (Richard 2026-07-12): Pains, Szenen, Vokabular und rote Linien aus
 dem VoC Pain Hunt Run 1 (2026-07-10, 105 verifizierte Praktiker-Zitate),
-Quelle: Clients\\Lisocon\\Research\\voc-run-1\\ (voc-report.md, mapping.md).
+Quelle: Clients\\Lisocon\\Research\\voc-run-1-praktiker-pain-hunt\\ (voc-report.md, mapping.md).
 Verbatim-Zitate aus dem Korpus bleiben dem separaten, kuratierten
 "Receipt"-Format vorbehalten und gehören NICHT in diese automatisierte Pipeline.
 """
@@ -90,7 +90,7 @@ TOKENS = {
 - Einzelfall-Zahlen nie als Marktfakt: keine 400.000 EUR/Jahr, keine 55-150 EUR/h, keine 20-35%, kein 2-4x, kein 10x; Textexpansion höchstens als "bis zu einem Drittel länger" und als Praktiker-Schätzung gekennzeichnet
 - Den Copy-Paste-Schmerz nie als "das löst niemand" framen (günstige Tools lösen den nackten Schritt); Differenzierung nur über das, was danach übrig bleibt: manueller Layout-Pass pro Sprache, stille Fehler, Korrekturschleifen
 - Nie ein Adobe-Bordmittel schlechtreden oder ein konkretes Tool-Problem als aktuellen Bug zitieren""",
-    "HASHTAG_LINE_DE": "Am Ende des Posts: 4-6 relevante Hashtags (#TechnischeDokumentation, #Lokalisierung, #Übersetzung, #Terminologie, #InDesign, #ContentOperations, #Maschinenbau oder ähnlich).",
+    "HASHTAG_LINE_DE": "Keine Hashtags verwenden. Der Post endet mit dem letzten Inhalts-Satz.",
 
     # --- EN-Post-Prompt (Stimme: Jae Hyun Kim) ---
     "PERSONA_EN": "You are Jae Hyun Kim, Sales & Marketing at lisocon (InTO: translation of InDesign documents directly in the original layout). You work daily with marketing and documentation teams at manufacturing companies drowning in multilingual DTP rework.",
@@ -98,7 +98,7 @@ TOKENS = {
     "WRITE_FOR_EN": "marketing, localization and documentation decision-makers, not for translators",
     "FOCUS_TOPICS_EN": "process and cost relevance: turnaround times, hidden DTP costs, terminology quality, scaling across languages",
     "FIRST_PERSON_ROLE_EN": "you speak from daily practice with multilingual document production in manufacturing",
-    "HASHTAG_LINE_EN": "End the post with 4-6 relevant hashtags (#Localization, #TechnicalDocumentation, #TranslationManagement, #Terminology, #InDesign, #ContentOps or similar).",
+    "HASHTAG_LINE_EN": "No hashtags. The post ends with the last content sentence.",
 
     # --- Format-Strukturen ---
     "BELIEF_ACTORS_DE": "Marketing- und Doku-Teams",
