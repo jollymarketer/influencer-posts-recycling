@@ -245,8 +245,16 @@ DAILY_KEYWORD_SEARCH = {
     "posted_limit": "week",
 }
 
-# Kadenz (Richard 2026-07-16, Slate-Modus): Cron "0 7 * * 1-5" (Mo-Fr 07:00 UTC).
-# Taeglich Phasen A (Bilder) + B (Drafts); Scrape + Slate nur Mo+Do (SLATE["days"]).
+# Kadenz (Stand 2026-07-26, serverseitig per GraphQL gesetzt, NICHT aus der toml):
+# Cron "0 5,10 * * 1-5" = Mo-Fr 05:00 und 10:00 UTC, also 07:00 und 12:00 Berlin.
+# Der Morgenslot lag bis 26.07. auf 07:00 UTC und wurde auf Wunsch Richards auf
+# 07:00 Ortszeit vorgezogen. ACHTUNG Zeitumstellung: 05:00 UTC ist nur bis zum
+# 25.10.2026 gleich 07:00 Berlin, danach 06:00 - dann auf "0 6,11" ziehen.
+# Jeder Lauf: Phase A (Bilder) + B (Kommentar-Entwuerfe, Tages-Guard).
+# Phase D (Engagement-Readback) + C (Scrape + Slate) nur Mo+Do (SLATE["days"]).
+# Der zweite Slot faehrt bewusst zwischen den beiden Publish-Zeiten (Jae 10:00,
+# Reinhard 13:00 Ortszeit, Make 9517006 / 9506674), damit ein vormittags
+# freigegebener Text noch am selben Tag sein Bild bekommt.
 # Nicht gepickte Kandidaten persistieren in Supabase (topic_candidates) und
 # konkurrieren in Folge-Slates erneut; Winner/Picks sind via Notion-URL-Dedup gesperrt.
 # max_posts 5 (Richard 2026-07-06, Kosten ~7 USD/Monat statt ~13 bei 10):
@@ -297,6 +305,9 @@ ENGAGEMENT_READBACK = {
 # 39 Influencer-Profile, ein Apify-Run pro Tag. Obergrenze 12 x 2 Posts x 21
 # Arbeitstage = 504 Items/Monat, real deutlich weniger (die wenigsten Profile
 # posten taeglich). ~2 USD/Monat im Worst Case. Posten bleibt manuell.
+# Tages-Guard `last_comments_at_lisocon` (engine_meta): der Cron faehrt zwei
+# Slots pro Tag, Entwuerfe entstehen trotzdem nur einmal. Ein leerer Morgenlauf
+# setzt den Guard nicht, damit der zweite Slot nachziehen kann.
 COMMENT_DRAFTS = {
     "profiles_per_day": 12,
     "max_posts_per_profile": 2,

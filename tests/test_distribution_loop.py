@@ -4,10 +4,14 @@ import importlib
 import os
 import sys
 import types
+from contextlib import ExitStack
+from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import run_slate
+from tools import comment_drafts as cd
 from tools.engagement_readback import extract_ids, match_row
 from tools.comment_drafts import assign_posts, rotate_profiles
 
@@ -131,3 +135,64 @@ def test_assign_posts_never_gives_one_post_to_two_posters():
 def test_assign_posts_stops_when_queue_runs_dry():
     pairs = assign_posts([{"post_url": "p0"}], ["Reinhard", "Jae"], 3)
     assert len(pairs) == 1
+
+
+# --- Tages-Guard Kommentar-Entwuerfe ----------------------------------------
+
+MON = datetime(2026, 7, 27, 5, 0, tzinfo=timezone.utc)
+_GUARD_CFG = types.SimpleNamespace(
+    NAME="lisocon", COMMENT_DRAFTS={"profiles_per_day": 2, "drafts_per_poster": 1,
+                                    "posters": ["Reinhard"]},
+    CONTENT_PERSONAS=[], TOKENS={}, CONTEXT="x", POSTER_DEFAULT="Reinhard")
+
+
+def _patch_comments(**kw):
+    defaults = dict(
+        get_meta=MagicMock(return_value=""),
+        set_meta=MagicMock(),
+        get_comment_target_urls=MagicMock(return_value=set()),
+        load_influencers=MagicMock(return_value=[{"name": "n", "linkedin_url": "u"}]),
+        fetch_fresh_posts=MagicMock(return_value=[{"post_url": "p0", "post_text": "t",
+                                                   "influencer": "n", "age_hours": 2}]),
+        draft_comment=MagicMock(return_value={"title": "t", "comment": "c",
+                                              "poster": "Reinhard", "target_url": "p0",
+                                              "influencer": "n", "excerpt": "e"}),
+        create_comment_entry=MagicMock(return_value="page"),
+        _notify=MagicMock(),
+    )
+    defaults.update(kw)
+    ctx = ExitStack()
+    mocks = {}
+    for name, mock in defaults.items():
+        ctx.enter_context(patch.object(cd, name, mock))
+        mocks[name] = mock
+    return ctx, mocks
+
+
+def test_second_daily_slot_skips_when_guard_is_set():
+    ctx, mocks = _patch_comments(get_meta=MagicMock(return_value="2026-07-27"))
+    with ctx:
+        assert cd.run_comment_drafts(_GUARD_CFG, MON) == 0
+    mocks["fetch_fresh_posts"].assert_not_called()
+    mocks["create_comment_entry"].assert_not_called()
+
+
+def test_guard_set_only_after_a_draft_was_written():
+    ctx, mocks = _patch_comments()
+    with ctx:
+        assert cd.run_comment_drafts(_GUARD_CFG, MON) == 1
+    mocks["set_meta"].assert_called_once_with("last_comments_at_lisocon", "2026-07-27")
+
+
+def test_empty_morning_run_leaves_guard_open_for_the_second_slot():
+    ctx, mocks = _patch_comments(fetch_fresh_posts=MagicMock(return_value=[]))
+    with ctx:
+        assert cd.run_comment_drafts(_GUARD_CFG, MON) == 0
+    mocks["set_meta"].assert_not_called()
+
+
+def test_unreadable_guard_never_blocks_the_run():
+    ctx, mocks = _patch_comments(get_meta=MagicMock(side_effect=RuntimeError("supabase down")))
+    with ctx:
+        assert cd.run_comment_drafts(_GUARD_CFG, MON) == 1
+    mocks["create_comment_entry"].assert_called_once()

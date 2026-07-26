@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from clients import load_client
 from tools.linkedin_scraper import load_influencers, parse_post_age_hours
 from tools.notion_db import create_comment_entry, get_comment_target_urls
+from tools.topic_pool import get_meta, set_meta
 
 load_dotenv()
 
@@ -198,6 +199,20 @@ def run_comment_drafts(cfg=None, now=None) -> int:
         print("  Kommentar-Entwuerfe nicht konfiguriert - Skip.")
         return 0
 
+    # Tages-Guard (analog last_slate_at_<client>): der Cron faehrt zwei Slots
+    # pro Tag, Kommentar-Entwuerfe sollen nur einmal entstehen. Bewusst NICHT
+    # fatal: ist Supabase nicht lesbar, laufen die Entwuerfe lieber doppelt als
+    # gar nicht. Gesetzt wird der Guard erst nach dem ersten geschriebenen
+    # Entwurf, damit ein leerer Morgenlauf den Mittagslauf nicht verbrennt.
+    meta_key = f"last_comments_at_{cfg.NAME}"
+    today = now.date().isoformat()
+    try:
+        if get_meta(meta_key) == today:
+            print("  Kommentar-Entwuerfe heute schon gebaut - Skip.")
+            return 0
+    except Exception as e:
+        print(f"  Tages-Guard nicht lesbar, Lauf faehrt trotzdem: {e}", file=sys.stderr)
+
     try:
         done = get_comment_target_urls()
     except Exception as e:
@@ -229,6 +244,10 @@ def run_comment_drafts(cfg=None, now=None) -> int:
 
     print(f"  Kommentar-Entwuerfe geschrieben: {written}")
     if written:
+        try:
+            set_meta(meta_key, today)
+        except Exception as e:
+            print(f"  Tages-Guard nicht schreibbar (nicht kritisch): {e}", file=sys.stderr)
         _notify(cfg, written)
     return written
 
