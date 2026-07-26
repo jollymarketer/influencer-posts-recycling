@@ -145,7 +145,7 @@ def test_draft_failure_skips_row_keeps_candidate_in_pool():
             return [_pool_row("u1"), _pool_row("u2", persona="anwender")]
         return []
 
-    def draft_side_effect(cfg, winner, persona_id, box, recents):
+    def draft_side_effect(cfg, winner, persona_id, box, recents, force_format=None):
         if winner["post_url"] == "u1":
             raise RuntimeError("sonnet down")
         return dict(_DRAFT)
@@ -171,7 +171,7 @@ def test_in_run_anti_repeat_grows_recents():
 
     seen = []
 
-    def draft_side_effect(cfg, winner, persona_id, box, recents):
+    def draft_side_effect(cfg, winner, persona_id, box, recents, force_format=None):
         seen.append([list(recents["formats"]), list(recents["infographic_types"]),
                      list(recents["archetypes"])])
         return dict(_DRAFT)

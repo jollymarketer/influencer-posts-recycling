@@ -943,6 +943,81 @@ def get_entry_by_page_id(page_id: str) -> dict:
     return resp.json()
 
 
+PUBLISHED_STATUSES = ("Posted", "Posting")
+
+
+def get_published_rows() -> list[dict]:
+    """Veröffentlichte Zeilen inkl. beider Poster-URL-Felder (Engagement-Readback).
+    live_url ist die URL des Feldes, das zum Poster gehört."""
+    pages = _query_db({"or": [{"property": "Status", "select": {"equals": s}}
+                              for s in PUBLISHED_STATUSES]})
+    rows = []
+    for page in pages:
+        props = page.get("properties", {})
+        poster = _select_name(props, "Poster")
+        by_poster = {
+            "Reinhard": (props.get("Posted URL (Reinhard)") or {}).get("url") or "",
+            "Jae": (props.get("Posted URL (Jae)") or {}).get("url") or "",
+        }
+        rows.append({
+            "page_id": page["id"],
+            "poster": poster,
+            "live_url": by_poster.get(poster, "") or next(
+                (u for u in by_poster.values() if u), ""),
+            "posted_at": ((props.get("Date Posted") or {}).get("date") or {}).get("start", ""),
+        })
+    return rows
+
+
+def update_engagement(page_id: str, likes: int, comments: int, shares: int,
+                      checked_at: str) -> None:
+    """Schreibt die gemessenen Engagement-Zahlen eines veröffentlichten Posts zurück."""
+    props = {
+        "Likes": {"number": int(likes)},
+        "Kommentare": {"number": int(comments)},
+        "Shares": {"number": int(shares)},
+        "Engagement-Stand": {"date": {"start": checked_at}},
+    }
+    resp = _notion_request("PATCH", f"{NOTION_API}/pages/{page_id}",
+                           headers=_headers(), json={"properties": props})
+    resp.raise_for_status()
+
+
+COMMENT_STATUS = "Kommentar"
+
+
+def get_comment_target_urls() -> set:
+    """Bereits bekommentierte Quell-Posts (Dedup für die Kommentar-Queue).
+    Die Ziel-URL steht bewusst NICHT in "LinkedIn Post URL": sonst würde ein
+    kommentierter Post nie mehr als Slate-Kandidat durch den Dedup kommen."""
+    pages = _query_db({"property": "Status", "select": {"equals": COMMENT_STATUS}})
+    return {(p.get("properties", {}).get("Kommentar-Ziel") or {}).get("url") or ""
+            for p in pages} - {""}
+
+
+def create_comment_entry(draft: dict) -> str:
+    """Kommentar-Vorschlag als Zeile in der Content-DB (Status "Kommentar").
+    Liegt bewusst in derselben DB: der lisocon-Integration-Token ist nur auf
+    diese DB berechtigt. Der Make-Publisher filtert auf Approved und sieht
+    Kommentar-Zeilen nie."""
+    title = _sanitize(draft.get("title", ""))[:250] or "Kommentar"
+    props = {
+        "title": {"title": [{"text": {"content": title}}]},
+        "Status": {"select": {"name": COMMENT_STATUS}},
+        "LinkedIn Draft": {"rich_text": _rich_text_prop(_sanitize(draft.get("comment", "")))},
+        "Kommentar-Ziel": {"url": draft.get("target_url", "")},
+        "Influencer": {"rich_text": _rich_text_prop(_sanitize(draft.get("influencer", "")))},
+        "Post Excerpt": {"rich_text": _rich_text_prop(_sanitize(draft.get("excerpt", ""))[:300])},
+        "Date Scraped": {"date": {"start": datetime.now(timezone.utc).isoformat()}},
+    }
+    if draft.get("poster"):
+        props["Poster"] = {"select": {"name": draft["poster"]}}
+    resp = _notion_request("POST", f"{NOTION_API}/pages", headers=_headers(),
+                           json={"parent": {"database_id": NOTION_DB_ID}, "properties": props})
+    resp.raise_for_status()
+    return resp.json()["id"]
+
+
 if __name__ == "__main__":
     print("Teste Notion-Verbindung ...")
     if not NOTION_TOKEN:

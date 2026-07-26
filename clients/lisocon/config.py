@@ -182,6 +182,10 @@ SCORING_MODEL = "claude-sonnet-4-6"
 # geht via MAKE_SLATE_WEBHOOK (Env) + Make-Szenario 9537326 an Jae.
 SLATE_VIEW_URL = "https://www.notion.so/3951617b1baf819e97a5d01a4765f606?v=39f1617b1baf81fab0cd000c9b527cac"
 
+# Kommentar-Queue-View (26.07.2026). Die Mail dazu ist optional: ohne gesetztes
+# MAKE_COMMENT_WEBHOOK schreibt die Engine die Zeilen stumm in die View.
+COMMENT_VIEW_URL = "https://www.notion.so/3951617b1baf819e97a5d01a4765f606?v=3a91617b1baf81b18432000c90e28558"
+
 # Slate-Modus (spec 2026-07-16): 2 Slates/Woche (Mo+Do), 10 Kandidaten,
 # hart quotiert 5 kaeufer + 5 anwender. Jae pickt fuer beide Poster.
 SLATE = {
@@ -260,6 +264,47 @@ SCRAPE = {
 LOGO_FILE = "into_logo.png"
 CTA_DE = "Interessant? Besuchen Sie uns auf www.in2go.io"
 CTA_EN = "Sounds interesting? Visit us at www.in2go.io"
+
+# CTA-Politik (Richard 2026-07-26, Performance-Analyse der ersten 17 Live-Posts:
+# 14 Likes gesamt, 2 Kommentare, 0 Leads). Derselbe externe Link unter jedem Post
+# daempft Reichweite und liest sich als Automatik. Ab jetzt tragen nur noch
+# Magnet-Posts einen Link, und zwar den auf das jeweilige Tool statt auf die
+# Startseite. WEICHT VON Reinhards Vorgabe vom 08.07. AB - muss ihm gesagt werden.
+CTA_POLICY = "magnet_only"
+
+# Magnet-Slots je Slate (Richard 2026-07-26): erzwingt den Konversionspfad.
+# Ohne diesen Zwang ist das Magnet-Format im Slate-Pfad unerreichbar (Box-Logik),
+# Ergebnis waren 17 Posts ohne einen einzigen Lead-Magnet-Post. 2 von 10 deckt
+# sich mit MATRIX["promotion_cap"].
+MAGNET_SLOTS_PER_SLATE = 2
+
+# Eigene Profile fuer den Engagement-Readback (Phase D).
+OWN_PROFILES = [
+    {"poster": "Reinhard", "url": "https://www.linkedin.com/in/reinhard-lindner"},
+    {"poster": "Jae", "url": "https://www.linkedin.com/in/jae-hyun-kim-472723110"},
+]
+
+# Engagement-Readback (Richard 2026-07-26): die Pipeline endete bisher beim
+# Publish, Winner-Repeat entschied rein nach Alter. Laeuft an den Slate-Tagen,
+# ein Apify-Run fuer beide Profile (~0,10 USD/Monat). Impressionen liefert die
+# API nicht, die kommen aus den nativen LinkedIn-Analytics der Poster.
+ENGAGEMENT_READBACK = {
+    "max_posts_per_profile": 20,
+    "posted_limit": "month",
+}
+
+# Kommentar-Entwuerfe (Richard 2026-07-26): taeglicher rotierender Ausschnitt der
+# 39 Influencer-Profile, ein Apify-Run pro Tag. Obergrenze 12 x 2 Posts x 21
+# Arbeitstage = 504 Items/Monat, real deutlich weniger (die wenigsten Profile
+# posten taeglich). ~2 USD/Monat im Worst Case. Posten bleibt manuell.
+COMMENT_DRAFTS = {
+    "profiles_per_day": 12,
+    "max_posts_per_profile": 2,
+    "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
+    "max_age_hours": 30,
+    "posters": ["Reinhard", "Jae"],
+    "drafts_per_poster": 3,
+}
 
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene Lisocon-Content-DB).
 NOTION_DB_ID_DEFAULT = None

@@ -65,6 +65,8 @@ from tools.image_archetypes import (
     build_archetype_prompt,
     skeleton_signals,
 )
+from tools.comment_drafts import run_comment_drafts
+from tools.engagement_readback import run_readback
 from tools.image_repair import fill_missing_images
 from tools.linkedin_scraper import scrape_new_posts
 from tools.linkedin_keyword_scraper import scrape_keyword_posts
@@ -96,6 +98,31 @@ def select_slate(scored: list, cfg) -> list:
             slate.append({**cand, "fill_marker": True})
             chosen.add(cand["post_url"])
     return slate[:size]
+
+
+def pick_magnet_slots(slate: list, cfg) -> set:
+    """Slate-Indizes, die zwingend das Magnet-Format fahren.
+
+    Ohne diesen Zwang ist Magnet im Slate-Pfad unerreichbar: das Format haengt
+    an der Box (Promotion x Education), aber `classify` stuft Fremd-Posts nie
+    als Promotion ein, und `free_formats` schliesst Asset-Formate aus. Ergebnis
+    live: 17 Posts, 0 Lead-Magnet-Posts, kein Konversionspfad (Befund 26.07.).
+    Ein Slot je Persona-Seite, jeweils der mittlere Kandidat - der staerkste
+    Winkel bleibt fuer echtes Thought Leadership, der schwaechste traegt keinen
+    Magneten.
+    """
+    if not getattr(cfg, "LEAD_MAGNETS", None):
+        return set()
+    per_slate = getattr(cfg, "MAGNET_SLOTS_PER_SLATE", 0)
+    if per_slate <= 0:
+        return set()
+    groups = {}
+    for idx, cand in enumerate(slate):
+        groups.setdefault(cand.get("persona", ""), []).append(idx)
+    order = [p["id"] for p in getattr(cfg, "CONTENT_PERSONAS", None) or []]
+    order += [p for p in sorted(groups) if p not in order]
+    slots = [groups[p][len(groups[p]) // 2] for p in order if groups.get(p)]
+    return set(slots[:per_slate])
 
 
 def scrape_all_sources(cfg, existing_urls: set) -> list:
@@ -250,16 +277,28 @@ def phase_slate(cfg, now) -> None:
         except Exception:
             pass
 
+    magnet_slots = pick_magnet_slots(slate, cfg)
+    if magnet_slots:
+        print(f"  Magnet-Slots: {sorted(magnet_slots)}")
+
     written = []
-    for cand in slate:
+    for idx, cand in enumerate(slate):
         prio = bool(target_box) and (cand.get("matrix_job", ""),
                                      cand.get("matrix_stage", "")) == target_box
         box = (cand.get("matrix_job", ""), cand.get("matrix_stage", ""))
         try:
-            draft = draft_candidate(cfg, cand, cand.get("persona", ""), box, recents)
+            draft = draft_candidate(cfg, cand, cand.get("persona", ""), box, recents,
+                                    force_format="Magnet" if idx in magnet_slots else None)
             if not draft:
                 print(f"  Kein Draft fuer {cand['post_url']} - Skip.", file=sys.stderr)
                 continue
+            # Erzwungene Formate schreiben ihre eigene Box und Persona in die
+            # Zeile: sonst zaehlt die Matrix-Coverage einen Magnet-Post als
+            # Perspective und der Poster passt nicht zur geschriebenen Stimme.
+            if idx in magnet_slots:
+                job, stage = FORMAT_TO_BOX.get(draft["post_format"], (box[0], box[1]))
+                cand = {**cand, "matrix_job": job, "matrix_stage": stage,
+                        "persona": draft.get("persona") or cand.get("persona", "")}
             create_slate_entry(cand, matrix_prio=prio, draft=draft)
             written.append(cand["post_url"])
             for key, field in (("formats", "post_format"),
@@ -314,7 +353,10 @@ def run_slate_mode(cfg, now=None) -> None:
     now = now or datetime.now(timezone.utc)
     print(f"=== Slate-Modus (Client: {cfg.NAME}) — {now.strftime('%Y-%m-%d %H:%M UTC')} ===")
     phase_images(cfg)
-    if now.weekday() in tuple(cfg.SLATE.get("days", (0, 3))):
+    phase_comments(cfg, now)
+    is_slate_day = now.weekday() in tuple(cfg.SLATE.get("days", (0, 3)))
+    if is_slate_day:
+        phase_readback(cfg)
         phase_slate(cfg, now)
     else:
         print(f"\nKein Slate-Tag (weekday {now.weekday()}).")
@@ -329,6 +371,29 @@ def phase_images(cfg) -> None:
         print(f"  FEHLER - Phase A: {e}", file=sys.stderr)
 
 
+def phase_comments(cfg, now) -> None:
+    """Taeglich: Kommentar-Entwuerfe auf frische Influencer-Posts (Distribution).
+    Non-fatal - ein Fehler hier darf den Slate-Bau nie blockieren."""
+    if not getattr(cfg, "COMMENT_DRAFTS", None):
+        return
+    print("\nPhase B: Kommentar-Entwuerfe ...")
+    try:
+        run_comment_drafts(cfg, now)
+    except Exception as e:
+        print(f"  FEHLER - Phase B: {e}", file=sys.stderr)
+
+
+def phase_readback(cfg) -> None:
+    """Engagement der eigenen veroeffentlichten Posts zurueck nach Notion."""
+    if not getattr(cfg, "ENGAGEMENT_READBACK", None):
+        return
+    print("\nPhase D: Engagement-Readback ...")
+    try:
+        run_readback(cfg)
+    except Exception as e:
+        print(f"  FEHLER - Phase D: {e}", file=sys.stderr)
+
+
 def _persona_by_id(cfg, persona_id: str) -> dict | None:
     personas = getattr(cfg, "CONTENT_PERSONAS", None) or []
     hit = next((p for p in personas if p.get("id") == persona_id), None)
@@ -337,20 +402,25 @@ def _persona_by_id(cfg, persona_id: str) -> dict | None:
     return next((p for p in personas if p.get("share") == "dominant"), None)
 
 
-def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dict) -> dict | None:
+def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dict,
+                    force_format: str | None = None) -> dict | None:
     """Erzeugt Draft + Bild-Prompt fuer einen Slate-Kandidaten (Amendment
     2026-07-17). Kein Notion-Zugriff: Anti-Repeat-Kontext kommt als `recents`
     ({"formats", "infographic_types", "archetypes"}) vom Aufrufer und waechst
-    dort pro Lauf. Rueckgabe-Dict fuer create_slate_entry(draft=...), None bei
-    leerem Draft."""
+    dort pro Lauf. `force_format` uebergeht Box- und Anti-Repeat-Wahl (Magnet-
+    Slots); fehlt das noetige Asset, greift der normale Fallback.
+    Rueckgabe-Dict fuer create_slate_entry(draft=...), None bei leerem Draft."""
     persona = _persona_by_id(cfg, persona_id)
-    candidates = formats_for_box(box, cfg) if all(box) else free_formats(cfg)
-    # Klumpen-Clamp (Befund 17.07: 9x Opinion): Ein-Format-Boxen umgehen das
-    # pick_format-Anti-Repeat ("Quota schlaegt Wiederholung"). Steht das
-    # erzwungene Format schon 2x in Folge im Lauf-Kontext, freie Wahl.
-    if len(candidates) == 1 and recents["formats"][:2] == [candidates[0]] * 2:
-        candidates = free_formats(cfg)
-    post_format = pick_format(winner, recents["formats"], candidates=candidates)
+    if force_format:
+        post_format = force_format
+    else:
+        candidates = formats_for_box(box, cfg) if all(box) else free_formats(cfg)
+        # Klumpen-Clamp (Befund 17.07: 9x Opinion): Ein-Format-Boxen umgehen das
+        # pick_format-Anti-Repeat ("Quota schlaegt Wiederholung"). Steht das
+        # erzwungene Format schon 2x in Folge im Lauf-Kontext, freie Wahl.
+        if len(candidates) == 1 and recents["formats"][:2] == [candidates[0]] * 2:
+            candidates = free_formats(cfg)
+        post_format = pick_format(winner, recents["formats"], candidates=candidates)
 
     chosen_asset = None
     try:
@@ -359,7 +429,10 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
         print(f"  Asset-Wahl fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if post_format in FORMAT_ASSET_ATTR and not chosen_asset:
         post_format = pick_format(winner, recents["formats"], candidates=free_formats(cfg))
-    if persona and post_format in FORMAT_ASSET_ATTR:
+    # Asset-Formate fahren die dominante Persona, weil ihre Zahlen Kaeufer-
+    # Argumente sind. Magnet ist ausgenommen: die beiden Tools adressieren
+    # beide Achsen, und der Poster der Zeile folgt der Kandidaten-Persona.
+    if persona and post_format in FORMAT_ASSET_ATTR and post_format != "Magnet":
         personas = getattr(cfg, "CONTENT_PERSONAS", None) or []
         dominant = next((p for p in personas if p.get("share") == "dominant"), None)
         if dominant:
@@ -421,4 +494,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
         "post_format": post_format,
         "infographic_type": infographic_type,
         "archetype": gen_archetype,
+        # Effektive Persona: Asset-Formate koennen sie gewechselt haben, der
+        # Poster der Notion-Zeile muss der geschriebenen Stimme folgen.
+        "persona": (persona or {}).get("id", persona_id),
     }
