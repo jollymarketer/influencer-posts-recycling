@@ -21,6 +21,13 @@ dem VoC Pain Hunt Run 1 (2026-07-10, 105 verifizierte Praktiker-Zitate),
 Quelle: Clients\\Lisocon\\Research\\voc-run-1-praktiker-pain-hunt\\ (voc-report.md, mapping.md).
 Verbatim-Zitate aus dem Korpus bleiben dem separaten, kuratierten
 "Receipt"-Format vorbehalten und gehören NICHT in diese automatisierte Pipeline.
+
+MVO-Thema (Richard 2026-07-26): Säule 4 (Compliance/Zukunft) ist als eigener
+Themen-Strang ausgebaut — EU-Maschinenverordnung (EU) 2023/1230, Geltungsbeginn
+20.01.2027. Einziges datiertes, extern erzwungenes WHY im ganzen Themenraum.
+Datum korrigiert: frühere Fassung nannte 14.01.2027, korrekt ist 20.01.2027
+(veröffentlicht 29.06.2023, in Kraft 19.07.2023, keine allgemeine Übergangsfrist).
+Rote Linie: MVO ist Anlass, nie Rechtsrat — siehe LANGUAGE_BANS_DE.
 """
 import os
 
@@ -35,7 +42,7 @@ ICP:
 Marketingleiter/MarCom-Direktoren, Lokalisierungsverantwortliche und Leiter Technische Dokumentation in produzierenden Unternehmen (500-10.000 MA), DACH und international. Typisch: Kataloge, Datenblätter und Technische Dokumentation in 10+ Sprachen, InDesign-basierte Publishing-Workflows, signifikantes Übersetzungs-/DTP-Budget.
 
 KERN-THEMEN die den ICP interessieren:
-Versteckte Lokalisierungs-/DTP-Kosten, Time-to-Market mehrsprachiger Materialien, Terminologie-Konsistenz, Translation Management, Technische Redaktion und Dokumentation, CCMS und strukturierter Content, InDesign-/Publishing-Automatisierung, AI in Übersetzung und Dokumentation, EU-Maschinenverordnung 2027, globale Content Operations, Abgrenzung der Ebenen: KI-Übersetzung (DeepL, Google, Plugins, Portale) löst Text, nicht Layout.
+Versteckte Lokalisierungs-/DTP-Kosten, Time-to-Market mehrsprachiger Materialien, Terminologie-Konsistenz, Translation Management, Technische Redaktion und Dokumentation, CCMS und strukturierter Content, InDesign-/Publishing-Automatisierung, AI in Übersetzung und Dokumentation, EU-Maschinenverordnung (EU) 2023/1230 ab 20.01.2027 (Sprachpflicht und Betriebsanleitungen), globale Content Operations, Abgrenzung der Ebenen: KI-Übersetzung (DeepL, Google, Plugins, Portale) löst Text, nicht Layout.
 
 VOC-EVIDENZ (Pain Hunt Run 1, 2026-07-10, 105 verifizierte Praktiker-Zitate — diese Schmerzen sind real belegt; Posts, die einen davon treffen, sind nachweislich relevanter):
 - Copy-Paste-Hölle (Anwender): übersetzte Texte werden Rahmen für Rahmen von Hand zurück ins InDesign-Layout gesetzt — pro Sprache, pro Version, jedes Jahr wieder. Der stärkste Recognition-Hook des Korpus.
@@ -50,9 +57,17 @@ CONTENT-SÄULEN (jeder Post zahlt klar auf EINE dieser 5 Säulen ein; höherer S
 1. Versteckte Lokalisierungskosten — die teure DTP-Nacharbeit, die niemand budgetiert (Money-Säule, Persona Käufer).
 2. Mehrsprachige Dokumentproduktion in der Praxis — InDesign-/DTP-/Versions-Chaos über viele Sprachen.
 3. Terminologie und Qualität über Sprachen — Konsistenz, Glossare, TM; die stärkste Säule.
-4. Compliance/Zukunft — EU-Maschinenverordnung 2023/1230 ab 14.01.2027, Sprachpflicht je Zielland als Deadline-Anker.
+4. Compliance/Zukunft — EU-Maschinenverordnung als Deadline-Anker (Persona Käufer, sekundär Anwender). Details siehe MVO-ANKER.
 5. Einwände und Abgrenzung — "KI übersetzt doch schon", Google, DeepL-Plugin, Portale: jeder Einwand ist Steilvorlage, nicht Bedrohung. Ebenen-Trennung Text vs. Layout.
 Kein Produkt-Content: InTO ist nie das Thema, höchstens die beiläufige Auflösung.
+
+MVO-ANKER (Säule 4, einziges datiertes und extern erzwungenes WHY im ganzen Themenraum — Posts, die diesen Anker sauber treffen, sind wertvoller als generischer Lokalisierungs-Content):
+- Fakt: EU-Maschinenverordnung (EU) 2023/1230 gilt ab 20.01.2027 und ersetzt die Maschinenrichtlinie 2006/42/EG. Keine allgemeine Übergangsfrist. Das Datum ist der Anker, exakt so, nie ein anderes Datum, nie "Anfang 2027", nie "2026".
+- Betroffene Dokumente: Betriebsanleitungen und Sicherheitsinformationen von Maschinen. Sie müssen in der Amtssprache des Mitgliedstaats bereitstehen, in dem die Maschine in Verkehr gebracht wird. Neu erlaubt ist die digitale Bereitstellung der Anleitung; auf Verlangen des Nutzers bleibt eine Papierfassung geschuldet, Sicherheitsinformationen bleiben in Papierform.
+- Erzählwinkel (immer ein Prozess-Winkel, nie ein Paragraphen-Winkel): eine Sprachpflicht ist eine Doku-Produktions-Aufgabe. Mehr Zielsprachen mal mehr Dokumente mal Korrekturrunden bis zu einem festen Datum, mit demselben Team. Der Übersetzungstext ist dabei das kleinere Problem, die druckreife Fassung je Sprache das größere.
+- Brücke zum kanonischen Spine: "übersetzt ist erst die Hälfte" trifft bei einer Deadline härter, weil ein Termin nicht verhandelbar ist. Wer erst im Herbst 2026 anfängt, layoutet unter Zeitdruck.
+- Zweitwinkel für den Anwender: digitale Anleitung heißt zusätzliche Ausgabekanäle je Sprache, nicht weniger Layout-Arbeit.
+- ROTE LINIEN MVO: kein Rechtsrat und keine Rechtsberatungs-Anmutung, keine Artikel- oder Anhang-Zitate, keine Aussage darüber, wer konkret betroffen ist oder was ein Unternehmen tun muss, keine Konformitäts- oder Haftungs-Versprechen, keine Bußgeld- oder Strafandrohung, keine Angst-Rhetorik. InTO macht niemanden MVO-konform; erlaubt ist ausschließlich der Prozess- und Kapazitäts-Winkel.
 
 PERSONA-REGEL (zwei kollidierende Wertachsen, in EINEM Post nie mischen):
 - Käufer/Entscheider (Marketing-/MarCom-Leitung, GF, Leitung Technische Dokumentation & Lokalisierung): versteckte Kosten, DTP-Nacharbeit, ROI. Marketing-Leitung ist laut Daten der einzige belegte Konverter — im Zweifel diese Achse und dieser Adressat.
@@ -72,7 +87,7 @@ HARTE REGELN:
 TOKENS = {
     # --- Scoring ---
     "SCORING_ROLE": "Du bist Content-Stratege bei lisocon (Produkt: InTO, Layout-Automatisierung für mehrsprachige Dokumente).",
-    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'.",
+    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'. Ebenfalls Bonus (Säule 4, Deadline-Anker): EU-Maschinenverordnung 2023/1230 ab 20.01.2027, Sprachpflicht, Betriebsanleitungen, digitale Anleitung, Produktsicherheits-Doku, CE-Dokumentation — sofern der Post einen Doku- oder Prozess-Bezug hat und nicht rein juristisch argumentiert.",
     "ICP_RELEVANZ_QUESTION": "Würde ein Marketingleiter, Lokalisierungsverantwortlicher oder Leiter Technische Dokumentation in einem produzierenden Unternehmen (500-10.000 MA) diesen Inhalt wollen?",
 
     # --- DE-Post-Prompt (Stimme: Reinhard Lindner) ---
@@ -89,7 +104,8 @@ TOKENS = {
 - Nie behaupten, Textexpansion werde verhindert oder Copyfitting automatisiert; erlaubt ist nur: im gerenderten Layout sofort sichtbar und in einer Runde korrigierbar
 - Einzelfall-Zahlen nie als Marktfakt: keine 400.000 EUR/Jahr, keine 55-150 EUR/h, keine 20-35%, kein 2-4x, kein 10x; Textexpansion höchstens als "bis zu einem Drittel länger" und als Praktiker-Schätzung gekennzeichnet
 - Den Copy-Paste-Schmerz nie als "das löst niemand" framen (günstige Tools lösen den nackten Schritt); Differenzierung nur über das, was danach übrig bleibt: manueller Layout-Pass pro Sprache, stille Fehler, Korrekturschleifen
-- Nie ein Adobe-Bordmittel schlechtreden oder ein konkretes Tool-Problem als aktuellen Bug zitieren""",
+- Nie ein Adobe-Bordmittel schlechtreden oder ein konkretes Tool-Problem als aktuellen Bug zitieren
+- Bei MVO-Posts: kein Rechtsrat, keine Artikel-/Anhang-Zitate, keine Aussage wer betroffen ist oder was zu tun ist, keine Konformitäts-, Haftungs- oder Bußgeld-Aussagen, keine Angst-Rhetorik; als Datum ausschließlich 20.01.2027, InTO nie als Weg zur MVO-Konformität darstellen""",
     "HASHTAG_LINE_DE": "Keine Hashtags verwenden. Der Post endet mit dem letzten Inhalts-Satz.",
 
     # --- EN-Post-Prompt (Stimme: Jae Hyun Kim) ---
@@ -199,6 +215,10 @@ PERSONA_BALANCE_WINDOW = 8
 # posted_limit "week" = gleicher 7-Tage-Pool wie SCRAPE (Verlierer konkurrieren erneut).
 # VoC-Härtung 2026-07-12: zwei Kaeufer-Achse-Begriffe ergaenzt (T5 versteckte
 # DTP-Kostenlinie war in den Keywords bisher gar nicht abgedeckt).
+# MVO-Thema 2026-07-26 (Richard, Freigabe ca. +1,5 EUR/Monat): vier Begriffe fuer
+# Saeule 4. Die 39 Influencer-Profile reden nicht ueber die Maschinenverordnung,
+# ohne diese Keywords kommt kein MVO-Kandidat in den Slate. Dient zugleich als
+# billigster V1-Resonanz-Sweep (MVO-WHY hat null Zitate im VoC-Korpus).
 DAILY_KEYWORD_SEARCH = {
     "keywords": [
         "multilingual technical documentation",
@@ -212,6 +232,10 @@ DAILY_KEYWORD_SEARCH = {
         "Redaktionssystem",
         "localization costs",
         "DTP Nacharbeit",
+        "Maschinenverordnung",
+        "EU Machinery Regulation",
+        "Betriebsanleitung Übersetzung",
+        "technische Dokumentation Compliance",
     ],
     "max_posts": 10,
     "posted_limit": "week",
