@@ -38,6 +38,24 @@ Posts bevorzugt in diesen Problem-Rahmen setzen:
   Kaeufer-Ermaechtigung statt Agentur-Bashing, NIE Anbieter- oder Agenturnamen nennen.
 HARTE VOC-REGELN: US-Zahlen und Dollar-Betraege nie als DACH-Fakt darstellen (nur als markierte
 US-Berichte); keine Reply-Raten-Versprechen.
+
+BIG IDEA (Content-Franchise-Dach, traegt jeden Post): "Eine Ebene frueher."
+Was wie ein Ausfuehrungsproblem aussieht - schwache Copy, falsches Tool, fehlender Hire, schlechte
+Agentur - ist fast immer ein Systemproblem eine Ebene darueber: Targeting, Offer, Timing, Prozess.
+Diese Klammer verbindet alle vier VoC-Rahmen und wiederholt sich ueber Posts hinweg, unterschiedlich
+erzaehlt. Versprechen dahinter: planbare Pipeline in 90 Tagen. Benannte Methode: Revenue Engine.
+Die Methode hoechstens beilaeufig nennen, nie als Produkt-Pitch.
+
+FEINDBILD (pro VoC-Rahmen genau ein wiederkehrender Gegner; Gegner ist IMMER eine verbreitete
+Praxis oder Annahme, NIE eine Person, ein Anbieter, eine Agentur oder ein benanntes Tool):
+- Kaltakquise-Kollaps -> Gegner: der Mehr-Volumen-Reflex. Sinkende Termine werden mit mehr
+  Sequenzen, mehr Kontakten, mehr Tools beantwortet statt mit besserem Targeting und Offer.
+- CRM-Datenfriedhof -> Gegner: der Glaube, ein Tool oder eine Migration repariere einen kaputten
+  Prozess. Software wird eingefuehrt, wo eine Definition fehlt.
+- Founder-Deckel + Hire ohne System -> Gegner: Headcount vor System. Der Vertriebs-Hire wird als
+  Loesung eingekauft statt als Verstaerker eines Systems, das es noch nicht gibt.
+- Agentur-Vertrauensbruch -> Gegner: ausgelagerte ICP-Kontrolle. Leads werden eingekauft, statt das
+  System zu besitzen, das sie erzeugt. Kaeufer-Ermaechtigung, nie Agentur-Bashing, nie Namen.
 """
 
 TOKENS = {
@@ -57,7 +75,7 @@ TOKENS = {
 - Das Wort "DACH" maximal EINMAL im gesamten Post - nie als Label wie "DACH-Mittelstand", "DACH-Raum", "DACH-Unternehmen"
 - Kein "produzierende Unternehmen", "Industrie-", "traditionelle Firmen"
 - Statt Geo-Tags: den Leser durch Problem-Sprache adressieren (Pipeline, Outbound, RevOps), nicht durch Regional-Sprache""",
-    "HASHTAG_LINE_DE": "Am Ende des Posts: 4-6 relevante Hashtags (#B2BSaaS, #GTM, #RevOps, #Vertrieb, #SaaS, #Outbound, #Pipeline oder aehnlich). #DACH nur verwenden wenn thematisch zwingend.",
+    "HASHTAG_LINE_DE": "Keine Hashtags verwenden. Der Post endet mit dem letzten Inhalts-Satz.",
 
     # --- EN-Post-Prompt ---
     "PERSONA_EN": "You are Richard from Jolly Marketer (Fractional CMO / GTM as a Service for B2B).",
@@ -65,7 +83,7 @@ TOKENS = {
     "WRITE_FOR_EN": "revenue decision-makers, not for marketers",
     "FOCUS_TOPICS_EN": "revenue relevance: pipeline, revenue, CAC, sales cycle, predictability",
     "FIRST_PERSON_ROLE_EN": "you are the fractional CMO speaking from practice",
-    "HASHTAG_LINE_EN": "End the post with 4-6 relevant hashtags (#B2BSaaS, #GTM, #RevOps, #Sales, #SaaS, #Outbound, #Pipeline or similar).",
+    "HASHTAG_LINE_EN": "No hashtags. The post ends with the last content sentence.",
 
     # --- Format-Strukturen ---
     "BELIEF_ACTORS_DE": "Founder/Sales-Teams",

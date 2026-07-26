@@ -69,3 +69,55 @@ def test_candidate_prompt_lists_only_candidates():
         post_scorer.pick_format(POST, [], candidates=["POV", "Signature"])
     prompt = c.messages.create.call_args.kwargs["messages"][0]["content"]
     assert "POV" in prompt and "Signature" in prompt and "Opinion" not in prompt
+
+
+# --- Anti-Repeat Tiefe 3 -----------------------------------------------------
+
+FREE = ["Opinion", "POV", "Signature", "Comparison", "Story", "Method"]
+
+
+def test_blocks_last_three_formats():
+    # LLM picks a blocked format; the result must avoid all three recent ones.
+    with patch.object(post_scorer, "client", _mock_client("Signature")):
+        result = post_scorer.pick_format(
+            POST, ["POV", "Story", "Signature"], candidates=FREE)
+    assert result not in ("POV", "Story", "Signature")
+
+
+def test_aba_cycle_is_prevented():
+    # The A-B-A pattern found in production: POV after Story after POV.
+    with patch.object(post_scorer, "client", _mock_client("POV")):
+        result = post_scorer.pick_format(POST, ["Story", "POV"], candidates=FREE)
+    assert result != "POV"
+
+
+def test_blocked_formats_are_not_offered_to_the_llm():
+    c = _mock_client("Method")
+    with patch.object(post_scorer, "client", c):
+        post_scorer.pick_format(POST, ["POV", "Story", "Signature"], candidates=FREE)
+    prompt = c.messages.create.call_args.kwargs["messages"][0]["content"]
+    assert "Method" in prompt
+    for blocked in ("POV", "Story", "Signature"):
+        assert f"- {blocked}:" not in prompt
+
+
+def test_block_relaxes_when_it_would_leave_no_candidate():
+    # Two candidates, both among the last three -> the ban must relax, not empty out.
+    with patch.object(post_scorer, "client", _mock_client("POV")):
+        result = post_scorer.pick_format(
+            POST, ["Signature", "POV", "Story"], candidates=["POV", "Story"])
+    assert result in ("POV", "Story")
+
+
+def test_blocked_formats_helper_relaxes_stepwise():
+    # Depth 3 would block every candidate -> relax to depth 2, which leaves Signature.
+    assert post_scorer._blocked_formats(
+        ["POV", "Story", "Signature"], ["Story", "Signature"]) == ["POV", "Story"]
+    # Depth 2 would still block everything -> relax to depth 1.
+    assert post_scorer._blocked_formats(
+        ["POV", "Story", "Signature"], ["Story", "POV"]) == ["POV"]
+    # Nothing blockable without emptying the pool -> no ban at all.
+    assert post_scorer._blocked_formats(["POV"], ["POV"]) == []
+    # Duplicates in the recent list collapse.
+    assert post_scorer._blocked_formats(
+        ["POV", "POV", "Story"], FREE) == ["POV", "Story"]

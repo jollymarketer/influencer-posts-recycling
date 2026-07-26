@@ -127,7 +127,7 @@ Formatierung:
   * Nummerierte Liste mit Unicode: ➊ ➋ ➌
   * GROSSBUCHSTABEN-Label fuer einen zentralen Abschnitt
 - Eine zugespitzte, eigenstaendige Zitat-Zeile auf eine eigene Zeile setzen (Screenshot- und Repost-faehig)
-- Laenge: ca. 200 Woerter, max. 3.000 Zeichen
+- Laenge: {length_target_de}
 
 Qualitaetspruefung (E3):
 - Evidence: Jede Kernaussage belegt durch Daten oder Beobachtung?
@@ -188,8 +188,6 @@ OUTPUT-FORMAT (exakt einhalten):
 
 ===POST===
 [LinkedIn-Post-Text auf Deutsch]
-
-#Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4
 
 ===SOUNDBYTE===
 [Sound Byte — ein Satz, max. 12 Woerter]
@@ -260,7 +258,7 @@ Formatting:
   * Numbered list with Unicode: ➊ ➋ ➌
   * ALL-CAPS label for one central section
 - Put one sharp, standalone quote line on its own line (screenshot- and repost-friendly).
-- Length: ~200 words, max 3,000 characters.
+- Length: {length_target_en}
 
 Quality check (E3):
 - Evidence: is each core claim backed by data or observation?
@@ -324,8 +322,6 @@ IMPORTANT: Reproduce the section headers (===POST===, ===SOUNDBYTE===, ===KONTEX
 ===POST===
 [LinkedIn post text in English]
 
-#Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4
-
 ===SOUNDBYTE===
 [Sound byte — one sentence, max 12 words]
 
@@ -350,12 +346,14 @@ FORMAT_STRUCTURES = {
 1. Hook (1-2 Saetze): Eine kontroverse These oder ein Gegen-Befund zu einer gaengigen Praxis. Entscheidet ob jemand weiterliest.
 2. Spannung: Was die meisten Teams glauben oder tun - und warum das in der Praxis nicht traegt. Konkret, nicht abstrakt.
 3. Position: Deine Gegenposition als erfahrener Praktiker, begruendet aus Beobachtung. Max 3-5 Belege oder Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
-4. Abschluss: Offene Schleife statt sauberem Punkt. Entweder eine spezifische, streitbare Frage zur Kern-These, oder eine Flag-Plant-Zeile, gegen die jemand Position beziehen kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
+4. Abschluss: Offene Schleife statt sauberem Punkt. Entweder eine spezifische, streitbare Frage zur Kern-These, oder eine Flag-Plant-Zeile, gegen die jemand Position beziehen kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
+Kausalitaet: Verbinde die Beats mit "aber" oder "deshalb", nie mit "und dann". Jeder Beat folgt aus dem vorherigen. Eine Aufzaehlung nebeneinanderstehender Punkte traegt den Post nicht.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): a contrarian thesis or counter-finding against a common practice. Decides whether anyone reads on.
 2. Tension: what most teams believe or do - and why it does not hold up in practice. Concrete, not abstract.
 3. Position: your contrarian take as an experienced operator, reasoned from observation. Max 3-5 proofs or steps. One original thought not in the source.
-4. Close: an open loop, not a clean full stop. Either a specific, arguable question on the core thesis, or a flag-plant line someone can take a stand against. Only the generic "What do you think?" is banned. No DM CTA.""",
+4. Close: an open loop, not a clean full stop. Either a specific, arguable question on the core thesis, or a flag-plant line someone can take a stand against. Only the generic "What do you think?" is banned. No DM CTA.
+Causality: connect the beats with "but" or "therefore", never with "and then". Each beat follows from the previous one. A list of side-by-side points does not carry the post.""",
     },
     "POV": {
         "de": """Post-Struktur (ohne explizite Benennung):
@@ -389,13 +387,15 @@ Note for the infographic section below: prefer the comparison table (belief vs. 
 2. Spannung: Wie die Szene sich entwickelt und wo der eigentliche Konflikt sitzt. Erzaehlend, keine Bullet-Liste, keine Box.
 3. Wendung: Die Erkenntnis aus der Szene, die das Muster sichtbar macht. Ein eigener Gedanke, den der Quell-Post nicht hat.
 4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
-Erfinde dabei keine konkreten Namen, Umsatzzahlen oder Fallstudien. Eine generische, plausible Szene ohne erfundene Spezifika - oder ein erkennbares Muster ("ich sehe das oft") statt eines erfundenen Einzelfalls. Dieses Format nutzt KEINE Emoji-Liste und KEINE ASCII-Box.""",
+Erfinde dabei keine konkreten Namen, Umsatzzahlen oder Fallstudien. Eine generische, plausible Szene ohne erfundene Spezifika - oder ein erkennbares Muster ("ich sehe das oft") statt eines erfundenen Einzelfalls. Dieses Format nutzt KEINE Emoji-Liste und KEINE ASCII-Box.
+Kausalitaet: Verbinde die Beats mit "aber" oder "deshalb", nie mit "und dann". Jeder Beat folgt aus dem vorherigen. Eine Szene, deren Teile nur nacheinander passieren statt auseinander, hat keine Spannung.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): drop into a concrete scene - a line [[SCENE_ACTOR_EN]] would say, or a moment from practice. Decides whether anyone reads on.
 2. Tension: how the scene unfolds and where the real conflict sits. Narrative, no bullet list, no box.
 3. Turn: the realization from the scene that exposes the pattern. One original thought the source post does not have.
 4. Close: an open loop - a specific, arguable question or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.
-Do not invent specific names, revenue figures or case studies. A generic, plausible scene without fabricated specifics - or a recognizable pattern ("I see this often") instead of an invented single case. This format uses NO emoji list and NO ASCII box.""",
+Do not invent specific names, revenue figures or case studies. A generic, plausible scene without fabricated specifics - or a recognizable pattern ("I see this often") instead of an invented single case. This format uses NO emoji list and NO ASCII box.
+Causality: connect the beats with "but" or "therefore", never with "and then". Each beat follows from the previous one. A scene whose parts merely happen in sequence rather than out of each other has no tension.""",
     },
     "Comparison": {
         "de": """Post-Struktur (ohne explizite Benennung):
@@ -414,12 +414,14 @@ Do not invent specific names, revenue figures or case studies. A generic, plausi
 1. Hook (1-2 Saetze): Das Ergebnis oder der Engpass, den die Methode adressiert - konkret, nicht abstrakt. Entscheidet ob jemand weiterliest.
 2. Methode: 3-5 nummerierte Schritte (➊ ➋ ➌) als das eine scanbare Artefakt. Jeder Schritt eine Handlung mit erkennbarem Output, keine Theorie.
 3. Stolperstein: Der eine Punkt, an dem Teams in der Praxis scheitern, und wie man ihn umgeht. Ein eigener Gedanke, den der Quell-Post nicht hat. Vorher-Nachher nur qualitativ - keine erfundenen Zahlen.
-4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage zur Methode oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
+4. Abschluss: Offene Schleife - eine spezifische, streitbare Frage zur Methode oder eine Flag-Plant-Zeile. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
+Kausalitaet: Jeder Schritt existiert, weil der vorherige ein Ergebnis erzeugt hat. Reihenfolge begruenden statt nur nummerieren; eine austauschbare Reihenfolge ist keine Methode.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): the outcome or bottleneck the method addresses - concrete, not abstract. Decides whether anyone reads on.
 2. Method: 3-5 numbered steps (➊ ➋ ➌) as the one scannable artifact. Each step an action with a visible output, no theory.
 3. Pitfall: the one point where teams fail in practice and how to avoid it. One original thought the source post does not have. Before/after only qualitative - no invented numbers.
-4. Close: an open loop - a specific, arguable question about the method, or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.""",
+4. Close: an open loop - a specific, arguable question about the method, or a flag-plant line. Only the generic "What do you think?" is banned. No DM CTA.
+Causality: each step exists because the previous one produced a result. Justify the order instead of merely numbering it; an interchangeable order is not a method.""",
     },
     "CaseProof": {
         "de": """Post-Struktur (ohne explizite Benennung):
@@ -452,12 +454,12 @@ Hard numbers rule: EVERY unit-bearing number (percent, currency, x-times) is tak
 1. Hook (1-2 Saetze): Das Problem, das das LEAD-MAGNET-ASSET unten loest - aus der Praxis, nicht als Werbetext. Entscheidet ob jemand weiterliest.
 2. Substanz-Vorschau: 3-5 konkrete Punkte aus dem Artefakt als scanbares Element - genug Wert, dass der Post auch ohne Download traegt. Keine leeren Teaser.
 3. Einordnung: Fuer wen das Artefakt gedacht ist und was es NICHT ist (Erwartungen ehrlich setzen). Ein eigener Gedanke, den der Quell-Post nicht hat.
-4. Abschluss: Genau EIN Kommentar-CTA mit dem Keyword aus dem LEAD-MAGNET-ASSET (z.B. "Kommentiere KEYWORD, ich schicke es dir"). Kein DM-CTA daneben, kein kuenstlicher Zeitdruck, keine Follower-Bedingung.""",
+4. Abschluss: Genau EIN CTA, uebernommen aus dem CTA-Feld des LEAD-MAGNET-ASSETS: entweder ein Kommentar-Keyword (z.B. "Kommentiere KEYWORD, ich schicke es dir") oder ein Direktlink zum Tool. Kein DM-CTA daneben, kein kuenstlicher Zeitdruck, keine Follower-Bedingung.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): the problem the LEAD MAGNET ASSET below solves - from practice, not ad copy. Decides whether anyone reads on.
 2. Substance preview: 3-5 concrete points from the artifact as the scannable element - enough value that the post stands without the download. No empty teasers.
 3. Placement: who the artifact is for and what it is NOT (set expectations honestly). One original thought the source post does not have.
-4. Close: exactly ONE comment CTA using the keyword from the LEAD MAGNET ASSET (e.g. "Comment KEYWORD and I'll send it over"). No DM CTA next to it, no fake scarcity, no follow-gate.""",
+4. Close: exactly ONE CTA taken from the LEAD MAGNET ASSET's CTA field: either a comment keyword (e.g. "Comment KEYWORD and I'll send it over") or a direct link to the tool. No DM CTA next to it, no fake scarcity, no follow-gate.""",
     },
     "Offer": {
         "de": """Post-Struktur (ohne explizite Benennung):
@@ -475,6 +477,22 @@ Hard numbers rule: EVERY unit-bearing number (percent, currency, x-times) is tak
 FORMAT_STRUCTURES = {
     fmt: {lang: apply_tokens(text, _cfg) for lang, text in variants.items()}
     for fmt, variants in FORMAT_STRUCTURES.items()
+}
+
+
+# Laengen-Ziel pro Format (ColdIQ-Analyse 6.750 LinkedIn-Posts, 2026-07-14:
+# Viral-Rate steigt von 12,4% bei <100 Woertern auf 58,3% bei 400-500 Woertern;
+# der globale 200-Woerter-Default lag am unteren Ende der Kurve). Nur Formate mit
+# echter Handlung/Zahlen (Story, CaseProof, Method) tragen die laengere Zielgroesse -
+# Woerter sind ein Substanz-Proxy, kein Selbstzweck; kurze Formate bleiben kurz.
+LONG_FORMATS = {"Story", "CaseProof", "Method"}
+_LENGTH_TARGET_DE = {
+    True: "ca. 350-400 Woerter, max. 3.000 Zeichen",
+    False: "ca. 200 Woerter, max. 3.000 Zeichen",
+}
+_LENGTH_TARGET_EN = {
+    True: "~350-400 words, max 3,000 characters.",
+    False: "~200 words, max 3,000 characters.",
 }
 
 
@@ -503,6 +521,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
     to Opinion. No API calls."""
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
+    is_long = post_format in LONG_FORMATS
     de = DACH_POST_PROMPT.format(
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
@@ -512,6 +531,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         persona_block=persona_de,
         assets_block=assets_de,
         persona_voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
+        length_target_de=_LENGTH_TARGET_DE[is_long],
     )
     en = EN_POST_PROMPT.format(
         context=CLIENT_CONTEXT,
@@ -521,6 +541,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         recent_types_line=en_recent,
         persona_block=persona_en,
         assets_block=assets_en,
+        length_target_en=_LENGTH_TARGET_EN[is_long],
     )
     return de, en
 
@@ -595,10 +616,30 @@ Regeln:
 - Antworte mit EINEM Wort: {format_names}. Nichts sonst."""
 
 
+# Wie viele der zuletzt genutzten Formate gesperrt sind. Tiefe 1 erzeugte in der
+# Praxis A-B-A-Zyklen (Notion-Auswertung 2026-07-25: 10 von 18 Fenstern), weil nur
+# das unmittelbar letzte Format verboten war.
+ANTI_REPEAT_DEPTH = 3
+
+
+def _blocked_formats(recent_formats: list[str], candidates: list[str]) -> list[str]:
+    """Die zu sperrenden Formate: bis zu ANTI_REPEAT_DEPTH der zuletzt genutzten,
+    aber nur so viele, dass mindestens ein Kandidat uebrig bleibt. Lockert die
+    Sperre schrittweise (3 -> 2 -> 1 -> keine)."""
+    for depth in range(min(ANTI_REPEAT_DEPTH, len(recent_formats)), 0, -1):
+        blocked = list(dict.fromkeys(recent_formats[:depth]))
+        if any(f not in blocked for f in candidates):
+            return blocked
+    return []
+
+
 def pick_format(post: dict, recent_formats: list[str],
                 candidates: list[str] | None = None) -> str:
-    """Waehlt das Format unter den Kandidaten: bester Topic-Fit, aber nie das
-    zuletzt genutzte Format. candidates=None -> die 4 Legacy-Formate.
+    """Waehlt das Format unter den Kandidaten: bester Topic-Fit, aber keines der
+    zuletzt genutzten Formate. candidates=None -> die 4 Legacy-Formate.
+    Gesperrt sind die letzten ANTI_REPEAT_DEPTH Formate; bliebe dabei kein
+    Kandidat uebrig, wird die Sperre schrittweise auf das letzte Format
+    gelockert (Kandidaten-Auswahl schlaegt Wiederholungs-Regel).
     Genau EIN Kandidat (Pflicht-Box) -> direkt zurueck, ohne API-Call und
     ohne Anti-Repeat (Quota schlaegt Wiederholungs-Regel).
     Faellt deterministisch zurueck und wirft nie."""
@@ -607,25 +648,26 @@ def pick_format(post: dict, recent_formats: list[str],
         return candidates[0]
 
     recent_formats = [f for f in recent_formats if f]
-    most_recent = recent_formats[0] if recent_formats else None
+    blocked = _blocked_formats(recent_formats, candidates)
+    allowed = [f for f in candidates if f not in blocked]
 
-    if recent_formats:
+    if blocked:
         recent_section = (
             f"Zuletzt genutzte Formate (neuestes zuerst): {', '.join(recent_formats)}. "
-            f"VERBOTEN ist: {most_recent}."
+            f"VERBOTEN sind: {', '.join(blocked)}."
         )
     else:
         recent_section = "Zuletzt genutzte Formate: keine."
 
     format_menu = "\n".join(
-        f"- {f}: {FORMAT_PICK_DESCRIPTIONS.get(f, '')}" for f in candidates
+        f"- {f}: {FORMAT_PICK_DESCRIPTIONS.get(f, '')}" for f in allowed
     )
     try:
         prompt = PICK_FORMAT_PROMPT.format(
             format_menu=format_menu,
             post_text=post["post_text"][:3000],
             recent_section=recent_section,
-            format_names=", ".join(candidates),
+            format_names=", ".join(allowed),
         )
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
@@ -633,16 +675,13 @@ def pick_format(post: dict, recent_formats: list[str],
             messages=[{"role": "user", "content": prompt}],
         )
         choice = response.content[0].text.strip()
-        for f in candidates:
-            if f.lower() in choice.lower() and f != most_recent:
+        for f in allowed:
+            if f.lower() in choice.lower():
                 return f
     except Exception as e:
         print(f"  Format-Pick fehlgeschlagen, Fallback: {e}")
 
-    for f in candidates:
-        if f != most_recent:
-            return f
-    return candidates[0]
+    return allowed[0]
 
 
 RANK_BOX_FIT_PROMPT = """Du pruefst, welcher Quell-Post am besten ein bestimmtes Content-Format tragen kann.
@@ -734,7 +773,7 @@ def persona_block(persona, lang: str) -> str:
 _ASSET_BLOCK_HEADERS = {
     "CaseProof": ("CASE-ASSET (einzige erlaubte Zahlenquelle, Zahlen woertlich uebernehmen)",
                   "CASE ASSET (the only allowed source of numbers, use them verbatim)"),
-    "Magnet": ("LEAD-MAGNET-ASSET (dieses Artefakt bewirbt der Post, CTA-Keyword woertlich nutzen)",
+    "Magnet": ("LEAD-MAGNET-ASSET (dieses Artefakt bewirbt der Post, CTA woertlich aus dem cta-Feld nutzen)",
                "LEAD MAGNET ASSET (the artifact this post promotes, use the CTA keyword verbatim)"),
     "Offer": ("OFFER-ASSET (dieses Angebot bewirbt der Post, CTA woertlich uebernehmen)",
               "OFFER ASSET (the offer this post promotes, use the CTA verbatim)"),

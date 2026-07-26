@@ -573,6 +573,7 @@ def get_recent_linkedin_drafts(limit: int = 7) -> list[str]:
         "filter": {
             "or": [
                 {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
                 {"property": "Status", "select": {"equals": "Approved"}},
                 {"property": "Status", "select": {"equals": "Ready to Review"}},
             ]
@@ -607,6 +608,7 @@ def get_recent_formats(limit: int = 3) -> list[str]:
         "filter": {
             "or": [
                 {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
                 {"property": "Status", "select": {"equals": "Approved"}},
                 {"property": "Status", "select": {"equals": "Ready to Review"}},
             ]
@@ -641,6 +643,7 @@ def get_recent_infographic_types(limit: int = 4) -> list[str]:
         "filter": {
             "or": [
                 {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
                 {"property": "Status", "select": {"equals": "Approved"}},
                 {"property": "Status", "select": {"equals": "Ready to Review"}},
             ]
@@ -675,6 +678,7 @@ def get_recent_archetypes(limit: int = 3) -> list[str]:
         "filter": {
             "or": [
                 {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
                 {"property": "Status", "select": {"equals": "Approved"}},
                 {"property": "Status", "select": {"equals": "Ready to Review"}},
             ]
@@ -710,6 +714,7 @@ def get_recent_boxes(limit: int = 10) -> list[tuple[str, str]]:
         "filter": {
             "or": [
                 {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
                 {"property": "Status", "select": {"equals": "Approved"}},
                 {"property": "Status", "select": {"equals": "Ready to Review"}},
             ]
@@ -742,6 +747,7 @@ def _get_recent_select(prop: str, limit: int) -> list[str]:
         "filter": {
             "or": [
                 {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
                 {"property": "Status", "select": {"equals": "Approved"}},
                 {"property": "Status", "select": {"equals": "Ready to Review"}},
             ]

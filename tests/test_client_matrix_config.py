@@ -35,8 +35,16 @@ def test_lisocon_excludes_promotion_selection_by_policy():
     assert ("Promotion", "Selection") not in [tuple(b) for b in lisocon.MATRIX["boxes"]]
     eff = cm.effective_boxes(lisocon)
     assert ("Proof", "Selection") in eff          # PROOF_ASSETS gefuellt
-    assert ("Promotion", "Education") not in eff  # keine Lead Magnets
-    assert len(eff) == 7
+    # LEAD_MAGNETS gefuellt (Richard 2026-07-25: layout-check + diagnose live)
+    assert ("Promotion", "Education") in eff
+    assert len(eff) == 8
+
+
+def test_lisocon_lead_magnets_carry_live_urls():
+    urls = " ".join(m["cta"] for m in lisocon.LEAD_MAGNETS)
+    assert "https://in2go.io/layout-check/" in urls
+    assert "https://in2go.io/diagnose/" in urls
+    assert len(lisocon.LEAD_MAGNETS) == 2
 
 
 def test_lisocon_proof_assets_pin_real_numbers():

@@ -295,7 +295,25 @@ PROOF_ASSETS = [
 ]
 
 OFFERS: list = []        # bewusst leer: kein Offer-Content für lisocon
-LEAD_MAGNETS: list = []  # keine Lead Magnets gebaut -> Magnet-Format aus
+
+# Zwei live Tools auf in2go.io (Richard 2026-07-25). CTA ist der Direktlink
+# (Self-Service-Tools, kein Kommentar-Keyword noetig). Zahlen von den
+# Tool-Seiten NICHT uebernehmen (Website keine Zahlenquelle); erlaubte
+# Referenz-Zahlen kommen ausschliesslich aus PROOF_ASSETS.
+LEAD_MAGNETS = [
+    {"id": "layout-check",
+     "name": "Layout-Check",
+     "problem": "Layout-Nacharbeit nach der Uebersetzung ist bezahlte Facharbeit, steht aber in keinem Budget-Posten",
+     "substance": "zwei PDF-Versionen desselben Dokuments (Quell- und Zielsprache) hochladen; die Analyse laeuft im Browser, Dateien bleiben lokal; Ergebnis: gefundene manuelle Layout-Eingriffe, Stunden-Schaetzung, Jahreskosten heute vs. automatisiert",
+     "not_included": "kein Account noetig, keine Weitergabe der Dokumente, keine Kostenrechnung ohne eigene Stundensatz-Angabe",
+     "cta": "Direktlink im Post: https://in2go.io/layout-check/"},
+    {"id": "prozess-diagnose",
+     "name": "Prozess-Diagnose",
+     "problem": "niemand im Team kann belegen, wie reif der mehrsprachige Dokumentenprozess wirklich ist",
+     "substance": "10 Aussagen, rund 3 Minuten; Ergebnis: Reifegrad-Score 0-100, Zeitersparnis pro Projekt, Potenzial bei Korrekturschleifen, drei priorisierte Massnahmen",
+     "not_included": "kein Audit-Ersatz, keine Tool-Empfehlungsliste; volle Ergebnisse erst nach Angabe der Business-E-Mail",
+     "cta": "Direktlink im Post: https://in2go.io/diagnose/"},
+]
 
 # Aus der PERSONA-REGEL im CONTEXT strukturiert: genau EINE Achse pro Post.
 CONTENT_PERSONAS = [

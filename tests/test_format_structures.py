@@ -105,10 +105,12 @@ def test_debate_demands_reply_not_dm():
     assert "camp" in en.lower()
 
 
-def test_magnet_allows_exactly_comment_cta():
+def test_magnet_allows_exactly_one_cta_from_asset():
+    # Seit 2026-07-25: CTA kommt aus dem Asset (Kommentar-Keyword ODER Direktlink).
     de, en = _format_prompts(POST, "Magnet")
-    assert "Kommentar-CTA" in de and "LEAD-MAGNET-ASSET" in de
-    assert "comment" in en.lower()
+    assert "Genau EIN CTA" in de and "LEAD-MAGNET-ASSET" in de
+    assert "Kommentar-Keyword" in de and "Direktlink" in de
+    assert "comment keyword" in en.lower() and "direct link" in en.lower()
 
 
 def test_offer_allows_dm_or_discovery_cta_without_scarcity():
