@@ -137,6 +137,45 @@ def test_assign_posts_stops_when_queue_runs_dry():
     assert len(pairs) == 1
 
 
+# --- Asset-Rotation ----------------------------------------------------------
+
+def test_lisocon_magnets_rotate_instead_of_always_taking_the_first():
+    from tools.content_matrix import asset_for_format
+    first = asset_for_format("Magnet", lisocon, [])
+    second = asset_for_format("Magnet", lisocon, [first["id"]])
+    assert first["id"] != second["id"]
+    assert {first["id"], second["id"]} == {m["id"] for m in lisocon.LEAD_MAGNETS}
+
+
+_ASSET_CFG = types.SimpleNamespace(
+    LEAD_MAGNETS=[{"id": "m1", "name": "A", "problem": "p", "substance": "s",
+                   "not_included": "n", "cta": "c"},
+                  {"id": "m2", "name": "B", "problem": "p", "substance": "s",
+                   "not_included": "n", "cta": "c"}],
+    PROOF_ASSETS=[], OFFERS=[], MATRIX=None, IMAGE_LANGUAGE="German",
+    CONTENT_PERSONAS=[{"id": "kaeufer", "share": "dominant", "label": "K",
+                       "pains": "x", "kpis": "y", "vocabulary_use": "z",
+                       "vocabulary_avoid": "q", "scene_de": "s", "scene_en": "s",
+                       "cta_style": "reply"}])
+
+
+def test_two_magnet_slots_in_one_run_take_different_lead_magnets():
+    # Vorher zog die LRU ihre Historie aus Notion, wo die gerade geschriebene
+    # Zeile noch fehlt - beide Magnet-Posts landeten auf demselben Tool.
+    recents = {"formats": [], "infographic_types": [], "archetypes": [], "assets": []}
+    gen = MagicMock(return_value=("Draft", "", "prompt", "skelett", "soundbyte", "kontext"))
+    arch = MagicMock(return_value=("editorial_cover", "prompt", "1:1", False))
+    drafts = []
+    with patch.object(run_slate, "generate_post_and_image_prompt", gen), \
+         patch.object(run_slate, "build_archetype_prompt", arch):
+        for url in ("u1", "u2"):
+            d = run_slate.draft_candidate(_ASSET_CFG, {"post_url": url}, "kaeufer",
+                                          ("", ""), recents, force_format="Magnet")
+            drafts.append(d)
+            recents["assets"].insert(0, d["asset"])
+    assert [d["asset"] for d in drafts] == ["m1", "m2"]
+
+
 # --- Tages-Guard Kommentar-Entwuerfe ----------------------------------------
 
 MON = datetime(2026, 7, 27, 5, 0, tzinfo=timezone.utc)

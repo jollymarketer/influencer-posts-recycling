@@ -268,10 +268,11 @@ def phase_slate(cfg, now) -> None:
     # Anti-Repeat-Kontext: Seed aus Notion (Posted/Approved), waechst im Lauf
     # mit jedem generierten Draft (20 Drafts sehen sonst denselben Stand und
     # klumpen auf ein Format / einen Infografik-Typ / einen Bild-Stil).
-    recents = {"formats": [], "infographic_types": [], "archetypes": []}
+    recents = {"formats": [], "infographic_types": [], "archetypes": [], "assets": []}
     for key, getter in (("formats", get_recent_formats),
                         ("infographic_types", get_recent_infographic_types),
-                        ("archetypes", get_recent_archetypes)):
+                        ("archetypes", get_recent_archetypes),
+                        ("assets", get_recent_assets)):
         try:
             recents[key] = getter()
         except Exception:
@@ -303,7 +304,8 @@ def phase_slate(cfg, now) -> None:
             written.append(cand["post_url"])
             for key, field in (("formats", "post_format"),
                                ("infographic_types", "infographic_type"),
-                               ("archetypes", "archetype")):
+                               ("archetypes", "archetype"),
+                               ("assets", "asset")):
                 if draft.get(field):
                     recents[key].insert(0, draft[field])
         except Exception as e:
@@ -424,7 +426,10 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
 
     chosen_asset = None
     try:
-        chosen_asset = asset_for_format(post_format, cfg, get_recent_assets())
+        # LRU aus `recents` statt aus Notion: die gerade geschriebene Zeile ist
+        # dort noch nicht sichtbar, sonst zoegen zwei Magnet-Slots im selben Lauf
+        # beide denselben Lead-Magneten (Befund 27.07.).
+        chosen_asset = asset_for_format(post_format, cfg, recents["assets"])
     except Exception as e:
         print(f"  Asset-Wahl fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if post_format in FORMAT_ASSET_ATTR and not chosen_asset:
@@ -497,4 +502,8 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
         # Effektive Persona: Asset-Formate koennen sie gewechselt haben, der
         # Poster der Notion-Zeile muss der geschriebenen Stimme folgen.
         "persona": (persona or {}).get("id", persona_id),
+        # Gewaehltes Asset zurueck an den Aufrufer: ohne das bleibt die
+        # Notion-Property "Asset" leer und die LRU greift ewig zum ersten
+        # Eintrag (Prozess-Diagnose kam so nie dran).
+        "asset": (chosen_asset or {}).get("id", ""),
     }

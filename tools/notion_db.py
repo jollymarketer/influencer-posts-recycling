@@ -848,7 +848,8 @@ def create_slate_entry(candidate: dict, matrix_prio: bool = False,
         # den Slate-Bau nicht killen).
         for prop, value in (("Format", draft.get("post_format", "")),
                             ("Infografik-Typ", draft.get("infographic_type", "")),
-                            ("Bild-Variante", draft.get("archetype", ""))):
+                            ("Bild-Variante", draft.get("archetype", "")),
+                            ("Asset", draft.get("asset", ""))):
             if value:
                 _patch_select_nonfatal(page_id, prop, value)
     return page_id
