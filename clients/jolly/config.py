@@ -126,10 +126,12 @@ Keep the overall look bright, clean, and brand-consistent""",
 }
 
 # Blanket-CTA unter jedem Post (Richard 2026-07-27). LinkedIn kann kein Wort
-# verlinken, daher URL sichtbar hinter dem Wortlaut. Magnet/Offer-Formate
-# tragen ihren eigenen Asset-CTA (siehe _SELF_CTA_FORMATS in post_scorer.py).
-CTA_DE = "👉Jetzt kostenlosen Discovery Call buchen: https://go.jollymarketer.com/meetings/new/30min"
-CTA_EN = "👉Book your free discovery call now: https://go.jollymarketer.com/meetings/new/30min"
+# verlinken, daher URL sichtbar hinter dem Wortlaut. Kurze Vanity-URL:
+# jollymarketer.com/call -> 301 (Rank-Math-Redirect #9) -> HubSpot-Meetings-Link.
+# Ohne https://, LinkedIn verlinkt nackte Domains automatisch.
+# Magnet/Offer-Formate tragen ihren eigenen Asset-CTA (_SELF_CTA_FORMATS).
+CTA_DE = "👉Jetzt kostenlosen Discovery Call buchen: jollymarketer.com/call"
+CTA_EN = "👉Book your free discovery call now: jollymarketer.com/call"
 
 FEATURES = {
     "supabase_persist": True,   # Rohdaten fuer das woechentliche Blog-Topic-Mining
@@ -195,7 +197,7 @@ OFFERS = [
     {"id": "revenue-engine-sprint",
      "name": "Revenue Engine (90-Tage-Sprint)",
      "promise": "planbare B2B-Pipeline in 90 Tagen: Outbound plus Inbound plus CRM, mit Uebergabe ans Team",
-     "cta": "👉Jetzt kostenlosen Discovery Call buchen: https://go.jollymarketer.com/meetings/new/30min"},
+     "cta": "👉Jetzt kostenlosen Discovery Call buchen: jollymarketer.com/call"},
 ]
 
 # Existierende Artefakte (PDF, Checkliste, Template). Leer = Magnet bleibt aus.
