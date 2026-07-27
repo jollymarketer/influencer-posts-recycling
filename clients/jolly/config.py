@@ -125,6 +125,12 @@ Keep the overall look bright, clean, and brand-consistent""",
     "DEFAULT_AUDIENCE_ARCHETYPE": "B2B founders, CEOs, revenue leaders",
 }
 
+# Blanket-CTA unter jedem Post (Richard 2026-07-27). LinkedIn kann kein Wort
+# verlinken, daher URL sichtbar hinter dem Wortlaut. Magnet/Offer-Formate
+# tragen ihren eigenen Asset-CTA (siehe _SELF_CTA_FORMATS in post_scorer.py).
+CTA_DE = "👉Jetzt kostenlosen Discovery Call buchen: https://go.jollymarketer.com/meetings/new/30min"
+CTA_EN = "👉Book your free discovery call now: https://go.jollymarketer.com/meetings/new/30min"
+
 FEATURES = {
     "supabase_persist": True,   # Rohdaten fuer das woechentliche Blog-Topic-Mining
     "keyword_scrape": True,     # Donnerstag: Keyword-Scrape fuer Jolly-Blog-Themen
@@ -189,7 +195,7 @@ OFFERS = [
     {"id": "revenue-engine-sprint",
      "name": "Revenue Engine (90-Tage-Sprint)",
      "promise": "planbare B2B-Pipeline in 90 Tagen: Outbound plus Inbound plus CRM, mit Uebergabe ans Team",
-     "cta": "Kostenlosen Discovery Call buchen"},
+     "cta": "👉Jetzt kostenlosen Discovery Call buchen: https://go.jollymarketer.com/meetings/new/30min"},
 ]
 
 # Existierende Artefakte (PDF, Checkliste, Template). Leer = Magnet bleibt aus.
