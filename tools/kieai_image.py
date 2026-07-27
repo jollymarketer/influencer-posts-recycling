@@ -45,6 +45,14 @@ HTTP_RETRY_BACKOFF_SECONDS = 4
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = "jollymarketer/influencer-posts-recycling"
 GITHUB_IMAGES_PATH = "images"
+# Bilder liegen auf einem EIGENEN Branch, nicht auf master (Befund 2026-07-27).
+# Railway deployt automatisch bei jedem Push auf den verbundenen Branch (master),
+# und ein neues Deployment ersetzt das laufende und stoppt dessen Container. Die
+# Engine hat sich damit potenziell selbst abgeschossen: ein Bild-Upload mitten im
+# Slate-Bau (rund 40 Minuten) killt den eigenen Lauf. Ein Branch, den Railway
+# nicht beobachtet, nimmt dem Upload den Deploy-Trigger. raw.githubusercontent.com
+# liefert jeden Branch, alte Bild-URLs auf master bleiben gueltig.
+GITHUB_IMAGES_BRANCH = "images"
 
 # Mandanten-Logo (LOGO_FILE in clients/<name>/config.py); Default: Jolly Marketer.
 LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "Resources",
@@ -271,15 +279,18 @@ def _upload_to_github(image_bytes: bytes, filename: str) -> str:
         "Content-Type": "application/json",
     }
 
-    # SHA holen falls Datei bereits existiert (sonst 422 Conflict)
+    # SHA holen falls Datei bereits existiert (sonst 422 Conflict); der ref muss
+    # derselbe Branch sein, auf den geschrieben wird.
     sha = None
-    check = requests.get(api_url, headers=headers, timeout=30)
+    check = requests.get(api_url, headers=headers,
+                         params={"ref": GITHUB_IMAGES_BRANCH}, timeout=30)
     if check.status_code == 200:
         sha = check.json().get("sha")
 
     payload = {
         "message": f"Add generated image {filename}",
         "content": content_b64,
+        "branch": GITHUB_IMAGES_BRANCH,
     }
     if sha:
         payload["sha"] = sha
@@ -287,7 +298,7 @@ def _upload_to_github(image_bytes: bytes, filename: str) -> str:
     resp = requests.put(api_url, headers=headers, json=payload, timeout=60)
     resp.raise_for_status()
 
-    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/master/{path}"
+    raw_url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_IMAGES_BRANCH}/{path}"
     print(f"  GitHub Upload: {raw_url}", flush=True)
     return raw_url
 
