@@ -191,13 +191,30 @@ def pick_asset(assets: list, recent_ids: list):
     return max(assets, key=lambda a: recent_ids.index(a["id"]))
 
 
-def asset_for_format(post_format: str, cfg, recent_ids: list):
+def assets_for_persona(assets: list, persona_id: str) -> list:
+    """Assets, die eine Persona tragen darf. Ein Asset ohne `persona` gilt fuer
+    alle (Mandanten ohne Persona-Bindung bleiben unveraendert); ist persona_id
+    leer, wird nicht gefiltert."""
+    if not persona_id:
+        return list(assets or [])
+    return [a for a in (assets or [])
+            if not a.get("persona") or a.get("persona") == persona_id]
+
+
+def asset_for_format(post_format: str, cfg, recent_ids: list, persona_id: str = ""):
     """Asset fuer ein Asset-Format aus der Mandanten-Config. None wenn das
-    Format kein Asset braucht oder der Block leer ist."""
+    Format kein Asset braucht, der Block leer ist oder die Persona kein
+    passendes Asset hat.
+
+    persona_id bindet die Wahl an die Achse des Posts (lisocon, Kundenfeedback
+    2026-07-29: Layout-Check gehoert dem Anwender, Prozess-Diagnose dem
+    Kaeufer). Vorher rotierte die LRU persona-blind und ein Anwender-Post trug
+    den Reifegrad-Check."""
     attr = FORMAT_ASSET_ATTR.get(post_format)
     if not attr:
         return None
-    return pick_asset(getattr(cfg, attr, None) or [], recent_ids or [])
+    assets = assets_for_persona(getattr(cfg, attr, None) or [], persona_id)
+    return pick_asset(assets, recent_ids or [])
 
 
 # Zahlen mit Einheit: Prozent, Waehrung, Vielfache. Reine Zaehl-Zahlen

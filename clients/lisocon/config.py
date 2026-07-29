@@ -22,6 +22,17 @@ Quelle: Clients\\Lisocon\\Research\\voc-run-1-praktiker-pain-hunt\\ (voc-report.
 Verbatim-Zitate aus dem Korpus bleiben dem separaten, kuratierten
 "Receipt"-Format vorbehalten und gehören NICHT in diese automatisierte Pipeline.
 
+Persona-Schnitt und Magnet-Bindung (Kundenfeedback Jae 2026-07-29): die Achse
+entscheidet, nicht die Rolle im Original-Post. Käufer = Zeit und Kosten des
+GESAMTEN Übersetzungsprozesses (Reinhard). Anwender = Zeitaufwand und Mühe der
+eigenen Layout-Arbeit (Jae). Leiter Technische Dokumentation, technische
+Redakteure und Lokalisierungsverantwortliche stehen ab jetzt auf der
+Anwender-Achse, obwohl sie Budget mitverantworten: ihr Post argumentiert
+Arbeitserleichterung, nie ROI. Jede Persona hat genau EINEN Lead-Magneten
+(Anwender: Layout-Check, Käufer: Prozess-Diagnose). Auslöser: im Run vom
+29.07. trug ein Anwender-Post die Prozess-Diagnose (Reifegrad-Check), weil die
+Magnet-Wahl bis dahin persona-blind per LRU rotierte.
+
 MVO-Thema (Richard 2026-07-26): Säule 4 (Compliance/Zukunft) ist als eigener
 Themen-Strang ausgebaut — EU-Maschinenverordnung (EU) 2023/1230, Geltungsbeginn
 20.01.2027. Einziges datiertes, extern erzwungenes WHY im ganzen Themenraum.
@@ -69,10 +80,10 @@ MVO-ANKER (Säule 4, einziges datiertes und extern erzwungenes WHY im ganzen The
 - Zweitwinkel für den Anwender: digitale Anleitung heißt zusätzliche Ausgabekanäle je Sprache, nicht weniger Layout-Arbeit.
 - ROTE LINIEN MVO: kein Rechtsrat und keine Rechtsberatungs-Anmutung, keine Artikel- oder Anhang-Zitate, keine Aussage darüber, wer konkret betroffen ist oder was ein Unternehmen tun muss, keine Konformitäts- oder Haftungs-Versprechen, keine Bußgeld- oder Strafandrohung, keine Angst-Rhetorik. InTO macht niemanden MVO-konform; erlaubt ist ausschließlich der Prozess- und Kapazitäts-Winkel.
 
-PERSONA-REGEL (zwei kollidierende Wertachsen, in EINEM Post nie mischen):
-- Käufer/Entscheider (Marketing-/MarCom-Leitung, GF, Leitung Technische Dokumentation & Lokalisierung): versteckte Kosten, DTP-Nacharbeit, ROI. Marketing-Leitung ist laut Daten der einzige belegte Konverter — im Zweifel diese Achse und dieser Adressat.
-- Anwender (Translation-Manager, Designer): einfache Bedienung, Browser-Lektorat ohne InDesign.
-Ein Post fährt genau EINE Achse. Kosten-Argument und Easy-to-use nie im selben Post vermengen.
+PERSONA-REGEL (zwei kollidierende Wertachsen, in EINEM Post nie mischen; die Achse entscheidet, nicht die Hierarchie-Ebene der Rolle):
+- Käufer/Entscheider (Marketing-/MarCom-Leitung, Geschäftsführung), postet Reinhard: Zeit und Kosten des GESAMTEN Übersetzungsprozesses. Versteckte DTP-Kosten, Durchlaufzeit über alle Sprachen, ROI. Marketing-Leitung ist laut Daten der einzige belegte Konverter — im Zweifel diese Achse und dieser Adressat.
+- Anwender und Fach-Leads (DTP und Designer, Translation-Manager, technische Redakteure, Leiter Technische Dokumentation, Lokalisierungsverantwortliche), postet Jae: Zeitaufwand und Mühe der eigenen Layout- und Dokumentarbeit. Leitfrage jedes Anwender-Posts ist "wie mache ich mir die Arbeit leichter", nie "wie bewerte ich meinen Prozess". Auch wenn ein Doku-Leiter Budget mitverantwortet, argumentiert sein Post Arbeitserleichterung, nie Kosten.
+Ein Post fährt genau EINE Achse. Kosten-Argument und Arbeitserleichterung nie im selben Post vermengen. Fachthemen sind nicht per se einer Achse zugeordnet: Terminologie zum Beispiel ist Käufer-Thema als Qualitätskosten über alle Sprachen und Anwender-Thema als "Lektor sichert Konsistenz selbst ab, ohne Rückfrage an die Agentur".
 
 SOCIAL PROOF (nur diese echten Referenzen, nie neue erfinden, Zahlen exakt so): Hörmann (offiziell 69% Kostensenkung), WAGO (80% Kostenreduktion, 17 Sprachen), Stiebel Eltron (30 Sprachen).
 
@@ -87,7 +98,7 @@ HARTE REGELN:
 TOKENS = {
     # --- Scoring ---
     "SCORING_ROLE": "Du bist Content-Stratege bei lisocon (Produkt: InTO, Layout-Automatisierung für mehrsprachige Dokumente).",
-    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'. Ebenfalls Bonus (Säule 4, Deadline-Anker): EU-Maschinenverordnung 2023/1230 ab 20.01.2027, Sprachpflicht, Betriebsanleitungen, digitale Anleitung, Produktsicherheits-Doku, CE-Dokumentation — sofern der Post einen Doku- oder Prozess-Bezug hat und nicht rein juristisch argumentiert.",
+    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'. Ebenfalls Bonus (Säule 4, Deadline-Anker): EU-Maschinenverordnung 2023/1230 ab 20.01.2027, Sprachpflicht, Betriebsanleitungen, digitale Anleitung, Produktsicherheits-Doku, CE-Dokumentation — sofern der Post einen Doku- oder Prozess-Bezug hat und nicht rein juristisch argumentiert. Abzug dagegen für Themen, die ausschliesslich VOR der Übersetzung spielen und nie bei mehrsprachiger Ausgabe landen: Prüfsoftware und Autorenunterstützung beim Verfassen, Terminologiearbeit allein im Ausgangsdokument, Redaktionsleitfäden in der Ausgangssprache. Das ist nicht unsere Kategorie.",
     "ICP_RELEVANZ_QUESTION": "Würde ein Marketingleiter, Lokalisierungsverantwortlicher oder Leiter Technische Dokumentation in einem produzierenden Unternehmen (500-10.000 MA) diesen Inhalt wollen?",
 
     # --- DE-Post-Prompt (Stimme: Reinhard Lindner) ---
@@ -177,6 +188,22 @@ IMAGE_LANGUAGE = "German"
 # Scoring-Modell (Richard 2026-07-16): Slate-Klassifikation (Persona, VoC,
 # Themen-Winkel) braucht mehr Praezision als Haiku liefert.
 SCORING_MODEL = "claude-sonnet-4-6"
+
+# InTO-Bruecke (Kundenfeedback Jae 2026-07-29): Zusatzfeld der Klassifikation,
+# das Kandidaten ohne Bezug zur Kategorie NACH der Uebersetzung deterministisch
+# aus dem Slate wirft (run_slate.drop_without_bridge). Anlass war ein Thema zu
+# Terminologie-Inkonsistenzen im Ausgangsdokument: hoher topic_fit ueber das
+# Stichwort Terminologie, inhaltlich aber Pruefsoftware beim Verfassen, also
+# vorgelagert und ohne jeden InTO-Bezug.
+CLASSIFY_BRIDGE = (
+    "EIN Satz, wie der Winkel bei mehrsprachiger Ausgabe oder bei der "
+    "Layout-Arbeit NACH der Uebersetzung landet. Themen, die ausschliesslich "
+    "vor der Uebersetzung spielen (Pruefsoftware und Autorenunterstuetzung "
+    "beim Verfassen, Terminologiearbeit allein im Ausgangsdokument, "
+    "Redaktionsleitfaeden in der Ausgangssprache), haben keine Bruecke: dann "
+    "leerer String. Keine Bruecke konstruieren, die der Quell-Post nicht "
+    "hergibt."
+)
 
 # Slate-Ready-Mail (17.07.2026): Link auf die Notion-View "Themen-Slate",
 # geht via MAKE_SLATE_WEBHOOK (Env) + Make-Szenario 9537326 an Jae.
@@ -356,15 +383,26 @@ OFFERS: list = []        # bewusst leer: kein Offer-Content für lisocon
 # (Self-Service-Tools, kein Kommentar-Keyword noetig). Zahlen von den
 # Tool-Seiten NICHT uebernehmen (Website keine Zahlenquelle); erlaubte
 # Referenz-Zahlen kommen ausschliesslich aus PROOF_ASSETS.
+#
+# Persona-Bindung (Kundenfeedback Jae 2026-07-29): genau ein Magnet je Persona,
+# `persona` steuert asset_for_format. Layout-Check gehoert zur Anwender-Achse
+# (er zeigt die Handarbeit im Dokument), Prozess-Diagnose zur Kaeufer-Achse
+# (Reifegrad und Massnahmen sind eine Management-Bewertung). Vorher rotierte
+# die Wahl persona-blind per LRU, dadurch trug ein Jae-Post den Reifegrad-Check.
+# OFFEN (Jae pruefen): der Layout-Check rechnet die Kostenzeile erst nach
+# Eingabe eines eigenen Stundensatzes. Zeigt er ohne diese Angabe kein
+# brauchbares Ergebnis, bricht der Anwender-Pfad auf der Landingpage.
 LEAD_MAGNETS = [
     {"id": "layout-check",
      "name": "Layout-Check",
-     "problem": "Layout-Nacharbeit nach der Uebersetzung ist bezahlte Facharbeit, steht aber in keinem Budget-Posten",
-     "substance": "zwei PDF-Versionen desselben Dokuments (Quell- und Zielsprache) hochladen; die Analyse laeuft im Browser, Dateien bleiben lokal; Ergebnis: gefundene manuelle Layout-Eingriffe, Stunden-Schaetzung, Jahreskosten heute vs. automatisiert",
+     "persona": "anwender",
+     "problem": "nach jeder Uebersetzung geht dieselbe Handarbeit von vorne los: Rahmen anpassen, Umbrueche fixen, Ueberlaeufe suchen, pro Sprache und pro Version",
+     "substance": "zwei PDF-Versionen desselben Dokuments (Quell- und Zielsprache) hochladen; die Analyse laeuft im Browser, Dateien bleiben lokal; Ergebnis: die gefundenen manuellen Layout-Eingriffe und eine Stunden-Schaetzung, auf Wunsch zusaetzlich Jahreskosten heute vs. automatisiert",
      "not_included": "kein Account noetig, keine Weitergabe der Dokumente, keine Kostenrechnung ohne eigene Stundensatz-Angabe",
      "cta": "Direktlink im Post: https://in2go.io/layout-check/"},
     {"id": "prozess-diagnose",
      "name": "Prozess-Diagnose",
+     "persona": "kaeufer",
      "problem": "niemand im Team kann belegen, wie reif der mehrsprachige Dokumentenprozess wirklich ist",
      "substance": "10 Aussagen, rund 3 Minuten; Ergebnis: Reifegrad-Score 0-100, Zeitersparnis pro Projekt, Potenzial bei Korrekturschleifen, drei priorisierte Massnahmen",
      "not_included": "kein Audit-Ersatz, keine Tool-Empfehlungsliste; volle Ergebnisse erst nach Angabe der Business-E-Mail",
@@ -372,11 +410,22 @@ LEAD_MAGNETS = [
 ]
 
 # Aus der PERSONA-REGEL im CONTEXT strukturiert: genau EINE Achse pro Post.
+#
+# `axis` steuert die Persona-Klassifikation im Scoring (post_scorer._classify_section),
+# `audience_de` / `decision_makers_de` / `focus_topics_de` ueberschreiben die
+# gleichnamigen TOKENS im DE-Generierungs-Prompt. Ohne diese Felder schrieb der
+# Prompt beiden Postern dieselbe Entscheider-Anweisung vor ("Schreibe fuer
+# Entscheider ... Fokus auf Kosten-Relevanz") und zog Jaes Posts systematisch
+# auf die Manager-Achse (Kundenfeedback 2026-07-29, Themen 2 und 5).
 CONTENT_PERSONAS = [
     {
         "id": "kaeufer",
-        "label": "Käufer/Entscheider (Marketing-/MarCom-/Doku-Leitung)",
+        "label": "Käufer/Entscheider (Marketing-/MarCom-Leitung, Geschäftsführung)",
         "share": "dominant",
+        "axis": "Zeit und Kosten des GESAMTEN Übersetzungsprozesses (Budget, Durchlaufzeit über alle Sprachen, ROI, Gesamtprozess)",
+        "audience_de": "Marketingleiter, MarCom-Direktoren und Geschäftsführung in produzierenden Unternehmen (500-10.000 MA) im deutschsprachigen Raum.",
+        "decision_makers_de": "Marketing- und MarCom-Entscheider mit Budgetverantwortung für mehrsprachige Materialien",
+        "focus_topics_de": "Zeit und Kosten des gesamten Übersetzungsprozesses: Durchlaufzeiten, versteckte DTP-Kosten, Skalierbarkeit über Sprachen",
         "pains": "versteckte DTP-Nacharbeit sprengt Budget und Timeline; Layout-Nacharbeit multipliziert sich mit jeder Zielsprache und steht in keinem Budget-Posten; Übersetzung läuft im Unternehmen nebenbei mit, unkoordiniert und unbudgetiert (VoC-verifiziert)",
         "kpis": "Kosten pro Sprachversion (Stunden x Sprachen x Korrekturrunden), Time-to-Market mehrsprachiger Materialien, Reklamationen wegen Layout-Fehlern",
         "vocabulary_use": "versteckte Kosten, DTP-Nacharbeit, Durchlaufzeit, ROI, Prozesskette, druckfertig, direkt im Layout",
@@ -387,12 +436,19 @@ CONTENT_PERSONAS = [
     },
     {
         "id": "anwender",
-        "label": "Anwender (Translation-Manager, Designer)",
+        "label": "Anwender und Fach-Leads (DTP/Designer, Translation-Manager, technische Redakteure, Leiter Technische Dokumentation, Lokalisierungsverantwortliche)",
         "share": "secondary",
+        "axis": "Zeitaufwand und Mühe der eigenen Layout- und Dokumentarbeit (Handgriffe, Korrekturschleifen, Abstimmungsaufwand)",
+        "audience_de": "DTP- und Layout-Verantwortliche, Designer, Translation-Manager, technische Redakteure sowie Leiter Technische Dokumentation und Lokalisierung in produzierenden Unternehmen (500-10.000 MA) im deutschsprachigen Raum.",
+        # Das Template haengt ", nicht fuer Marketer" an: hier keine zweite
+        # Verneinung, sonst steht sie doppelt im Prompt.
+        "decision_makers_de": "Praktiker, die die mehrsprachige Dokumentproduktion selbst machen",
+        "focus_topics_de": "Arbeitserleichterung im eigenen Tagesgeschäft: Handgriffe pro Sprachversion, Korrekturschleifen, Abstimmungsaufwand mit der Übersetzungsagentur, Terminologie selbst absichern",
+        "value_axis": "Der Post endet in weniger Arbeit, nie in einer Bewertung: weniger Handarbeit pro Sprachversion, weniger Korrekturschleifen, weniger Abstimmung mit der Übersetzungsagentur, schneller ausrollen, mit gleichem Budget mehr mehrsprachiges Material. Leitfrage ist 'wie mache ich mir die Arbeit leichter', nie 'wie reif ist unser Prozess'.",
         "pains": "übersetzte Texte Rahmen für Rahmen von Hand zurück ins Layout setzen (pro Sprache, pro Version, jedes Jahr wieder); PDF-Kommentar-Korrekturschleifen mit 3-4 Runden pro Dokument; Versionschaos zwischen Übersetzern und Layout (VoC-verifiziert)",
         "kpis": "Korrekturschleifen pro Dokument, Stunden Nacharbeit pro Sprache, Fehler nach Freigabe",
         "vocabulary_use": "Korrekturlauf, Lektorat im Browser, Versionen, Layout-Erhalt, Rahmen für Rahmen, Fremdsprachensatz",
-        "vocabulary_avoid": "Budget- und ROI-Argumente (Käufer-Achse), Preise",
+        "vocabulary_avoid": "Budget- und ROI-Argumente (Käufer-Achse), Preise, Bewertungs- und Management-Rahmen (Reifegrad, Assessment, Prozess-Audit, Benchmark, Kennzahlen-Vergleich, Maturity)",
         "scene_de": "eine Designerin, die zum dritten Mal denselben Umbruch in zwölf Sprachversionen fixt",
         "scene_en": "a designer fixing the same line break in twelve language versions for the third time",
         "cta_style": "reply",

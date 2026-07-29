@@ -49,12 +49,14 @@ from tools.post_scorer import (
     parse_infographic_type,
     normalize_infographic_type,
     persona_block,
+    persona_prompt_tokens,
     assets_block,
 )
 from tools.content_matrix import (
     FORMAT_ASSET_ATTR,
     FORMAT_TO_BOX,
     asset_for_format,
+    assets_for_persona,
     figures_ok,
     formats_for_box,
     free_formats,
@@ -110,8 +112,13 @@ def pick_magnet_slots(slate: list, cfg) -> set:
     Ein Slot je Persona-Seite, jeweils der mittlere Kandidat - der staerkste
     Winkel bleibt fuer echtes Thought Leadership, der schwaechste traegt keinen
     Magneten.
+
+    Eine Persona ohne eigenen Magneten bekommt keinen Slot (Kundenfeedback
+    2026-07-29): sonst erzwingt der Slot ein Format, fuer das die Asset-Wahl
+    nichts liefert, und der Post faellt still auf ein freies Format zurueck.
     """
-    if not getattr(cfg, "LEAD_MAGNETS", None):
+    magnets = getattr(cfg, "LEAD_MAGNETS", None)
+    if not magnets:
         return set()
     per_slate = getattr(cfg, "MAGNET_SLOTS_PER_SLATE", 0)
     if per_slate <= 0:
@@ -121,8 +128,37 @@ def pick_magnet_slots(slate: list, cfg) -> set:
         groups.setdefault(cand.get("persona", ""), []).append(idx)
     order = [p["id"] for p in getattr(cfg, "CONTENT_PERSONAS", None) or []]
     order += [p for p in sorted(groups) if p not in order]
-    slots = [groups[p][len(groups[p]) // 2] for p in order if groups.get(p)]
+    slots = [groups[p][len(groups[p]) // 2] for p in order
+             if groups.get(p) and assets_for_persona(magnets, p)]
     return set(slots[:per_slate])
+
+
+def check_magnet_coverage(cfg) -> list:
+    """Personas ohne eigenen Lead-Magneten. Ziel ist genau einer je Persona
+    (Kundenfeedback 2026-07-29); fehlt einer, hat dieser Poster keinen
+    Konversionspfad. Der Lauf laeuft weiter, meldet es aber laut, statt es
+    wie im Juli 17 Posts lang still zu verschlucken."""
+    magnets = getattr(cfg, "LEAD_MAGNETS", None) or []
+    if not magnets:
+        return []
+    return [p["id"] for p in getattr(cfg, "CONTENT_PERSONAS", None) or []
+            if not assets_for_persona(magnets, p["id"])]
+
+
+def drop_without_bridge(scored: list, cfg) -> tuple[list, list]:
+    """Trennt Kandidaten ohne InTO-Bruecke ab (cfg.CLASSIFY_BRIDGE). Gibt
+    (behalten, verworfen) zurueck; ohne CLASSIFY_BRIDGE bleibt alles drin.
+
+    Anlass (Kundenfeedback 2026-07-29): ein Thema zu Terminologie-
+    Inkonsistenzen im Ausgangsdokument scorte hoch ueber das Stichwort
+    Terminologie, gehoerte inhaltlich aber zu Pruefsoftware beim Verfassen und
+    damit in keine Kategorie, die wir besitzen."""
+    if not getattr(cfg, "CLASSIFY_BRIDGE", ""):
+        return scored, []
+    keep, dropped = [], []
+    for cand in scored:
+        (keep if (cand.get("into_bridge") or "").strip() else dropped).append(cand)
+    return keep, dropped
 
 
 def scrape_all_sources(cfg, existing_urls: set) -> list:
@@ -254,7 +290,18 @@ def phase_slate(cfg, now) -> None:
     scored = score_posts([_pool_row_to_post(r) for r in pool_rows],
                          recent_drafts=recent_drafts, classify=True)
 
-    slate = select_slate(scored, cfg)
+    eligible, no_bridge = drop_without_bridge(scored, cfg)
+    if no_bridge:
+        print(f"  Ohne InTO-Bruecke verworfen: {len(no_bridge)} "
+              f"({', '.join(c['post_url'] for c in no_bridge[:3])}...)")
+
+    uncovered = check_magnet_coverage(cfg)
+    if uncovered:
+        print(f"  WARNUNG - Persona ohne Lead-Magnet: {', '.join(uncovered)}. "
+              f"Diese Seite bekommt keinen Magnet-Slot und damit keinen "
+              f"Konversionspfad.", file=sys.stderr)
+
+    slate = select_slate(eligible, cfg)
     if not slate:
         print(f"  Kein Kandidat ueber Mindest-Score {MIN_SCORE} - kein Slate.")
         return
@@ -429,19 +476,26 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
         # LRU aus `recents` statt aus Notion: die gerade geschriebene Zeile ist
         # dort noch nicht sichtbar, sonst zoegen zwei Magnet-Slots im selben Lauf
         # beide denselben Lead-Magneten (Befund 27.07.).
-        chosen_asset = asset_for_format(post_format, cfg, recents["assets"])
+        chosen_asset = asset_for_format(post_format, cfg, recents["assets"],
+                                        persona_id=(persona or {}).get("id", ""))
     except Exception as e:
         print(f"  Asset-Wahl fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     if post_format in FORMAT_ASSET_ATTR and not chosen_asset:
         post_format = pick_format(winner, recents["formats"], candidates=free_formats(cfg))
     # Asset-Formate fahren die dominante Persona, weil ihre Zahlen Kaeufer-
-    # Argumente sind. Magnet ist ausgenommen: die beiden Tools adressieren
-    # beide Achsen, und der Poster der Zeile folgt der Kandidaten-Persona.
+    # Argumente sind. Magnet ist ausgenommen: die Magnete sind seit dem
+    # Kundenfeedback 2026-07-29 selbst an eine Persona gebunden, die Zeile
+    # behaelt also die Kandidaten-Persona und damit ihren Poster.
     if persona and post_format in FORMAT_ASSET_ATTR and post_format != "Magnet":
         personas = getattr(cfg, "CONTENT_PERSONAS", None) or []
         dominant = next((p for p in personas if p.get("share") == "dominant"), None)
         if dominant:
             persona = dominant
+
+    # Zielgruppe, Adressat und Fokus-Themen des DE-Prompts folgen der Persona
+    # (Kundenfeedback 2026-07-29). Erst nach der Dominant-Umschaltung oben
+    # bilden, sonst schreibt ein Käufer-Post Anwender-Zielgruppe.
+    ptokens = persona_prompt_tokens(persona)
 
     linkedin_draft, en_draft, image_prompt, skeleton, sound_byte, kontext =         generate_post_and_image_prompt(
             winner, post_format,
@@ -451,6 +505,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
             persona_de=persona_block(persona, "de"),
             persona_en=persona_block(persona, "en"),
             persona_voice_de=(persona or {}).get("voice_de", ""),
+            persona_tokens_de=ptokens,
         )
     if not linkedin_draft:
         return None
@@ -468,6 +523,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
                         assets_en=assets_block(post_format, chosen_asset, "en"),
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
+                        persona_tokens_de=ptokens,
                     )
             else:
                 print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
@@ -478,6 +534,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
                         recent_infographic_types=recents["infographic_types"],
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
+                        persona_tokens_de=ptokens,
                     )
         if not linkedin_draft:
             return None

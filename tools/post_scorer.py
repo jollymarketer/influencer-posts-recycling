@@ -60,21 +60,40 @@ SCORING_PROMPT = apply_tokens(SCORING_PROMPT, _cfg)
 # der Jolly-Pfad (classify=False) bleibt byte-identisch.
 CLASSIFY_SECTION = """
 Zusaetzlich klassifiziere den Post (Felder im selben JSON):
-- "persona": genau eine von [[CLASSIFY_PERSONA_IDS]] — wen adressiert ein daraus
-  gemachter Post staerker?
-- "voc_hit": trifft das Thema einen der im KONTEXT belegten VoC-Schmerzen?
-  Dann benenne ihn kurz woertlich, sonst leerer String.
 - "topic_angle_de": EIN deutscher Satz — worueber unser Post gehen wuerde
   (eigenstaendiger Blickwinkel, kein Zitat des Originals).
+- "persona": genau eine der folgenden Achsen. Entscheide nach dem Winkel, den
+  UNSER Post fahren wuerde (topic_angle_de), nicht nach der Zielgruppe des
+  Original-Posts. Fachthemen gehoeren keiner Achse fest: derselbe Themenbereich
+  kann je nach Winkel auf beiden liegen.
+[[CLASSIFY_PERSONA_MENU]]
+- "voc_hit": trifft das Thema einen der im KONTEXT belegten VoC-Schmerzen?
+  Dann benenne ihn kurz woertlich, sonst leerer String.
 - "matrix_job": genau eine von Perspective, Proof, Promotion.
 - "matrix_stage": genau eine von Awareness, Education, Selection."""
 
-_CLASSIFY_FIELDS = ("persona", "voc_hit", "topic_angle_de", "matrix_job", "matrix_stage")
+# Mandanten mit CLASSIFY_BRIDGE haengen ein Pflicht-Bruecken-Feld an: leerer
+# Wert = Kandidat faellt vor dem Slate raus (run_slate.drop_without_bridge).
+_CLASSIFY_BRIDGE_LINE = '- "into_bridge": {question}'
+
+_CLASSIFY_FIELDS = ("persona", "voc_hit", "topic_angle_de", "matrix_job",
+                    "matrix_stage", "into_bridge")
 
 
 def _classify_section() -> str:
-    ids = ", ".join(p.get("id", "") for p in getattr(_cfg, "CONTENT_PERSONAS", []) or [])
-    return CLASSIFY_SECTION.replace("[[CLASSIFY_PERSONA_IDS]]", ids or "kaeufer, anwender")
+    personas = getattr(_cfg, "CONTENT_PERSONAS", []) or []
+    if personas:
+        menu = "\n".join(
+            f"  - {p.get('id', '')}: {p.get('axis') or p.get('label', '')}"
+            for p in personas
+        )
+    else:
+        menu = "  - kaeufer\n  - anwender"
+    section = CLASSIFY_SECTION.replace("[[CLASSIFY_PERSONA_MENU]]", menu)
+    bridge = getattr(_cfg, "CLASSIFY_BRIDGE", "")
+    if bridge:
+        section += "\n" + _CLASSIFY_BRIDGE_LINE.format(question=bridge)
+    return section
 
 DACH_POST_PROMPT = """[[PERSONA_DE]]
 
@@ -207,9 +226,25 @@ TOOL-LOGOS: keine"""
 # PERSONA_DE wird erst zur Generierungszeit gefuellt: der Persona-Split kann
 # die Stimme wechseln (voice_de in CONTENT_PERSONAS, z.B. lisocon: Anwender-
 # Posts in Jaes Stimme). Ohne Override bleibt TOKENS["PERSONA_DE"].
-DACH_POST_PROMPT = apply_tokens(
-    DACH_POST_PROMPT.replace("[[PERSONA_DE]]", "{persona_voice}"), _cfg
-)
+#
+# Dasselbe fuer Zielgruppe, Adressat und Fokus-Themen (Kundenfeedback lisocon
+# 2026-07-29): diese drei standen fest im Template und schrieben JEDEM Post die
+# Entscheider-Anweisung samt Kosten-Fokus vor, egal welche Persona ihn faehrt.
+# Ohne Persona-Override bleibt der statische TOKENS-Wert des Mandanten.
+_PERSONA_PROMPT_TOKENS = ("audience_de", "decision_makers_de", "focus_topics_de")
+
+DACH_POST_PROMPT = DACH_POST_PROMPT.replace("[[PERSONA_DE]]", "{persona_voice}")
+for _tok in _PERSONA_PROMPT_TOKENS:
+    DACH_POST_PROMPT = DACH_POST_PROMPT.replace(f"[[{_tok.upper()}]]", "{" + _tok + "}")
+DACH_POST_PROMPT = apply_tokens(DACH_POST_PROMPT, _cfg)
+
+
+def persona_prompt_tokens(persona) -> dict:
+    """DE-Prompt-Tokens, die eine Persona ueberschreiben darf. Fehlendes Feld
+    (oder keine Persona) faellt auf den statischen TOKENS-Wert zurueck, damit
+    Mandanten ohne diese Persona-Felder byte-identische Prompts behalten."""
+    return {tok: (persona or {}).get(tok) or _cfg.TOKENS[tok.upper()]
+            for tok in _PERSONA_PROMPT_TOKENS}
 
 EN_POST_PROMPT = """[[PERSONA_EN]]
 
@@ -513,11 +548,14 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
                     recent_infographic_types=None,
                     assets_de: str = "", assets_en: str = "",
                     persona_de: str = "", persona_en: str = "",
-                    persona_voice_de: str = "") -> tuple[str, str]:
+                    persona_voice_de: str = "",
+                    persona_tokens_de: dict | None = None) -> tuple[str, str]:
     """Pure builder: returns (de_prompt, en_prompt) with the format structure,
     the infographic anti-repeat line, and optional persona/asset blocks
     injected. persona_voice_de overrides the DE author voice (Persona-Split);
-    empty falls back to TOKENS["PERSONA_DE"]. Unknown format keys fall back
+    empty falls back to TOKENS["PERSONA_DE"]. persona_tokens_de overrides
+    audience/addressee/focus in the DE prompt (persona_prompt_tokens); None
+    falls back to the tenant's static TOKENS. Unknown format keys fall back
     to Opinion. No API calls."""
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
@@ -532,6 +570,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         assets_block=assets_de,
         persona_voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
         length_target_de=_LENGTH_TARGET_DE[is_long],
+        **(persona_tokens_de or persona_prompt_tokens(None)),
     )
     en = EN_POST_PROMPT.format(
         context=CLIENT_CONTEXT,
@@ -754,12 +793,22 @@ PERSONA_BLOCK_EN = """TARGET PERSONA for this post (exactly ONE persona, never m
 - Vocabulary to avoid: {vocabulary_avoid}
 - Typical scene: {scene}"""
 
+# Nutzenachse (Kundenfeedback lisocon 2026-07-29): der Persona-Block lieferte
+# nur Schmerz und Vokabular. Wohin ein Post AUFLOESEN soll, stand nirgends,
+# darum landeten Anwender-Posts regelmaessig in einer Management-Bewertung.
+# Nur gerendert, wenn die Persona das Feld fuehrt.
+_VALUE_AXIS_LINE_DE = "\n- Worin der Post aufloest: {value_axis}"
+_VALUE_AXIS_LINE_EN = "\n- What the post must resolve into: {value_axis}"
+
 
 def persona_block(persona, lang: str) -> str:
     """Persona-Linse fuer den Generierungs-Prompt. None/leer -> ""."""
     if not persona:
         return ""
     template = PERSONA_BLOCK_DE if lang == "de" else PERSONA_BLOCK_EN
+    value_axis = persona.get("value_axis", "")
+    if value_axis:
+        template += _VALUE_AXIS_LINE_DE if lang == "de" else _VALUE_AXIS_LINE_EN
     return template.format(
         label=persona.get("label", ""),
         pains=persona.get("pains", ""),
@@ -767,6 +816,7 @@ def persona_block(persona, lang: str) -> str:
         vocabulary_use=persona.get("vocabulary_use", ""),
         vocabulary_avoid=persona.get("vocabulary_avoid", ""),
         scene=persona.get("scene_de" if lang == "de" else "scene_en", ""),
+        value_axis=value_axis,
     )
 
 
@@ -1288,7 +1338,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    recent_infographic_types=None,
                                    assets_de: str = "", assets_en: str = "",
                                    persona_de: str = "", persona_en: str = "",
-                                   persona_voice_de: str = "") -> tuple[str, str, str, str, str, str]:
+                                   persona_voice_de: str = "",
+                                   persona_tokens_de: dict | None = None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
@@ -1298,7 +1349,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     recent_infographic_types steuert das Anti-Repeat des Infografik-Typs.
     assets_de/assets_en und persona_de/persona_en sind vorgefertigte Prompt-
     Bloecke (siehe assets_block/persona_block), Default "" bleibt wirkungslos.
-    persona_voice_de wechselt die DE-Autorenstimme (Persona-Split).
+    persona_voice_de wechselt die DE-Autorenstimme (Persona-Split),
+    persona_tokens_de Zielgruppe/Adressat/Fokus im DE-Prompt.
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton, soundbyte, kontext)
     zurueck. soundbyte/kontext speisen den Bild-Archetyp-Router (image_archetypes).
     """
@@ -1307,6 +1359,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         assets_de=assets_de, assets_en=assets_en,
         persona_de=persona_de, persona_en=persona_en,
         persona_voice_de=persona_voice_de,
+        persona_tokens_de=persona_tokens_de,
     )
 
     de_resp = client.messages.create(
