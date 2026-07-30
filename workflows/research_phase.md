@@ -21,6 +21,15 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
 - Notion DB `778bd719db9147ff994ddbf8a4ecac34` — bestehende Posts (Duplikat-Filter)
 
 ### Was passiert (run_research.py)
+0. **System-Check (Phase 0, `tools/system_check.py`)** — GO/NO-GO vor allem
+   anderen. Prüft Env-Variablen, Notion-DB inklusive aller Properties, die
+   dieser Mandant schreibt, Apify-Token + Actors, Anthropic-Key + Scoring-Modell,
+   kie.ai-Credits, Supabase. Bei einem harten Fehler bricht der Lauf mit Exit 1
+   ab — ohne diesen Check endet ein Lauf mit fehlender Env-Variable still mit
+   Exit 0 und Railway meldet SUCCESS, obwohl nichts passiert ist.
+   Nur lesende, kostenlose Aufrufe: kein Actor-Run, kein kie.ai-Task, kein
+   Make-Webhook (der löst eine echte Mail aus).
+   Einzeln aufrufbar: `python tools/system_check.py` (Exit 1 bei NO-GO).
 1. Bestehende Post-URLs aus Notion laden
 2. Neue Posts scrapen via Apify (`harvestapi/linkedin-profile-posts`) + Substack RSS
    - `maxPosts` und Altersfenster pro Mandant aus `clients/<name>/config.py`, Block `SCRAPE`
@@ -95,6 +104,33 @@ New → (Daily Run) → Skipped (nicht als Winner gewählt)
 - Scoring-Fehler → nur Viralitäts-Score wird verwendet
 - Bildgenerierung fehlgeschlagen → Post wird trotzdem als "Ready to Review" gespeichert (ohne Bild)
 - Leerer LinkedIn-Draft → Run bricht ab, kein Notion-Update
+
+## Engagement-Auswertung (nach dem Readback)
+
+`tools/engagement_readback.py` schrieb Likes/Kommentare/Shares bisher nach
+Notion und endete dort. `tools/engagement_stats.py` wertet sie jetzt entlang
+der Entscheidungen aus, die die Pipeline pro Post trifft (Format, Persona,
+Bild-Variante, Infografik-Typ, Matrix-Box, Poster) und druckt den Stand nach
+jedem Readback-Lauf.
+
+Zwei Gates, beide müssen offen sein, bevor überhaupt ein Sieger genannt wird:
+
+| Gate | Schwelle | Warum |
+|------|----------|-------|
+| Stichprobe | mindestens 2 Zellen mit je 5 Posts | Unter 5 Posts kippt ein einzelner Ausreisser die Rangfolge |
+| Abstand | Median-Spanne mindestens 3 Punkte | Bei Medianen von 0 und 1 ist der Sieger eine einzelne Reaktion |
+
+Median statt Mittelwert, weil LinkedIn-Engagement einen schweren Rand hat: ein
+viraler Post zieht den Mittelwert einer Zelle so weit hoch, dass die Rangfolge
+nur noch diesen einen Post abbildet. Zellen ohne Property-Wert (`(ohne Wert)`,
+z.B. Altposts vor Einführung der Matrix) erscheinen im Report, können aber nie
+Sieger werden: eine fehlende Property ist keine Entscheidung der Pipeline.
+
+Solange ein Gate zu ist, nennt der Report keinen Sieger, sondern den Grund und
+den Abstand bis zur Auswertbarkeit. Es fliesst bewusst noch nichts in den
+Generierungs-Prompt zurück — ein Muster aus vier Posts ist kein Muster.
+
+Nur-Lese-Blick ohne Scrape und ohne Schreiben: `python tools/engagement_stats.py`
 
 ## Content-Run (manuell, nur bei Bedarf)
 

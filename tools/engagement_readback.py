@@ -17,7 +17,8 @@ from apify_client import ApifyClient
 from dotenv import load_dotenv
 
 from clients import load_client
-from tools.notion_db import get_published_rows, update_engagement
+from tools.engagement_stats import aggregate, report_lines, summary_line
+from tools.notion_db import ENGAGEMENT_DIMENSIONS, get_published_rows, update_engagement
 
 load_dotenv()
 
@@ -112,6 +113,9 @@ def run_readback(cfg=None) -> dict:
             print(f"    FEHLER - Readback {row['page_id']}: {e}", file=sys.stderr)
             continue
         matched += 1
+        # Frische Zahlen in die lokale Zeile: die Auswertung unten soll den
+        # Stand nach diesem Lauf sehen, nicht den vor dem Schreiben.
+        row["likes"], row["comments"], row["shares"] = likes, comments, shares
         top.append((likes + 2 * comments + 3 * shares, likes, comments,
                     row.get("poster", ""), row.get("posted_at", "")[:10]))
 
@@ -119,7 +123,22 @@ def run_readback(cfg=None) -> dict:
     for score, likes, comments, poster, date in top[:3]:
         print(f"    Top: {date} {poster} - {likes} Likes, {comments} Kommentare")
     print(f"  Engagement zurueckgeschrieben: {matched}/{len(rows)} Zeilen.")
+    print_stats(rows)
     return {"matched": matched, "rows": len(rows)}
+
+
+def print_stats(rows: list) -> None:
+    """Auswertung entlang der Pipeline-Entscheidungen. Non-fatal: eine kaputte
+    Statistik darf den Readback nie zum Fehler machen."""
+    try:
+        print("\n  Wirkung nach Entscheidung (Median, * = auswertbare Zelle):")
+        print(summary_line(rows))
+        stats = aggregate(rows, ENGAGEMENT_DIMENSIONS)
+        for line in report_lines(stats):
+            print(line)
+    except Exception as e:
+        print(f"  Engagement-Auswertung fehlgeschlagen (nicht kritisch): {e}",
+              file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,14 @@ FRIDAY = dt.datetime(2026, 6, 12, tzinfo=dt.timezone.utc)    # weekday 4
 MONDAY = dt.datetime(2026, 6, 8, tzinfo=dt.timezone.utc)     # weekday 0
 
 
+@pytest.fixture(autouse=True)
+def _system_check_go():
+    """Phase 0 telefoniert (Notion, Apify, Anthropic). Fuer die Scheduling-Tests
+    steht sie auf GO; die Gate-Tests unten patchen sie erneut auf NO-GO."""
+    with patch.object(run_research, "run_system_check", return_value=True):
+        yield
+
+
 def _run(now):
     with patch.object(run_research, "run_daily") as rd, \
          patch.object(run_research, "scrape_and_persist") as ks, \
@@ -79,3 +87,29 @@ def test_daily_ok_exits_cleanly():
     rd, ks, tm = _run(FRIDAY)  # run_daily mocked = success; must NOT raise SystemExit
     rd.assert_called_once()
     tm.assert_called_once()
+
+
+def test_system_check_no_go_aborts_before_any_work():
+    """Kein halber Lauf: bei NO-GO faellt main() mit Exit 1 raus, bevor
+    irgendetwas scrapt, generiert oder nach Notion schreibt."""
+    with patch.object(run_research, "run_system_check", return_value=False), \
+         patch.object(run_research, "run_daily") as rd, \
+         patch.object(run_research, "scrape_and_persist") as ks, \
+         patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "sync_topic_decisions") as sync:
+        with pytest.raises(SystemExit) as exc:
+            run_research.main(now=THURSDAY)
+    assert exc.value.code == 1
+    rd.assert_not_called()
+    ks.assert_not_called()
+    tm.assert_not_called()
+    sync.assert_not_called()
+
+
+def test_system_check_runs_before_slate_mode():
+    """Auch der Slate-Pfad (lisocon) darf nicht ohne bestandenen Check starten."""
+    with patch.object(run_research, "run_system_check", return_value=False), \
+         patch.dict(run_research._cfg.FEATURES, {"slate_mode": True}):
+        with pytest.raises(SystemExit) as exc:
+            run_research.main(now=MONDAY)
+    assert exc.value.code == 1

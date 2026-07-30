@@ -947,9 +947,19 @@ def get_entry_by_page_id(page_id: str) -> dict:
 PUBLISHED_STATUSES = ("Posted", "Posting")
 
 
+# Dimensionen, entlang derer die Wirkung eines Posts ausgewertet wird
+# (tools/engagement_stats.py). Namen = Notion-Select-Properties.
+ENGAGEMENT_DIMENSIONS = ("Format", "Persona", "Bild-Variante", "Infografik-Typ",
+                         "Matrix-Job", "Matrix-Stage", "Poster")
+
+
 def get_published_rows() -> list[dict]:
     """Veröffentlichte Zeilen inkl. beider Poster-URL-Felder (Engagement-Readback).
-    live_url ist die URL des Feldes, das zum Poster gehört."""
+    live_url ist die URL des Feldes, das zum Poster gehört.
+
+    Trägt zusätzlich die bereits gemessenen Engagement-Zahlen und die
+    Auswertungs-Dimensionen (`dims`) — beides kommt aus derselben Query, ein
+    zweiter Notion-Aufruf für die Statistik wäre reine Verschwendung."""
     pages = _query_db({"or": [{"property": "Status", "select": {"equals": s}}
                               for s in PUBLISHED_STATUSES]})
     rows = []
@@ -966,6 +976,10 @@ def get_published_rows() -> list[dict]:
             "live_url": by_poster.get(poster, "") or next(
                 (u for u in by_poster.values() if u), ""),
             "posted_at": ((props.get("Date Posted") or {}).get("date") or {}).get("start", ""),
+            "likes": (props.get("Likes") or {}).get("number"),
+            "comments": (props.get("Kommentare") or {}).get("number"),
+            "shares": (props.get("Shares") or {}).get("number"),
+            "dims": {d: _select_name(props, d) for d in ENGAGEMENT_DIMENSIONS},
         })
     return rows
 

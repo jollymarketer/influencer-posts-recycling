@@ -298,6 +298,9 @@ def test_no_phase_drafts_anymore():
 
 def test_run_research_dispatches_to_slate_mode(monkeypatch):
     import run_research
+    # Phase 0 telefoniert (Notion, Apify, Anthropic); hier geht es nur um das
+    # Dispatch-Verhalten. Eigene Gate-Tests: tests/test_run_research_schedule.py.
+    monkeypatch.setattr(run_research, "run_system_check", lambda cfg: True)
     monkeypatch.setattr(run_research._cfg, "FEATURES",
                         {**run_research._cfg.FEATURES, "slate_mode": True},
                         raising=False)

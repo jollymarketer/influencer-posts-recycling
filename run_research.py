@@ -74,6 +74,7 @@ from tools.image_archetypes import (
 from tools.kieai_image import generate_image
 from tools.image_repair import repair_wrong_images
 from tools.supabase_db import upsert_posts
+from tools.system_check import run_system_check
 from run_topic_mining import run_topic_mining
 from run_keyword_scrape import scrape_and_persist
 from tools.topic_decisions_db import sync_topic_decisions
@@ -452,6 +453,13 @@ def run_daily():
 
 
 def main(now=None):
+    # Phase 0: GO/NO-GO vor allem anderen. Ohne diesen Check beendet ein Lauf
+    # mit fehlender Env-Variable oder totem Token still mit Exit 0 und Railway
+    # meldet SUCCESS, obwohl nichts passiert ist.
+    if not run_system_check(_cfg):
+        print("System-Check NO-GO — Lauf abgebrochen.", file=sys.stderr)
+        sys.exit(1)
+
     # Slate-Modus (spec 2026-07-16): lisocon faehrt die 3-Phasen-Pipeline,
     # der Winner-Flow inkl. Wochen-Jobs bleibt Jolly-only.
     if _cfg.FEATURES.get("slate_mode"):

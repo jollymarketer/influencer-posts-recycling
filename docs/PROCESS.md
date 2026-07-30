@@ -98,6 +98,7 @@ Make your Choice  →  Ready to Review  →  (Manuell) Veröffentlicht
 | Komponente | Details |
 |------------|---------|
 | Scheduler | Railway Cron (`0 7 * * *`) |
+| Phase 0 | `tools/system_check.py` — GO/NO-GO vor jedem Lauf, Exit 1 bei hartem Fehler |
 | Scraping | Apify Actor `harvestapi/linkedin-profile-posts` |
 | Bildgenerierung | kie.ai API (Nano-Banano II, 1:1 Format) |
 | Datenspeicher | Notion DB `778bd719...` |
