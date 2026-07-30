@@ -1,4 +1,4 @@
-"""Taegliche Kommentar-Entwuerfe auf frische Influencer-Posts.
+"""Kommentar-Entwuerfe auf frische Influencer-Posts.
 
 Die Engine scrapt die Wasserloecher der Zielgruppe ohnehin schon, aber Reinhard
 und Jae tauchen dort nie auf: eigene Posts ohne Netzwerk-Aktivitaet erreichen
@@ -7,8 +7,10 @@ Profil-Ausschnitts und legt fertige Kommentare als Notion-Zeilen (Status
 "Kommentar") ab. Posten bleibt manuell - ein Kommentar unter fremdem Namen
 laeuft nie automatisiert.
 
-Kosten: ein Apify-Run pro Tag ueber `profiles_per_day` Profile mit
-`max_posts_per_profile` Posts (Rotation deckt die volle Liste in wenigen Tagen).
+Kadenz: `days` schaltet die Lauftage (leer = taeglich), `drafts_total` deckelt
+die Entwuerfe pro Lauf ueber alle Poster hinweg. Kosten: ein Apify-Run pro
+Lauftag ueber `profiles_per_day` Profile mit `max_posts_per_profile` Posts
+(Rotation deckt die volle Liste in wenigen Lauftagen).
 """
 import os
 import sys
@@ -123,16 +125,42 @@ def fetch_fresh_posts(profiles: list, settings: dict) -> list:
     return posts
 
 
-def assign_posts(posts: list, posters: list, per_poster: int) -> list:
+def assign_posts(posts: list, posters: list, per_poster: int,
+                 total: int | None = None) -> list:
     """Verteilt die frischesten Posts abwechselnd auf die Poster. Ein Post wird
     nur einmal vergeben: zwei Kommentare derselben Firma unter einem Post lesen
-    sich als Kampagne."""
+    sich als Kampagne.
+
+    `total` deckelt die Entwuerfe des Laufs ueber alle Poster hinweg. Ohne
+    Deckel bleibt es bei per_poster x Poster (Jolly-Pfad unveraendert)."""
     queue, assignments = list(posts), []
-    for idx in range(per_poster * len(posters)):
+    slots = per_poster * len(posters)
+    if total is not None:
+        slots = min(slots, total)
+    for idx in range(slots):
         if not queue:
             break
         assignments.append((posters[idx % len(posters)], queue.pop(0)))
     return assignments
+
+
+def poster_rotation(posters: list, days, now) -> list:
+    """Poster-Reihenfolge dieses Laufs.
+
+    Bei gedeckelter Gesamtzahl (drafts_total) bekommt sonst immer derselbe
+    Poster den Kommentar. Der Startindex wandert deshalb mit dem Lauf-Slot:
+    ISO-Woche x Zahl der Lauftage + Position des heutigen Tages. Ueber
+    tm_yday zu rotieren reicht nicht - Mo/Mi/Fr liegen alle auf geraden
+    Abstaenden und wuerden bei zwei Postern nie wechseln."""
+    if not posters:
+        return posters
+    slots = tuple(days) if days else ()
+    if slots and now.weekday() in slots:
+        index = now.isocalendar()[1] * len(slots) + slots.index(now.weekday())
+    else:
+        index = now.timetuple().tm_yday
+    shift = index % len(posters)
+    return posters[shift:] + posters[:shift]
 
 
 def _voice(cfg, poster: str) -> str:
@@ -190,13 +218,19 @@ def _notify(cfg, count: int) -> None:
 
 
 def run_comment_drafts(cfg=None, now=None) -> int:
-    """Taeglicher Lauf: rotierender Profil-Ausschnitt, frische Posts, je ein
-    Kommentar-Entwurf pro Poster. Rueckgabe: Zahl geschriebener Zeilen."""
+    """Ein Lauf: rotierender Profil-Ausschnitt, frische Posts, Kommentar-
+    Entwuerfe bis zum Deckel. Rueckgabe: Zahl geschriebener Zeilen."""
     cfg = cfg or _cfg
     now = now or datetime.now(timezone.utc)
     settings = getattr(cfg, "COMMENT_DRAFTS", None)
     if not settings:
         print("  Kommentar-Entwuerfe nicht konfiguriert - Skip.")
+        return 0
+
+    # Wochentags-Gate vor jedem Kostenpunkt: ohne `days` bleibt es taeglich.
+    days = settings.get("days")
+    if days and now.weekday() not in tuple(days):
+        print(f"  Kein Kommentar-Tag (weekday {now.weekday()}) - Skip.")
         return 0
 
     # Tages-Guard (analog last_slate_at_<client>): der Cron faehrt zwei Slots
@@ -226,10 +260,12 @@ def run_comment_drafts(cfg=None, now=None) -> int:
     if not posts:
         return 0
 
-    posters = settings.get("posters") or [getattr(cfg, "POSTER_DEFAULT", "")]
+    posters = poster_rotation(
+        settings.get("posters") or [getattr(cfg, "POSTER_DEFAULT", "")], days, now)
     per_poster = settings.get("drafts_per_poster", 3)
     written = 0
-    for poster, post in assign_posts(posts, posters, per_poster):
+    for poster, post in assign_posts(posts, posters, per_poster,
+                                     total=settings.get("drafts_total")):
         try:
             draft = draft_comment(cfg, post, poster)
             if not draft:

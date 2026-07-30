@@ -79,26 +79,75 @@ from tools.substack_scraper import scrape_substack_posts
 MIN_SCORE = 25
 
 
+def topic_cluster(cand: dict, cfg) -> str:
+    """Themen-Cluster eines Kandidaten, oder "" wenn keiner greift.
+
+    Gematcht wird der vom Scoring formulierte Winkel (topic_angle_de), nicht
+    der Quell-Post: gedeckelt gehoert, worueber WIR schreiben wuerden. Ohne
+    cfg.TOPIC_CLUSTERS ist alles clusterlos (Jolly-Pfad bleibt unveraendert).
+    """
+    haystack = (cand.get("topic_angle_de") or "").lower()
+    if not haystack:
+        return ""
+    for cluster in getattr(cfg, "TOPIC_CLUSTERS", None) or []:
+        if any(kw in haystack for kw in cluster["keywords"]):
+            return cluster["id"]
+    return ""
+
+
 def select_slate(scored: list, cfg) -> list:
     """Pure Slate-Auswahl: pro Persona-Seite Top-N ueber MIN_SCORE,
-    knappe Seite wird von der anderen aufgefuellt (fill_marker=True)."""
+    knappe Seite wird von der anderen aufgefuellt (fill_marker=True).
+
+    Ein Themen-Cluster besetzt je Persona-Seite hoechstens
+    cfg.TOPIC_CLUSTER_CAP Plaetze (Kundenfeedback Jae 2026-07-30: der Slate vom
+    30.07. trug auf der Kaeufer-Seite 5 von 5 MVO-Themen). Der Cap ist noetig,
+    weil `themen_diversitaet` im Scoring jeden Kandidaten einzeln gegen die
+    zuletzt VEROEFFENTLICHTEN Posts bewertet und die Kandidaten desselben
+    Slates einander nie sehen. Gaebe der Pool sonst kein volles Slate her, wird
+    der Cap gelockert statt das Slate zu verknappen (cluster_overflow=True).
+    """
     slate_cfg = cfg.SLATE
     per, size = slate_cfg["per_persona"], slate_cfg["size"]
+    cap = getattr(cfg, "TOPIC_CLUSTER_CAP", 0)
     eligible = sorted((c for c in scored if c.get("score", 0) >= MIN_SCORE),
                       key=lambda c: c["score"], reverse=True)
+    used: dict = {}   # (persona, cluster) -> schon belegte Plaetze
+
+    def blocked(cand: dict) -> bool:
+        cluster = topic_cluster(cand, cfg)
+        if not (cap and cluster):
+            return False
+        return used.get((cand.get("persona", ""), cluster), 0) >= cap
+
+    def book(cand: dict) -> None:
+        cluster = topic_cluster(cand, cfg)
+        if cluster:
+            key = (cand.get("persona", ""), cluster)
+            used[key] = used.get(key, 0) + 1
+
     sides = {"kaeufer": [], "anwender": []}
     for cand in eligible:
         side = sides.get(cand.get("persona", ""))
-        if side is not None and len(side) < per:
+        if side is not None and len(side) < per and not blocked(cand):
             side.append(cand)
+            book(cand)
     slate = sides["kaeufer"] + sides["anwender"]
     chosen = {c["post_url"] for c in slate}
-    for cand in eligible:
-        if len(slate) >= size:
-            break
-        if cand["post_url"] not in chosen:
-            slate.append({**cand, "fill_marker": True})
+    # Erst mit Cap auffuellen, erst danach ohne - so kommt ein zweites Thema
+    # immer vor dem dritten Kandidaten desselben Themas.
+    for relaxed in (False, True):
+        for cand in eligible:
+            if len(slate) >= size:
+                break
+            if cand["post_url"] in chosen or (not relaxed and blocked(cand)):
+                continue
+            extra = {"fill_marker": True}
+            if relaxed:
+                extra["cluster_overflow"] = True
+            slate.append({**cand, **extra})
             chosen.add(cand["post_url"])
+            book(cand)
     return slate[:size]
 
 
@@ -306,6 +355,16 @@ def phase_slate(cfg, now) -> None:
         print(f"  Kein Kandidat ueber Mindest-Score {MIN_SCORE} - kein Slate.")
         return
 
+    spread = {}
+    for cand in slate:
+        key = f"{cand.get('persona', '')}/{topic_cluster(cand, cfg) or 'frei'}"
+        spread[key] = spread.get(key, 0) + 1
+    print(f"  Themen-Verteilung: {dict(sorted(spread.items()))}")
+    overflow = sum(1 for c in slate if c.get("cluster_overflow"))
+    if overflow:
+        print(f"  WARNUNG - Themen-Cap fuer {overflow} Zeile(n) gelockert: der Pool "
+              f"gab kein Slate mit genug Themen-Vielfalt her.", file=sys.stderr)
+
     target_box = None
     try:
         target_box = pick_target_box(get_recent_boxes(), cfg)
@@ -421,8 +480,10 @@ def phase_images(cfg) -> None:
 
 
 def phase_comments(cfg, now) -> None:
-    """Taeglich: Kommentar-Entwuerfe auf frische Influencer-Posts (Distribution).
-    Non-fatal - ein Fehler hier darf den Slate-Bau nie blockieren."""
+    """Kommentar-Entwuerfe auf frische Influencer-Posts (Distribution). Die
+    Lauftage stehen in COMMENT_DRAFTS["days"], das Gate sitzt in
+    run_comment_drafts. Non-fatal - ein Fehler hier darf den Slate-Bau nie
+    blockieren."""
     if not getattr(cfg, "COMMENT_DRAFTS", None):
         return
     print("\nPhase B: Kommentar-Entwuerfe ...")

@@ -98,7 +98,7 @@ HARTE REGELN:
 TOKENS = {
     # --- Scoring ---
     "SCORING_ROLE": "Du bist Content-Stratege bei lisocon (Produkt: InTO, Layout-Automatisierung für mehrsprachige Dokumente).",
-    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'. Ebenfalls Bonus (Säule 4, Deadline-Anker): EU-Maschinenverordnung 2023/1230 ab 20.01.2027, Sprachpflicht, Betriebsanleitungen, digitale Anleitung, Produktsicherheits-Doku, CE-Dokumentation — sofern der Post einen Doku- oder Prozess-Bezug hat und nicht rein juristisch argumentiert. Abzug dagegen für Themen, die ausschliesslich VOR der Übersetzung spielen und nie bei mehrsprachiger Ausgabe landen: Prüfsoftware und Autorenunterstützung beim Verfassen, Terminologiearbeit allein im Ausgangsdokument, Redaktionsleitfäden in der Ausgangssprache. Das ist nicht unsere Kategorie.",
+    "TOPIC_FIT_QUESTION": "Passt das Thema zu Lokalisierung, Übersetzung, Technischer Dokumentation, Terminologie, mehrsprachigem Content, DTP/Publishing-Workflows, CCMS oder Content Operations? Bonus, wenn es einen VoC-verifizierten Schmerz trifft: manuelles Zurücksetzen übersetzter Texte ins Layout, versteckte DTP-Kosten pro Sprachversion, PDF-Korrekturschleifen, Textexpansion, oder 'KI übersetzt, Layout bleibt Handarbeit'. Themen rund um die EU-Maschinenverordnung 2023/1230 ab 20.01.2027 (Sprachpflicht, Betriebsanleitungen, digitale Anleitung, Produktsicherheits-Doku, CE-Dokumentation) zählen als passendes Thema, aber OHNE Bonus: sie werden wie jedes andere Thema bewertet und brauchen einen Doku- oder Prozess-Bezug, rein juristische Posts fallen durch. Abzug dagegen für Themen, die ausschliesslich VOR der Übersetzung spielen und nie bei mehrsprachiger Ausgabe landen: Prüfsoftware und Autorenunterstützung beim Verfassen, Terminologiearbeit allein im Ausgangsdokument, Redaktionsleitfäden in der Ausgangssprache. Das ist nicht unsere Kategorie.",
     "ICP_RELEVANZ_QUESTION": "Würde ein Marketingleiter, Lokalisierungsverantwortlicher oder Leiter Technische Dokumentation in einem produzierenden Unternehmen (500-10.000 MA) diesen Inhalt wollen?",
 
     # --- DE-Post-Prompt (Stimme: Reinhard Lindner) ---
@@ -213,10 +213,18 @@ SLATE_VIEW_URL = "https://www.notion.so/3951617b1baf819e97a5d01a4765f606?v=39f16
 # MAKE_COMMENT_WEBHOOK schreibt die Engine die Zeilen stumm in die View.
 COMMENT_VIEW_URL = "https://www.notion.so/3951617b1baf819e97a5d01a4765f606?v=3a91617b1baf81b18432000c90e28558"
 
-# Slate-Modus (spec 2026-07-16): 2 Slates/Woche (Mo+Do), 10 Kandidaten,
-# hart quotiert 5 kaeufer + 5 anwender. Jae pickt fuer beide Poster.
+# Slate-Modus (spec 2026-07-16): 10 Kandidaten, hart quotiert 5 kaeufer +
+# 5 anwender. Jae pickt fuer beide Poster.
+# Kadenz-Korrektur 2026-07-30 (Richard, Anlass Kundenfeedback Jae): vorher
+# 2 Slates/Woche (Mo+Do) = 20 Kandidaten gegen 10 Publish-Slots (2/Tag x 5
+# Werktage). Jae las das Slate als Freigabe-Queue statt als Menue, approvte 9
+# von 10 und bekam zwei Tage spaeter die naechsten 10. Jetzt ein Slate pro
+# Woche = 10 Kandidaten = genau die Wochenkapazitaet, eine Review-Sitzung.
+# Deckt sich zugleich mit SCRAPE["max_age_hours"] = 168 (7 Tage, keine Luecke,
+# keine Doppelabdeckung). Phase C und D laufen damit nur noch montags; die
+# taeglichen Kommentar-Entwuerfe (Phase B) sind davon unberuehrt.
 SLATE = {
-    "days": (0, 3),          # Mo, Do (weekday())
+    "days": (0,),            # Mo (weekday())
     "size": 10,
     "per_persona": 5,
     "max_age_days": 60,
@@ -250,6 +258,12 @@ PERSONA_BALANCE_WINDOW = 8
 # Saeule 4. Die 39 Influencer-Profile reden nicht ueber die Maschinenverordnung,
 # ohne diese Keywords kommt kein MVO-Kandidat in den Slate. Dient zugleich als
 # billigster V1-Resonanz-Sweep (MVO-WHY hat null Zitate im VoC-Korpus).
+# Kuerzung 2026-07-30 (Kundenfeedback Jae): vier MVO-Begriffe schwemmten den
+# Kandidaten-Pool, der Slate vom 30.07. trug 5 von 5 Kaeufer-Themen zur MVO.
+# Bleiben zwei: "Maschinenverordnung" als DE-Anker und "Betriebsanleitung
+# Uebersetzung" als Doku-Bezug. Raus sind "EU Machinery Regulation" (englisches
+# Duplikat desselben Ankers, ICP ist DACH) und "technische Dokumentation
+# Compliance" (zog juristische Posts ohne Prozess-Winkel).
 DAILY_KEYWORD_SEARCH = {
     "keywords": [
         "multilingual technical documentation",
@@ -264,13 +278,39 @@ DAILY_KEYWORD_SEARCH = {
         "localization costs",
         "DTP Nacharbeit",
         "Maschinenverordnung",
-        "EU Machinery Regulation",
         "Betriebsanleitung Übersetzung",
-        "technische Dokumentation Compliance",
     ],
     "max_posts": 10,
     "posted_limit": "week",
 }
+
+# Themen-Cap je Persona-Seite (Kundenfeedback Jae 2026-07-30). Der Slate vom
+# 30.07. trug auf der Kaeufer-Seite 5 von 5 MVO-Themen, Reinhard haette fuenf
+# Tage hintereinander ueber dieselbe Verordnung gepostet. Ursache ist
+# strukturell: `themen_diversitaet` im Scoring bewertet jeden Kandidaten in
+# einem eigenen API-Call und nur gegen die zuletzt VEROEFFENTLICHTEN Posts -
+# fuenf frische MVO-Kandidaten sehen einander nie. Greift deterministisch in
+# run_slate.select_slate, kostet keinen zusaetzlichen API-Call.
+TOPIC_CLUSTER_CAP = 2
+
+# Cluster-Erkennung ueber den vom Scoring formulierten Winkel (topic_angle_de),
+# nicht ueber den Quell-Post: gedeckelt gehoert, worueber WIR schreiben wuerden.
+# Reihenfolge zaehlt, der erste Treffer gewinnt. Kein Treffer = kein Cluster =
+# kein Cap; ein Cap auf "sonstiges" wuerde den Slate ohne Not verknappen.
+# Keywords in Kleinschreibung, mit echten Umlauten wie im LLM-Output.
+TOPIC_CLUSTERS = [
+    {"id": "mvo",
+     "keywords": ("maschinenverordnung", "machinery regulation", "2023/1230",
+                  "20.01.2027", "20. januar 2027", "betriebsanleitung")},
+    {"id": "terminologie",
+     "keywords": ("terminologie", "glossar", "translation memory")},
+    {"id": "dtp-kosten",
+     "keywords": ("dtp-kosten", "dtp-nacharbeit", "versteckte kosten",
+                  "kosten pro sprachversion")},
+    {"id": "ki-uebersetzung",
+     "keywords": ("ki-übersetzung", "ki übersetzt", "deepl", "chatgpt",
+                  "maschinelle übersetzung")},
+]
 
 # Kadenz (Stand 2026-07-26, serverseitig per GraphQL gesetzt, NICHT aus der toml):
 # Cron "0 5,10 * * 1-5" = Mo-Fr 05:00 und 10:00 UTC, also 07:00 und 12:00 Berlin.
@@ -278,7 +318,8 @@ DAILY_KEYWORD_SEARCH = {
 # 07:00 Ortszeit vorgezogen. ACHTUNG Zeitumstellung: 05:00 UTC ist nur bis zum
 # 25.10.2026 gleich 07:00 Berlin, danach 06:00 - dann auf "0 6,11" ziehen.
 # Jeder Lauf: Phase A (Bilder) + B (Kommentar-Entwuerfe, Tages-Guard).
-# Phase D (Engagement-Readback) + C (Scrape + Slate) nur Mo+Do (SLATE["days"]).
+# Phase D (Engagement-Readback) + C (Scrape + Slate) nur montags (SLATE["days"],
+# seit 30.07. ein Slate statt zwei pro Woche).
 # Der zweite Slot faehrt bewusst zwischen den beiden Publish-Zeiten (Jae 10:00,
 # Reinhard 13:00 Ortszeit, Make 9517006 / 9506674), damit ein vormittags
 # freigegebener Text noch am selben Tag sein Bild bekommt.
@@ -328,20 +369,29 @@ ENGAGEMENT_READBACK = {
     "posted_limit": "month",
 }
 
-# Kommentar-Entwuerfe (Richard 2026-07-26): taeglicher rotierender Ausschnitt der
-# 39 Influencer-Profile, ein Apify-Run pro Tag. Obergrenze 12 x 2 Posts x 21
-# Arbeitstage = 504 Items/Monat, real deutlich weniger (die wenigsten Profile
-# posten taeglich). ~2 USD/Monat im Worst Case. Posten bleibt manuell.
+# Kommentar-Entwuerfe (Richard 2026-07-26): rotierender Ausschnitt der 39
+# Influencer-Profile, ein Apify-Run pro Lauftag. Posten bleibt manuell.
 # Tages-Guard `last_comments_at_lisocon` (engine_meta): der Cron faehrt zwei
 # Slots pro Tag, Entwuerfe entstehen trotzdem nur einmal. Ein leerer Morgenlauf
 # setzt den Guard nicht, damit der zweite Slot nachziehen kann.
+#
+# Kadenz-Korrektur 2026-07-30 (Richard, Anlass Kundenfeedback Jae): vorher 3
+# Entwuerfe je Poster an jedem Werktag = 30 pro Woche, zusaetzlich zu 20
+# Themenvorschlaegen. Soll sind 3 Kommentare pro Woche. Bewusst auf Mo/Mi/Fr
+# verteilt statt als Wochenblock: ein Kommentar wirkt nur unter einem frischen
+# Post (max_age_hours 30), und drei Kommentare an einem Tag lesen sich als
+# Kampagne. `drafts_total` deckelt ueber beide Poster, `poster_rotation` in
+# tools/comment_drafts.py laesst Reinhard und Jae abwechseln.
+# Kosten sinken mit auf 3 statt 5 Apify-Runs pro Woche (~0,85 statt ~2 USD/Monat).
 COMMENT_DRAFTS = {
     "profiles_per_day": 12,
     "max_posts_per_profile": 2,
     "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
     "max_age_hours": 30,
     "posters": ["Reinhard", "Jae"],
-    "drafts_per_poster": 3,
+    "days": (0, 2, 4),        # Mo, Mi, Fr (weekday())
+    "drafts_per_poster": 1,
+    "drafts_total": 1,        # bindender Deckel ueber alle Poster
 }
 
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene Lisocon-Content-DB).
