@@ -26,12 +26,20 @@ CLIENT_CONTEXT = _cfg.CONTEXT
 # jolly bleibt auf Haiku (keine stille Kostenerhoehung beim Fremd-Mandanten).
 SCORING_MODEL = getattr(_cfg, "SCORING_MODEL", "claude-haiku-4-5-20251001")
 
-SCORING_PROMPT = """[[SCORING_ROLE]]
+# Der Scoring-Prompt ist in zwei Bloecke geteilt, damit Prompt-Caching greift:
+# der Kopf (Rolle + KONTEXT) ist ueber alle Posts eines Laufs byte-identisch, alles
+# ab "Bewerte diesen..." wechselt pro Post. Reihenfolge und Wortlaut sind gegenueber
+# der ungeteilten Fassung unveraendert, nur die Blockgrenze ist neu - das Scoring-
+# Verhalten aendert sich dadurch nicht.
+# Achtung: Caching greift erst ab einem Mindest-Prefix (Sonnet 4.6: 1024 Tokens,
+# Haiku 4.5: 4096). Gemessen 30.07.2026: lisocon 3026 Tokens Kontext -> greift,
+# jolly 1439 -> stiller No-Op, kostet aber auch nichts.
+SCORING_PREFIX = """[[SCORING_ROLE]]
 
 KONTEXT:
-{context}
+{context}"""
 
-Bewerte diesen LinkedIn-Post von {influencer} nach 5 inhaltlichen Kriterien (je 0-10 Punkte):
+SCORING_PROMPT = """Bewerte diesen LinkedIn-Post von {influencer} nach 5 inhaltlichen Kriterien (je 0-10 Punkte):
 
 POST:
 {post_text}
@@ -53,6 +61,7 @@ Bewertungskriterien:
 Antworte NUR mit validem JSON (kein Markdown, kein Text davor/danach):
 {{"topic_fit": X, "icp_relevanz": X, "recyclierbarkeit": X, "einzigartigkeit": X, "themen_diversitaet": X, "reasoning": "1-2 Saetze warum dieser Score"}}"""
 SCORING_PROMPT = apply_tokens(SCORING_PROMPT, _cfg)
+SCORING_PREFIX = apply_tokens(SCORING_PREFIX, _cfg).format(context=_cfg.CONTEXT)
 
 # Klassifikations-Zusatz fuer den Slate-Modus (spec 2026-07-16): Persona,
 # VoC-Treffer, Themen-Winkel und Matrix-Box werden beim Einlagern in den
@@ -1153,7 +1162,6 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
 
         try:
             prompt = SCORING_PROMPT.format(
-                context=CLIENT_CONTEXT,
                 influencer=post["influencer"],
                 post_text=post["post_text"][:3000],
                 likes=engagement.get("likes", 0),
@@ -1163,10 +1171,21 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
             )
             if classify:
                 prompt += _classify_section()
+            # max_tokens grosszuegig: laeuft die Antwort in den Deckel, bricht das
+            # JSON mitten im String ab, json.loads wirft und der except-Zweig unten
+            # setzt den Post auf reine Viralitaet - im Slate-Modus zusaetzlich ohne
+            # Klassifikation, womit drop_without_bridge ihn still verwirft. Gemessen
+            # 30.07.2026: 3 von 40 Calls liefen in den alten Deckel (500/300).
+            # Output wird nach tatsaechlicher Laenge abgerechnet, der hoehere Deckel
+            # kostet also nichts, solange das Modell ihn nicht braucht.
             response = client.messages.create(
                 model=SCORING_MODEL,
-                max_tokens=500 if classify else 300,
-                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000 if classify else 600,
+                messages=[{"role": "user", "content": [
+                    {"type": "text", "text": SCORING_PREFIX,
+                     "cache_control": {"type": "ephemeral"}},
+                    {"type": "text", "text": prompt},
+                ]}],
             )
             raw = response.content[0].text.strip()
             if raw.startswith("```"):

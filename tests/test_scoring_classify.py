@@ -63,9 +63,14 @@ def test_classify_adds_fields_to_result(monkeypatch):
     assert out[0]["matrix_stage"] == "Awareness"
 
 
+def _prompt_text(mc):
+    """Der Scoring-Call schickt zwei Content-Bloecke: cachebarer Kopf + Post-Teil."""
+    return "".join(b["text"] for b in mc.call_args.kwargs["messages"][0]["content"])
+
+
 def test_classify_prompt_contains_classification_block(monkeypatch):
     _, mc = _scored_with(monkeypatch, _CLASSIFY_JSON, classify=True)
-    prompt = mc.call_args.kwargs["messages"][0]["content"]
+    prompt = _prompt_text(mc)
     assert "persona" in prompt and "topic_angle_de" in prompt
     assert "matrix_job" in prompt
 
@@ -74,9 +79,19 @@ def test_no_classify_prompt_unchanged(monkeypatch):
     base = {"topic_fit": 8, "icp_relevanz": 7, "recyclierbarkeit": 8,
             "einzigartigkeit": 6, "themen_diversitaet": 8, "reasoning": "ok"}
     _, mc = _scored_with(monkeypatch, base, classify=False)
-    prompt = mc.call_args.kwargs["messages"][0]["content"]
+    prompt = _prompt_text(mc)
     assert "topic_angle_de" not in prompt
     assert "matrix_job" not in prompt
+
+
+def test_static_head_is_marked_cacheable(monkeypatch):
+    """Ohne cache_control auf dem Kopf zahlt jeder Post den KONTEXT voll."""
+    _, mc = _scored_with(monkeypatch, _CLASSIFY_JSON, classify=True)
+    blocks = mc.call_args.kwargs["messages"][0]["content"]
+    assert len(blocks) == 2
+    assert blocks[0]["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in blocks[1], "der Post-Teil wechselt, er ist nicht cachebar"
+    assert blocks[0]["text"] == post_scorer.SCORING_PREFIX
 
 
 def test_classify_missing_fields_fall_back_to_empty(monkeypatch):

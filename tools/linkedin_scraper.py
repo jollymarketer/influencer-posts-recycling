@@ -31,12 +31,15 @@ INFLUENCERS_CSV = _cfg.INFLUENCERS_CSV
 # Kadenz-Parameter pro Mandant (clients/<name>/config.py, SCRAPE-Block).
 # Jolly daily: Filter 6-36h, max 3 Posts/Profil. Lisocon weekly: 6-168h, max 10.
 # Mindest-Alter 6h: sonst werden frische Posts gefiltert, bevor Engagement reifen konnte.
-# Das Apify-Fetch-Fenster (postedLimit, s.u.) MUSS >= MAX_AGE_HOURS sein, sonst faellt
-# ein Post, der beim letzten Run zu jung (also gefiltert) war, beim naechsten Run aus dem
-# Fetch-Fenster und wird nie gesehen. postedLimit-Enum: "week" deckt bis 168h.
+# Das Apify-Fetch-Fenster (postedLimitDate, s. fetch_window_start) MUSS > MAX_AGE_HOURS
+# sein, sonst faellt ein Post, der beim letzten Run zu jung (also gefiltert) war, beim
+# naechsten Run aus dem Fetch-Fenster und wird nie gesehen.
 MIN_AGE_HOURS = _cfg.SCRAPE["min_age_hours"]
 MAX_AGE_HOURS = _cfg.SCRAPE["max_age_hours"]
 MAX_POSTS_PER_PROFILE = _cfg.SCRAPE["max_posts_per_profile"]
+
+# Puffer auf das Fetch-Fenster, damit ein verspaeteter Cron-Lauf keinen Post verliert.
+FETCH_BUFFER_HOURS = 4
 
 
 def load_influencers():
@@ -51,11 +54,28 @@ def load_influencers():
     return influencers
 
 
+def fetch_window_start() -> str:
+    """Frueheste Post-Zeit, die der Actor liefern soll, als ISO-8601-String.
+
+    Apify rechnet pro geliefertem Post ab (0,002 USD). Mit dem Enum postedLimit
+    war das schmalste Fenster "24h" zu eng (ein Post, der beim letzten Lauf mit
+    <6h gefiltert wurde, faellt sonst aus dem Fetch-Fenster) und "week" mit 168h
+    viel zu weit: bei MAX_AGE_HOURS=36 wurden ~4 von 5 gelieferten Posts sofort
+    vom Altersfilter verworfen und trotzdem bezahlt. postedLimitDate nimmt ein
+    exaktes Datum und schneidet dieselben Posts serverseitig ab.
+
+    FETCH_BUFFER_HOURS haelt das Fenster echt groesser als MAX_AGE_HOURS, damit
+    ein verspaeteter Cron-Lauf keinen Post verliert.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=MAX_AGE_HOURS + FETCH_BUFFER_HOURS)
+    return cutoff.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
 def scrape_posts_for_profile(client, profile_url, max_posts=3):
     run_input = {
         "targetUrls": [profile_url],
         "maxPosts": max_posts,
-        "postedLimit": "week",
+        "postedLimitDate": fetch_window_start(),
         "includeQuotePosts": True,
         "includeReposts": False,
         "scrapeReactions": False,

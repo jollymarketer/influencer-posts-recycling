@@ -23,7 +23,12 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
 ### Was passiert (run_research.py)
 1. Bestehende Post-URLs aus Notion laden
 2. Neue Posts scrapen via Apify (`harvestapi/linkedin-profile-posts`) + Substack RSS
-   - `maxPosts=10`, `postedLimit="week"`, nur Posts 1-5 Tage alt
+   - `maxPosts` und Altersfenster pro Mandant aus `clients/<name>/config.py`, Block `SCRAPE`
+   - Fetch-Fenster über `postedLimitDate` = jetzt minus (`max_age_hours` + 4h), **nicht**
+     über das Enum `postedLimit`. Der Actor rechnet pro geliefertem Post ab (0,002 USD);
+     `postedLimit="week"` lieferte bei einem 36h-Filter rund vier von fünf Posts, die der
+     Altersfilter sofort verwarf und die trotzdem bezahlt wurden. Gemessen 30.07.2026:
+     gleiches Profil, `week` = 3 Posts (15h, 33h, 55h), `postedLimitDate` = 2 Posts.
    - Posts unter 50 Wörtern werden gefiltert
 3. Alle neuen Posts in Notion schreiben (Status: "New")
 4. Posts scoren: 5 KI-Dimensionen + Viralität (Engagement), max. 60 Punkte
@@ -40,7 +45,12 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
 
 ### Output
 - Genau ein Notion-Eintrag täglich mit Status "Ready to Review" (wenn min. ein Post Mindest-Score erreicht)
-- Kosten: Apify ~$0.40 + Anthropic ~$0.01 + kie.ai ~$0.02 pro Tag
+- Kosten, gemessen 30.06. bis 30.07.2026 über die Anthropic-Admin-API und die Apify-Run-Liste:
+  - Apify `linkedin-profile-posts`: 0,32 bis 0,66 USD/Tag über beide Mandanten (76 bis 123 Runs)
+  - Apify `linkedin-post-search`: 0,54 USD pro Jolly-Keyword-Lauf (Do), 0,30 USD pro Lisocon-Lauf
+  - Anthropic: 15,94 USD/30d auf dem Projekt-Key, davon 11,15 Sonnet 4.6 und 4,79 Haiku 4.5.
+    Normaler Wochentag ca. 0,25 USD, Slate-Tag (Mo+Do, Lisocon) bis 4,44 USD
+  - kie.ai: ~0,02 USD pro Bild
 
 ## Email-Reminder (Scheduled Agent)
 
