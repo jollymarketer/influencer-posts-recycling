@@ -52,6 +52,15 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
     Normaler Wochentag ca. 0,25 USD, Slate-Tag (Mo+Do, Lisocon) bis 4,44 USD
   - kie.ai: ~0,02 USD pro Bild
 
+Kostentreiber im Slate-Modus war der Rescore: `run_slate.py` bewertete bei jedem Lauf
+den kompletten Kandidaten-Pool neu, obwohl jede Zeile Score und Klassifikation schon
+gespeichert hat. Gemessen 30.07.2026: 307 Kandidaten, Median-Score 18, Maximum 32, nur
+50 über dem Gate von 25. Der Floor `SLATE["rescore_floor"]` bewertet jetzt nur noch
+Kandidaten ab diesem gespeicherten Score plus alle nie gescorten. Bei Lisocon mit
+Floor 20 sind das 132 statt 307. Preis dafür: wer unter dem Floor liegt, kann in
+diesem Lauf nicht mehr aufsteigen, das Anti-Repeat wird für schwache Kandidaten
+stumpf. `rescore_floor: 0` schaltet die Sparlogik ab.
+
 ## Email-Reminder (Scheduled Agent)
 
 ### Trigger

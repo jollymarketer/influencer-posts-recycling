@@ -229,6 +229,12 @@ SLATE = {
     "per_persona": 5,
     "max_age_days": 60,
     "max_times_slated": 3,
+    # Rescore-Floor (Richard 2026-07-30): nur Kandidaten ab diesem gespeicherten
+    # Score werden pro Slate-Lauf neu bewertet, der Rest behaelt seinen Score.
+    # Gemessen an dem Tag: 132 von 307 statt 307, Median lag bei 18, Gate bei 25.
+    # Wer unter 20 liegt, kann in diesem Lauf nicht mehr aufsteigen - bewusster
+    # Kompromiss. 0 schaltet die Sparlogik ab.
+    "rescore_floor": 20,
     # Winner-Repeat (Richard 2026-07-17, ColdIQ-Masterclass): gepickte Themen
     # nach 6 Wochen zurueck in den Pool - bewaehrte Winkel werden neu gescored
     # und als frischer Draft wieder angeboten, niemand merkt Wiederholungen.

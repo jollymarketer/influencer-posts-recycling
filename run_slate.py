@@ -210,6 +210,32 @@ def drop_without_bridge(scored: list, cfg) -> tuple[list, list]:
     return keep, dropped
 
 
+def rows_to_rescore(pool_rows: list, floor: int) -> tuple[list, list]:
+    """Teilt den Pool in (neu scoren, gespeicherten Score behalten).
+
+    Der Pool wurde bei jedem Slate-Lauf komplett neu gescored, obwohl jeder Eintrag
+    Score und Klassifikation schon gespeichert hat. Gemessen 30.07.2026: 307
+    Kandidaten, Median-Score 18, Maximum 32, nur 50 ueber MIN_SCORE. 257 Kandidaten
+    wurden also zweimal pro Woche mit Sonnet bewertet, ohne den Gate je zu erreichen.
+
+    Der Floor ist ein bewusster Kompromiss: nur wer nahe genug am Gate liegt, wird
+    neu bewertet und kann von einer frischen Themen-Diversitaet noch profitieren.
+    Wer darunter liegt, behaelt seinen Score und kann in diesem Lauf nicht aufsteigen
+    - fuer schwache Kandidaten wird das Anti-Repeat also stumpf. floor=0 schaltet die
+    Sparlogik ab und scored wieder alles.
+
+    Nie gescorte Zeilen (score_total None) gehen immer mit, sonst kaeme ein neu
+    gescrapter Post nie in den Slate.
+    """
+    if not floor:
+        return list(pool_rows), []
+    to_score, dormant = [], []
+    for row in pool_rows:
+        score = row.get("score_total")
+        (to_score if score is None or score >= floor else dormant).append(row)
+    return to_score, dormant
+
+
 def scrape_all_sources(cfg, existing_urls: set) -> list:
     """Alle drei Quellen, jede non-fatal (gleiches Muster wie run_daily Schritt 2)."""
     posts = []
@@ -336,7 +362,12 @@ def phase_slate(cfg, now) -> None:
         recent_drafts = get_recent_linkedin_drafts(7)
     except Exception:
         recent_drafts = []
-    scored = score_posts([_pool_row_to_post(r) for r in pool_rows],
+    to_score, dormant = rows_to_rescore(pool_rows, slate_cfg.get("rescore_floor", 0))
+    if dormant:
+        print(f"  Rescore-Floor {slate_cfg['rescore_floor']}: {len(to_score)} von "
+              f"{len(pool_rows)} Kandidaten werden neu gescored, {len(dormant)} behalten "
+              f"ihren gespeicherten Score.")
+    scored = score_posts([_pool_row_to_post(r) for r in to_score],
                          recent_drafts=recent_drafts, classify=True)
 
     eligible, no_bridge = drop_without_bridge(scored, cfg)
