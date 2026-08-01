@@ -598,6 +598,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
             persona_en=persona_block(persona, "en"),
             persona_voice_de=(persona or {}).get("voice_de", ""),
             persona_tokens_de=ptokens,
+            asset=chosen_asset,
         )
     if not linkedin_draft:
         return None

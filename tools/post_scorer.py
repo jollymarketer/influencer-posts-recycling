@@ -1252,6 +1252,28 @@ def _append_cta(text: str, cta: str) -> str:
     return text.rstrip() + "\n\n" + cta
 
 
+_URL_RE = re.compile(r"https?://\S+")
+
+
+def enforce_magnet_cta(text: str, post_format: str, asset) -> str:
+    """Setzt den CTA-Satz eines Magnet-Posts woertlich aus dem Asset (Richard
+    2026-07-31). Vorher schrieb das Modell die Schlusszeile frei aus dem
+    cta-Feld - Wortlaut und Link waren damit nicht garantiert, obwohl beides
+    Kundenvorgabe ist (Jae: Layout-Kosten-Rechner, Reinhard:
+    Uebersetzungsmanagement-Stresstest). Die selbst geschriebene Linkzeile
+    faellt weg, sonst stuenden zwei CTAs unter dem Post."""
+    if post_format != "Magnet" or not asset or not text:
+        return text
+    cta = (asset.get("cta") or "").strip()
+    if not cta:
+        return text
+    url_match = _URL_RE.search(cta)
+    if url_match:
+        url = url_match.group(0).rstrip("/")
+        text = "\n".join(line for line in text.splitlines() if url not in line)
+    return _append_cta(text, cta)
+
+
 # Formate mit eigenem CTA aus dem Asset-Block (Magnet: Direktlink oder
 # Kommentar-Keyword, Offer: DM/Call). Ein zweiter Blanket-CTA daneben waere
 # genau der doppelte Call-to-Action, den die Format-Struktur verbietet.
@@ -1358,7 +1380,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    assets_de: str = "", assets_en: str = "",
                                    persona_de: str = "", persona_en: str = "",
                                    persona_voice_de: str = "",
-                                   persona_tokens_de: dict | None = None) -> tuple[str, str, str, str, str, str]:
+                                   persona_tokens_de: dict | None = None,
+                                   asset: dict | None = None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
@@ -1370,6 +1393,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     Bloecke (siehe assets_block/persona_block), Default "" bleibt wirkungslos.
     persona_voice_de wechselt die DE-Autorenstimme (Persona-Split),
     persona_tokens_de Zielgruppe/Adressat/Fokus im DE-Prompt.
+    asset ist das gewaehlte Asset-Dict; bei Magnet-Posts setzt es den CTA-Satz
+    woertlich (siehe enforce_magnet_cta).
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton, soundbyte, kontext)
     zurueck. soundbyte/kontext speisen den Bild-Archetyp-Router (image_archetypes).
     """
@@ -1388,6 +1413,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     )
     de_parts = _parse_generation_response(de_resp.content[0].text.strip())
     de_draft = grammar_check(sanitize_generated_text(de_parts["post"]))
+    de_draft = enforce_magnet_cta(de_draft, post_format, asset)
     de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE"))
 
     if _cfg.FEATURES.get("en_draft", True):

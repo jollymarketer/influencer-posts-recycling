@@ -5,7 +5,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from tools.post_scorer import _append_cta, sanitize_generated_text
+from tools.post_scorer import (
+    _append_cta,
+    enforce_magnet_cta,
+    sanitize_generated_text,
+)
 
 
 def test_strips_markdown_bold():
@@ -76,6 +80,53 @@ def test_sanitize_strips_ascii_box_keeps_takeaway():
     assert "┌" not in out and "│" not in out and "─" not in out
     assert "Fremdsprachensatz ist dann gut" in out
     assert "Absatz davor." in out and "Absatz danach." in out
+
+
+MAGNET = {"id": "layout-check",
+          "cta": "Probieren Sie unseren Layout-Kosten-Rechner direkt im Browser: "
+                 "https://in2go.io/layout-check/"}
+
+
+def test_magnet_cta_appended_verbatim():
+    """Richard 2026-07-31: der CTA-Satz ist Kundenvorgabe, kein Modell-Freitext."""
+    out = enforce_magnet_cta("Body.\n\nLetzter Absatz.", "Magnet", MAGNET)
+    assert out.endswith(MAGNET["cta"])
+    assert out.startswith("Body.\n\nLetzter Absatz.")
+
+
+def test_magnet_cta_replaces_model_written_link_line():
+    """Das Modell schreibt aus dem cta-Feld selbst eine Schlusszeile. Ohne
+    Ersetzen stuenden zwei Links unter dem Post."""
+    text = ("Body.\n\nSchauen Sie sich den Layout-Check an: "
+            "https://in2go.io/layout-check/")
+    out = enforce_magnet_cta(text, "Magnet", MAGNET)
+    assert out.count("https://in2go.io/layout-check/") == 1
+    assert out.endswith(MAGNET["cta"])
+    assert "Schauen Sie sich den Layout-Check an" not in out
+
+
+def test_magnet_cta_noop_for_other_formats():
+    assert enforce_magnet_cta("Body.", "Opinion", MAGNET) == "Body."
+
+
+def test_magnet_cta_noop_without_asset():
+    assert enforce_magnet_cta("Body.", "Magnet", None) == "Body."
+
+
+def test_lisocon_magnet_ctas_are_the_client_wording():
+    """Jae faehrt den Layout-Kosten-Rechner (Anwender), Reinhard den
+    Uebersetzungsmanagement-Stresstest (Kaeufer). Wortlaut Richard 2026-07-31."""
+    from clients.lisocon import config as lisocon
+
+    by_id = {m["id"]: m for m in lisocon.LEAD_MAGNETS}
+    assert by_id["layout-check"]["persona"] == "anwender"
+    assert by_id["layout-check"]["cta"] == (
+        "Probieren Sie unseren Layout-Kosten-Rechner direkt im Browser: "
+        "https://in2go.io/layout-check/")
+    assert by_id["prozess-diagnose"]["persona"] == "kaeufer"
+    assert by_id["prozess-diagnose"]["cta"] == (
+        "Probieren Sie unseren Übersetzungsmanagement-Stresstest direkt im Browser: "
+        "https://in2go.io/diagnose/")
 
 
 def test_sanitize_no_box_chars_untouched():

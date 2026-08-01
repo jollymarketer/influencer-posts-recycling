@@ -303,6 +303,7 @@ def run_daily():
             persona_de=persona_block(persona, "de"),
             persona_en=persona_block(persona, "en"),
             persona_voice_de=persona_voice_de,
+            asset=chosen_asset,
         )
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
