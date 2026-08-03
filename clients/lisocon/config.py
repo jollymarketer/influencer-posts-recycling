@@ -459,7 +459,7 @@ LEAD_MAGNETS = [
      "problem": "nach jeder Uebersetzung geht dieselbe Handarbeit von vorne los: Rahmen anpassen, Umbrueche fixen, Ueberlaeufe suchen, pro Sprache und pro Version",
      "substance": "zwei PDF-Versionen desselben Dokuments (Quell- und Zielsprache) hochladen; die Analyse laeuft im Browser, Dateien bleiben lokal; Ergebnis: die gefundenen manuellen Layout-Eingriffe und eine Stunden-Schaetzung, auf Wunsch zusaetzlich Jahreskosten heute vs. automatisiert",
      "not_included": "kein Account noetig, keine Weitergabe der Dokumente, keine Kostenrechnung ohne eigene Stundensatz-Angabe",
-     "cta": "Probieren Sie unseren Layout-Kosten-Rechner direkt im Browser: https://in2go.io/layout-check/"},
+     "cta": "Probieren Sie unseren Layout-Kosten-Rechner direkt im Browser: https://lnkd.in/dGACGzrs"},
     {"id": "prozess-diagnose",
      "name": "Übersetzungsmanagement-Stresstest",
      "persona": "kaeufer",

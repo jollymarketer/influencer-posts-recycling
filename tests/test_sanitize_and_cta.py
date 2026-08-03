@@ -84,7 +84,7 @@ def test_sanitize_strips_ascii_box_keeps_takeaway():
 
 MAGNET = {"id": "layout-check",
           "cta": "Probieren Sie unseren Layout-Kosten-Rechner direkt im Browser: "
-                 "https://in2go.io/layout-check/"}
+                 "https://lnkd.in/dGACGzrs"}
 
 
 def test_magnet_cta_appended_verbatim():
@@ -98,9 +98,9 @@ def test_magnet_cta_replaces_model_written_link_line():
     """Das Modell schreibt aus dem cta-Feld selbst eine Schlusszeile. Ohne
     Ersetzen stuenden zwei Links unter dem Post."""
     text = ("Body.\n\nSchauen Sie sich den Layout-Check an: "
-            "https://in2go.io/layout-check/")
+            "https://lnkd.in/dGACGzrs")
     out = enforce_magnet_cta(text, "Magnet", MAGNET)
-    assert out.count("https://in2go.io/layout-check/") == 1
+    assert out.count("https://lnkd.in/dGACGzrs") == 1
     assert out.endswith(MAGNET["cta"])
     assert "Schauen Sie sich den Layout-Check an" not in out
 
@@ -122,7 +122,7 @@ def test_lisocon_magnet_ctas_are_the_client_wording():
     assert by_id["layout-check"]["persona"] == "anwender"
     assert by_id["layout-check"]["cta"] == (
         "Probieren Sie unseren Layout-Kosten-Rechner direkt im Browser: "
-        "https://in2go.io/layout-check/")
+        "https://lnkd.in/dGACGzrs")
     assert by_id["prozess-diagnose"]["persona"] == "kaeufer"
     assert by_id["prozess-diagnose"]["cta"] == (
         "Probieren Sie unseren Übersetzungsmanagement-Stresstest direkt im Browser: "

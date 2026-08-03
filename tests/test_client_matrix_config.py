@@ -42,7 +42,7 @@ def test_lisocon_excludes_promotion_selection_by_policy():
 
 def test_lisocon_lead_magnets_carry_live_urls():
     urls = " ".join(m["cta"] for m in lisocon.LEAD_MAGNETS)
-    assert "https://in2go.io/layout-check/" in urls
+    assert "https://lnkd.in/dGACGzrs" in urls
     assert "https://in2go.io/diagnose/" in urls
     assert len(lisocon.LEAD_MAGNETS) == 2
 
