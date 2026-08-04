@@ -1281,18 +1281,12 @@ _SELF_CTA_FORMATS = ("Magnet", "Offer")
 
 
 def blanket_cta(post_format: str, attr: str) -> str:
-    """CTA, der unter einen Post gehaengt wird - abhaengig von CTA_POLICY.
-
-    "always" (Default, Jolly): wie bisher unter jeden Post.
-    "magnet_only" (lisocon, Befund 2026-07-26): NUR Formate mit eigenem
-    Asset-CTA tragen einen Link. Derselbe externe Link unter jedem Post kostet
-    Reichweite und liest sich als Automatik; die 17 Live-Posts vom 10.-23.07.
-    kamen damit auf 14 Likes gesamt. Der Konversionspfad laeuft stattdessen
-    ueber die Magnet-Posts (Lead-Magnet statt Startseite).
-    """
+    """Mandanten-CTA (CTA_DE/CTA_EN) fuer jeden Post; Formate mit eigenem
+    Asset-CTA (Magnet, Offer) bleiben ohne zweiten Link. Die CTA_POLICY
+    "magnet_only" vom 26.07. ist auf Richards Anweisung vom 04.08.2026
+    entfernt: CTA-Link gehoert wieder unter jeden Post (Reinhards Vorgabe
+    vom 08.07.)."""
     if post_format in _SELF_CTA_FORMATS:
-        return ""
-    if getattr(_cfg, "CTA_POLICY", "always") == "magnet_only":
         return ""
     return getattr(_cfg, attr, "")
 

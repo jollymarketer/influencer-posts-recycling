@@ -347,13 +347,6 @@ LOGO_FILE = "into_logo.png"
 CTA_DE = "Interessant? Besuchen Sie uns auf www.in2go.io"
 CTA_EN = "Sounds interesting? Visit us at www.in2go.io"
 
-# CTA-Politik (Richard 2026-07-26, Performance-Analyse der ersten 17 Live-Posts:
-# 14 Likes gesamt, 2 Kommentare, 0 Leads). Derselbe externe Link unter jedem Post
-# daempft Reichweite und liest sich als Automatik. Ab jetzt tragen nur noch
-# Magnet-Posts einen Link, und zwar den auf das jeweilige Tool statt auf die
-# Startseite. WEICHT VON Reinhards Vorgabe vom 08.07. AB - muss ihm gesagt werden.
-CTA_POLICY = "magnet_only"
-
 # Magnet-Slots je Slate (Richard 2026-07-26): erzwingt den Konversionspfad.
 # Ohne diesen Zwang ist das Magnet-Format im Slate-Pfad unerreichbar (Box-Logik),
 # Ergebnis waren 17 Posts ohne einen einzigen Lead-Magnet-Post. 2 von 10 deckt

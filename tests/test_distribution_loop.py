@@ -34,24 +34,17 @@ def _slate(kaeufer=5, anwender=5):
 
 # --- CTA-Politik -------------------------------------------------------------
 
-def test_lisocon_runs_magnet_only_cta_policy():
-    assert lisocon.CTA_POLICY == "magnet_only"
-    # Jolly bleibt unveraendert auf dem Blanket-CTA.
-    assert getattr(jolly, "CTA_POLICY", "always") == "always"
+def test_lisocon_has_no_cta_policy_switch():
+    # CTA_POLICY "magnet_only" auf Richards Anweisung 04.08.2026 entfernt:
+    # CTA-Link wieder unter jedem Post (Reinhards Vorgabe 08.07.).
+    assert not hasattr(lisocon, "CTA_POLICY")
 
 
-def test_blanket_cta_suppressed_for_lisocon_and_asset_formats(monkeypatch):
+def test_blanket_cta_under_every_post_except_asset_formats(monkeypatch):
     from tools import post_scorer
 
     monkeypatch.setattr(post_scorer, "_cfg",
-                        types.SimpleNamespace(CTA_POLICY="magnet_only",
-                                              CTA_DE="LINK", CTA_EN="LINK"))
-    assert post_scorer.blanket_cta("Opinion", "CTA_DE") == ""
-    assert post_scorer.blanket_cta("Magnet", "CTA_DE") == ""
-
-    monkeypatch.setattr(post_scorer, "_cfg",
-                        types.SimpleNamespace(CTA_POLICY="always",
-                                              CTA_DE="LINK", CTA_EN="LINK"))
+                        types.SimpleNamespace(CTA_DE="LINK", CTA_EN="LINK"))
     assert post_scorer.blanket_cta("Opinion", "CTA_DE") == "LINK"
     # Magnet/Offer bringen ihren CTA aus dem Asset-Block mit - nie zwei CTAs.
     assert post_scorer.blanket_cta("Magnet", "CTA_DE") == ""
