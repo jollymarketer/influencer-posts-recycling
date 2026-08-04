@@ -36,19 +36,34 @@ def _slate(kaeufer=5, anwender=5):
 
 def test_lisocon_has_no_cta_policy_switch():
     # CTA_POLICY "magnet_only" auf Richards Anweisung 04.08.2026 entfernt:
-    # CTA-Link wieder unter jedem Post (Reinhards Vorgabe 08.07.).
+    # CTA-Link wieder unter jedem Post, Wortlaut aus dem Persona-Magneten.
     assert not hasattr(lisocon, "CTA_POLICY")
 
 
-def test_blanket_cta_under_every_post_except_asset_formats(monkeypatch):
+def test_blanket_cta_uses_persona_magnet_wording(monkeypatch):
+    from tools import post_scorer
+
+    magnets = [{"persona": "anwender", "cta": "MAGNET-A"},
+               {"persona": "kaeufer", "cta": "MAGNET-K"}]
+    monkeypatch.setattr(post_scorer, "_cfg",
+                        types.SimpleNamespace(LEAD_MAGNETS=magnets,
+                                              CTA_DE="LINK", CTA_EN="LINK"))
+    # Persona mit eigenem Magneten bekommt dessen CTA-Satz.
+    assert post_scorer.blanket_cta("Opinion", "CTA_DE", "anwender") == "MAGNET-A"
+    assert post_scorer.blanket_cta("Story", "CTA_DE", "kaeufer") == "MAGNET-K"
+    # Ohne Persona-Treffer faellt es auf den Mandanten-CTA zurueck.
+    assert post_scorer.blanket_cta("Opinion", "CTA_DE") == "LINK"
+    # Magnet/Offer bringen ihren CTA aus dem Asset-Block mit - nie zwei CTAs.
+    assert post_scorer.blanket_cta("Magnet", "CTA_DE", "anwender") == ""
+    assert post_scorer.blanket_cta("Offer", "CTA_EN", "kaeufer") == ""
+
+
+def test_blanket_cta_without_lead_magnets_falls_back(monkeypatch):
     from tools import post_scorer
 
     monkeypatch.setattr(post_scorer, "_cfg",
                         types.SimpleNamespace(CTA_DE="LINK", CTA_EN="LINK"))
-    assert post_scorer.blanket_cta("Opinion", "CTA_DE") == "LINK"
-    # Magnet/Offer bringen ihren CTA aus dem Asset-Block mit - nie zwei CTAs.
-    assert post_scorer.blanket_cta("Magnet", "CTA_DE") == ""
-    assert post_scorer.blanket_cta("Offer", "CTA_EN") == ""
+    assert post_scorer.blanket_cta("Opinion", "CTA_DE", "anwender") == "LINK"
 
 
 # --- Magnet-Slots ------------------------------------------------------------

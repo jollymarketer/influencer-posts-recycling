@@ -599,6 +599,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
             persona_voice_de=(persona or {}).get("voice_de", ""),
             persona_tokens_de=ptokens,
             asset=chosen_asset,
+            persona_id=(persona or {}).get("id", ""),
         )
     if not linkedin_draft:
         return None
@@ -617,6 +618,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
                         persona_tokens_de=ptokens,
+                        persona_id=(persona or {}).get("id", ""),
                     )
             else:
                 print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
@@ -628,6 +630,7 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
                         persona_tokens_de=ptokens,
+                        persona_id=(persona or {}).get("id", ""),
                     )
         if not linkedin_draft:
             return None

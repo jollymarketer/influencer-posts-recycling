@@ -1280,14 +1280,23 @@ def enforce_magnet_cta(text: str, post_format: str, asset) -> str:
 _SELF_CTA_FORMATS = ("Magnet", "Offer")
 
 
-def blanket_cta(post_format: str, attr: str) -> str:
-    """Mandanten-CTA (CTA_DE/CTA_EN) fuer jeden Post; Formate mit eigenem
-    Asset-CTA (Magnet, Offer) bleiben ohne zweiten Link. Die CTA_POLICY
-    "magnet_only" vom 26.07. ist auf Richards Anweisung vom 04.08.2026
-    entfernt: CTA-Link gehoert wieder unter jeden Post (Reinhards Vorgabe
-    vom 08.07.)."""
+def blanket_cta(post_format: str, attr: str, persona_id: str = "") -> str:
+    """CTA fuer jeden Post; Formate mit eigenem Asset-CTA (Magnet, Offer)
+    bleiben ohne zweiten Link.
+
+    Wortlaut (Richard 2026-08-04): traegt die Persona einen eigenen
+    Lead-Magneten (LEAD_MAGNETS), kommt dessen CTA-Satz unter den Post -
+    derselbe Wortlaut wie bei Magnet-Posts (lisocon: anwender =
+    Layout-Kosten-Rechner, kaeufer = Stresstest). Ohne passenden Magneten
+    (Jolly, EN-Pfad) faellt es auf den Mandanten-CTA CTA_DE/CTA_EN zurueck.
+    Die CTA_POLICY "magnet_only" vom 26.07. ist ersatzlos entfernt."""
     if post_format in _SELF_CTA_FORMATS:
         return ""
+    for magnet in getattr(_cfg, "LEAD_MAGNETS", []) or []:
+        if persona_id and magnet.get("persona") == persona_id:
+            cta = (magnet.get("cta") or "").strip()
+            if cta:
+                return cta
     return getattr(_cfg, attr, "")
 
 
@@ -1375,7 +1384,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    persona_de: str = "", persona_en: str = "",
                                    persona_voice_de: str = "",
                                    persona_tokens_de: dict | None = None,
-                                   asset: dict | None = None) -> tuple[str, str, str, str, str, str]:
+                                   asset: dict | None = None,
+                                   persona_id: str = "") -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
@@ -1408,7 +1418,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     de_parts = _parse_generation_response(de_resp.content[0].text.strip())
     de_draft = grammar_check(sanitize_generated_text(de_parts["post"]))
     de_draft = enforce_magnet_cta(de_draft, post_format, asset)
-    de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE"))
+    de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
 
     if _cfg.FEATURES.get("en_draft", True):
         en_resp = client.messages.create(
@@ -1418,7 +1428,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         )
         en_parts = _parse_generation_response(en_resp.content[0].text.strip())
         en_draft = _append_cta(sanitize_generated_text(en_parts["post"]),
-                               blanket_cta(post_format, "CTA_EN"))
+                               blanket_cta(post_format, "CTA_EN", persona_id))
         image_parts = en_parts
     else:
         en_draft = ""
