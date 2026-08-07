@@ -393,6 +393,30 @@ COMMENT_DRAFTS = {
     "drafts_total": 1,        # bindender Deckel ueber alle Poster
 }
 
+# ABM-Kommentar-Entwuerfe (Richard 2026-08-07, OrLI W01 Air Cover): ein
+# Wochenlauf ueber die volle Kommentar-Watchlist (Committee-Personen der
+# aktiven ABM-Konten, gebaut via jolly-outbound-engine
+# tools/clients/lisocon/build_abm_watchlist.py, Kopie liegt hier im Repo).
+# Alle Entwuerfe unter Reinhard (Absender-Entscheidung 2026-08-06), Ablage
+# mit Status "ABM Kommentar". Obergrenzen aus dem Brief erzwingt
+# tools/abm_comment_drafts.py gegen die Notion-Historie. Wochen-Guard
+# `last_abm_comments_at_lisocon` wird nach dem Scrape gesetzt, nicht erst
+# nach dem ersten Entwurf: ein leeres Ergebnis ist der Normalfall und der
+# zweite Cron-Slot soll den Scrape nicht doppelt bezahlen.
+# Kosten: ~0,45 USD je Lauf (411 Profile, meist 0-Result-Queries a 0,001 USD).
+ABM_COMMENT_DRAFTS = {
+    "watchlist_csv": os.path.join(os.path.dirname(__file__), "abm_watchlist.csv"),
+    "day": 0,                 # Montag (weekday())
+    "max_posts_per_profile": 2,
+    "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
+    "max_age_hours": 168,     # 7 Tage: Wochenlauf sieht die ganze Woche
+    "min_words": 25,          # Industrie postet kuerzer als die Influencer (dort 40)
+    "poster": "Reinhard",
+    "author_dedup_days": 14,  # max 1 Kommentar je Person in 14 Tagen
+    "per_domain_per_week": 2, # max 2 je Firma pro Woche
+    "drafts_total": 10,       # Deckel je Lauf
+}
+
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene Lisocon-Content-DB).
 NOTION_DB_ID_DEFAULT = None
 

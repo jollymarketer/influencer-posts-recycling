@@ -999,26 +999,56 @@ def update_engagement(page_id: str, likes: int, comments: int, shares: int,
 
 
 COMMENT_STATUS = "Kommentar"
+ABM_COMMENT_STATUS = "ABM Kommentar"
 
 
 def get_comment_target_urls() -> set:
-    """Bereits bekommentierte Quell-Posts (Dedup für die Kommentar-Queue).
+    """Bereits bekommentierte Quell-Posts (Dedup für die Kommentar-Queue),
+    Influencer- und ABM-Pfad zusammen: ein Post bekommt nie zwei Entwuerfe.
     Die Ziel-URL steht bewusst NICHT in "LinkedIn Post URL": sonst würde ein
     kommentierter Post nie mehr als Slate-Kandidat durch den Dedup kommen."""
-    pages = _query_db({"property": "Status", "select": {"equals": COMMENT_STATUS}})
+    pages = _query_db({"or": [
+        {"property": "Status", "select": {"equals": COMMENT_STATUS}},
+        {"property": "Status", "select": {"equals": ABM_COMMENT_STATUS}},
+    ]})
     return {(p.get("properties", {}).get("Kommentar-Ziel") or {}).get("url") or ""
             for p in pages} - {""}
 
 
-def create_comment_entry(draft: dict) -> str:
-    """Kommentar-Vorschlag als Zeile in der Content-DB (Status "Kommentar").
+def get_abm_comment_log() -> list:
+    """Historie der ABM-Kommentar-Zeilen fuer die Obergrenzen des Briefs
+    (1 je Person in 14 Tagen, 2 je Firma pro Woche). Rueckgabe je Zeile:
+    author_url, domain, created (UTC)."""
+    pages = _query_db({"property": "Status", "select": {"equals": ABM_COMMENT_STATUS}})
+    log = []
+    for p in pages:
+        props = p.get("properties", {})
+        created_raw = ((props.get("Date Scraped") or {}).get("date") or {}).get("start") \
+            or p.get("created_time", "")
+        try:
+            created = datetime.fromisoformat(created_raw.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        domain_rt = (props.get("ABM-Domain") or {}).get("rich_text") or []
+        log.append({
+            "author_url": (props.get("ABM-Autor") or {}).get("url") or "",
+            "domain": domain_rt[0].get("plain_text", "") if domain_rt else "",
+            "created": created,
+        })
+    return log
+
+
+def create_comment_entry(draft: dict, status: str = COMMENT_STATUS,
+                         extra_props: dict | None = None) -> str:
+    """Kommentar-Vorschlag als Zeile in der Content-DB (Status "Kommentar",
+    ABM-Pfad "ABM Kommentar" plus Autor/Domain-Props fuer die Obergrenzen).
     Liegt bewusst in derselben DB: der lisocon-Integration-Token ist nur auf
     diese DB berechtigt. Der Make-Publisher filtert auf Approved und sieht
     Kommentar-Zeilen nie."""
     title = _sanitize(draft.get("title", ""))[:250] or "Kommentar"
     props = {
         "title": {"title": [{"text": {"content": title}}]},
-        "Status": {"select": {"name": COMMENT_STATUS}},
+        "Status": {"select": {"name": status}},
         "LinkedIn Draft": {"rich_text": _rich_text_prop(_sanitize(draft.get("comment", "")))},
         "Kommentar-Ziel": {"url": draft.get("target_url", "")},
         "Influencer": {"rich_text": _rich_text_prop(_sanitize(draft.get("influencer", "")))},
@@ -1027,6 +1057,8 @@ def create_comment_entry(draft: dict) -> str:
     }
     if draft.get("poster"):
         props["Poster"] = {"select": {"name": draft["poster"]}}
+    if extra_props:
+        props.update(extra_props)
     resp = _notion_request("POST", f"{NOTION_API}/pages", headers=_headers(),
                            json={"parent": {"database_id": NOTION_DB_ID}, "properties": props})
     resp.raise_for_status()

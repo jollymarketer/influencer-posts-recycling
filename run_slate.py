@@ -493,6 +493,7 @@ def run_slate_mode(cfg, now=None) -> None:
     print(f"=== Slate-Modus (Client: {cfg.NAME}) — {now.strftime('%Y-%m-%d %H:%M UTC')} ===")
     phase_images(cfg)
     phase_comments(cfg, now)
+    phase_abm_comments(cfg, now)
     is_slate_day = now.weekday() in tuple(cfg.SLATE.get("days", (0, 3)))
     if is_slate_day:
         phase_readback(cfg)
@@ -522,6 +523,19 @@ def phase_comments(cfg, now) -> None:
         run_comment_drafts(cfg, now)
     except Exception as e:
         print(f"  FEHLER - Phase B: {e}", file=sys.stderr)
+
+
+def phase_abm_comments(cfg, now) -> None:
+    """ABM-Kommentar-Entwuerfe auf frische Posts der Watchlist (OrLI W01).
+    Wochen-Gate und Guard sitzen in run_abm_comment_drafts. Non-fatal."""
+    if not getattr(cfg, "ABM_COMMENT_DRAFTS", None):
+        return
+    print("\nPhase B2: ABM-Kommentar-Entwuerfe ...")
+    try:
+        from tools.abm_comment_drafts import run_abm_comment_drafts
+        run_abm_comment_drafts(cfg, now)
+    except Exception as e:
+        print(f"  FEHLER - Phase B2: {e}", file=sys.stderr)
 
 
 def phase_readback(cfg) -> None:

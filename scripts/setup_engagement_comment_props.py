@@ -15,8 +15,10 @@ NEW_PROPS = {
     "Shares": {"number": {}},
     "Engagement-Stand": {"date": {}},
     "Kommentar-Ziel": {"url": {}},
+    "ABM-Autor": {"url": {}},
+    "ABM-Domain": {"rich_text": {}},
 }
-NEW_STATUS_OPTIONS = ["Kommentar"]
+NEW_STATUS_OPTIONS = ["Kommentar", "ABM Kommentar"]
 
 
 def main():

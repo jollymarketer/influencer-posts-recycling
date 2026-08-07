@@ -42,6 +42,7 @@ READBACK_NOTION_PROPS = ("Likes", "Kommentare", "Shares", "Engagement-Stand",
                          "Date Posted", "Poster",
                          "Posted URL (Reinhard)", "Posted URL (Jae)")
 COMMENT_NOTION_PROPS = ("Kommentar-Ziel", "Poster")
+ABM_COMMENT_NOTION_PROPS = ("Kommentar-Ziel", "Poster", "ABM-Autor", "ABM-Domain")
 
 APIFY_ACTORS = ("harvestapi~linkedin-profile-posts",)
 APIFY_KEYWORD_ACTOR = "harvestapi~linkedin-post-search"
@@ -67,6 +68,8 @@ def required_notion_props(cfg) -> tuple:
         props += list(READBACK_NOTION_PROPS)
     if getattr(cfg, "COMMENT_DRAFTS", None):
         props += list(COMMENT_NOTION_PROPS)
+    if getattr(cfg, "ABM_COMMENT_DRAFTS", None):
+        props += list(ABM_COMMENT_NOTION_PROPS)
     return tuple(dict.fromkeys(props))
 
 
