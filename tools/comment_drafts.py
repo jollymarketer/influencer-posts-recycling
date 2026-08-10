@@ -131,12 +131,19 @@ def assign_posts(posts: list, posters: list, per_poster: int,
     nur einmal vergeben: zwei Kommentare derselben Firma unter einem Post lesen
     sich als Kampagne.
 
-    `total` deckelt die Entwuerfe des Laufs ueber alle Poster hinweg. Ohne
-    Deckel bleibt es bei per_poster x Poster (Jolly-Pfad unveraendert)."""
+    `total` ist der bindende Deckel des Laufs ueber alle Poster hinweg: liegt
+    per_poster x Poster darunter, gewinnt `total` und per_poster wird
+    angehoben. Sonst wuerde eine unbemerkt zu kleine per_poster-Zahl den
+    Wunsch-Deckel still aushebeln (Fall 10.08.2026: drafts_total 5, aber
+    drafts_per_poster 1 bei 2 Postern = 2 Entwuerfe). Ohne `total` bleibt es
+    bei per_poster x Poster (Jolly-Pfad unveraendert)."""
     queue, assignments = list(posts), []
     slots = per_poster * len(posters)
     if total is not None:
-        slots = min(slots, total)
+        if slots < total:
+            print(f"    Hinweis: drafts_per_poster {per_poster} x {len(posters)} Poster "
+                  f"< drafts_total {total} - Deckel gewinnt.", file=sys.stderr)
+        slots = total
     for idx in range(slots):
         if not queue:
             break

@@ -4,6 +4,7 @@ Anlass (Richard 2026-07-30, Kundenfeedback Jae): lisocon produzierte 6
 Kommentar-Entwuerfe pro Tag = 30 pro Woche. Soll sind 3 pro Woche, verteilt
 statt geblockt.
 """
+import importlib
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -27,6 +28,21 @@ def _day(week: int, offset: int) -> datetime:
 def test_total_caps_below_per_poster_product():
     assert len(assign_posts(POSTS, POSTERS, 3, total=1)) == 1
     assert len(assign_posts(POSTS, POSTERS, 3, total=4)) == 4
+
+
+def test_total_wins_over_a_too_small_per_poster_number():
+    """Anlass 10.08.2026: drafts_total 5 bei drafts_per_poster 1 und zwei
+    Postern haette still 2 Entwuerfe ergeben. Der Deckel ist bindend."""
+    assert len(assign_posts(POSTS, POSTERS, 1, total=5)) == 5
+    assert len(assign_posts(POSTS, ["Christian"], 1, total=5)) == 5
+
+
+def test_client_configs_can_actually_reach_their_total():
+    """Die Configs sollen den Deckel auch ohne die Notbremse oben erreichen."""
+    for module in ("clients.lisocon.config", "clients.swot.config"):
+        cfg = importlib.import_module(module)
+        s = cfg.COMMENT_DRAFTS
+        assert s["drafts_per_poster"] * len(s["posters"]) >= s["drafts_total"], module
 
 
 def test_total_none_keeps_old_behaviour():

@@ -92,15 +92,23 @@ OWN_PROFILES = [
 # und ein Kommentar wirkt nur unter einem frischen Post.
 # Nur 7 Quellen, deshalb profiles_per_day = 7: die Rotation deckt die volle
 # Liste in einem Lauf ab. Waechst die Liste, hier nachziehen.
+#
+# Mengen-Korrektur 2026-08-10 (Richard): Deckel wie bei lisocon auf 5 je
+# Lauftag, Fenster auf 72 Stunden (Abstand zwischen zwei Lauftagen).
+# WARNUNG, gemessen am 10.08.: die 7 Quellen liefern in einer ganzen Woche nur
+# 8 brauchbare Posts, unter 72 Stunden genau 1. Der Deckel ist damit kein
+# Versprechen - realistisch bleiben 1 bis 2 Entwuerfe je Lauftag, bis
+# influencers.csv deutlich waechst. Die Zahl ist ein Angebotsproblem, kein
+# Deckelproblem.
 COMMENT_DRAFTS = {
-    "profiles_per_day": 7,
+    "profiles_per_day": 7,    # volle Liste; waechst die CSV, hier nachziehen
     "max_posts_per_profile": 2,
     "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
-    "max_age_hours": 30,
+    "max_age_hours": 72,      # Abstand zwischen zwei Lauftagen (Mo/Mi/Fr)
     "posters": ["Christian"],
     "days": (0, 2, 4),        # Mo, Mi, Fr (weekday())
-    "drafts_per_poster": 1,
-    "drafts_total": 1,
+    "drafts_per_poster": 5,   # muss x Poster >= drafts_total sein, sonst greift der Deckel nie
+    "drafts_total": 5,
 }
 
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene SWOT-Content-DB).

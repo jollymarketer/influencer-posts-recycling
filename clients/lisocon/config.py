@@ -382,15 +382,25 @@ ENGAGEMENT_READBACK = {
 # Kampagne. `drafts_total` deckelt ueber beide Poster, `poster_rotation` in
 # tools/comment_drafts.py laesst Reinhard und Jae abwechseln.
 # Kosten sinken mit auf 3 statt 5 Apify-Runs pro Woche (~0,85 statt ~2 USD/Monat).
+#
+# Mengen-Korrektur 2026-08-10 (Richard): Soll sind 5 kommentierbare Posts je
+# Lauftag statt 1. Der Deckel allein reicht dafuer nicht - gemessen am 10.08.
+# ueber die volle Liste lagen nur 4 Posts unter 30 Stunden, bei 12 rotierten
+# Profilen entsprechend rund 1. Deshalb rotiert der Lauf jetzt die komplette
+# Liste (profiles_per_day = 39) und das Frischefenster geht auf 72 Stunden:
+# Mo/Mi/Fr liegen 48 bis 72 Stunden auseinander, das Fenster deckt damit genau
+# die Zeit seit dem letzten Lauf ab, und der Notion-Dedup verhindert, dass ein
+# Post zweimal drankommt. Kosten je Lauftag steigen von ~0,006 auf ~0,076 USD
+# (39 statt 12 Profile), rund 1 USD pro Monat.
 COMMENT_DRAFTS = {
-    "profiles_per_day": 12,
+    "profiles_per_day": 39,   # volle Liste; waechst die CSV, hier nachziehen
     "max_posts_per_profile": 2,
     "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
-    "max_age_hours": 30,
+    "max_age_hours": 72,      # Abstand zwischen zwei Lauftagen (Mo/Mi/Fr)
     "posters": ["Reinhard", "Jae"],
     "days": (0, 2, 4),        # Mo, Mi, Fr (weekday())
-    "drafts_per_poster": 1,
-    "drafts_total": 1,        # bindender Deckel ueber alle Poster
+    "drafts_per_poster": 3,   # muss x Poster >= drafts_total sein, sonst greift der Deckel nie
+    "drafts_total": 5,        # bindender Deckel ueber alle Poster
 }
 
 # ABM-Kommentar-Entwuerfe (Richard 2026-08-07, OrLI W01 Air Cover): ein
