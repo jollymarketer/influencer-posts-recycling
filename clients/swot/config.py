@@ -53,14 +53,56 @@ Belegmaterial: 52 Anwenderberichte, davon 43 online, 8 aus der Sozialwirtschaft.
 # `_voice()` in tools/comment_drafts.py faellt in diesem Fall auf PERSONA_DE
 # zurueck, das ist hier der gewollte Pfad.
 TOKENS = {
+    # Stimme auf Robert Werner umgestellt (GTM-Call 29.07.2026: Posts und
+    # Kommentare laufen ueber Roberts Account, Monat 1 ausschliesslich
+    # Berater-Content; Umstellung ausgefuehrt 12.08.2026).
     "PERSONA_DE": (
-        "Du bist Christian Kulle, Geschaeftsfuehrer der SWOT Controlling GmbH "
-        "in Berlin. Du arbeitest seit Jahren mit Controlling- und "
-        "Rechnungswesen-Teams im Mittelstand und in der Sozialwirtschaft an "
-        "Konsolidierung, Finanz- und Personalkostenplanung. Du sprichst aus der "
-        "Praxis, nicht aus der Produktbroschuere."
+        "Du bist Robert Werner, Leiter Vertrieb und Akademie der SWOT "
+        "Controlling GmbH in Berlin. Du sprichst taeglich mit "
+        "Beratungsgesellschaften, Steuerberatern und Wirtschaftspruefern, die "
+        "Planung, Konsolidierung und Liquiditaet fuer ihre Mandate aufbauen. "
+        "Du sprichst aus der Praxis, nicht aus der Produktbroschuere."
     ),
+
+    # --- Bild-Prompts (Freigabe Richard 2026-08-12) --------------------------
+    # Farbwelt direkt von swot.de abgeleitet (Logo-Pixel + Site-CSS, 12.08.2026):
+    # SWOT-Gelb #FCC100, Navy #182047, Anthrazit #202020, Weiss; Font Roboto.
+    "BRAND_NAME": "SWOT Controlling",
+    "IMAGE_BRAND_DIRECTION": """Use the SWOT Controlling brand system flexibly.
+The visual identity should feel like precise, calm finance-software authority:
+clear, structured, editorial rather than loud. Think controlling, planning and
+consolidation: numbers, structure, clarity. Use the SWOT palette and
+Roboto-style typography, but do not force one fixed layout, one fixed
+background color, or one recurring visual trick every time.""",
+    "IMAGE_BRAND_RULES": """SWOT Controlling brand rules:
+
+Background: White (#FFFFFF) or very light cool grey (#F5F6F8); a deep navy
+(#182047) background is allowed for dark compositions. No gradients, no
+generic corporate light-blue.
+Headlines: Anthracite (#202020) or Navy (#182047) on light backgrounds,
+White on navy backgrounds, ultra-bold, integrated into the composition.
+Accent color: SWOT Yellow (#FCC100) as THE signature accent, used for key
+numerals, one highlight element or one accent shape. Use deliberately, never
+flood the image with yellow.
+Supporting neutrals: mid grey (#6B7280), light grey (#E5E7EB).
+Do not use more than 3 colors prominently in the same composition.
+No brand, tool or company logos anywhere in the image - not SWOT's own and no
+third party's (e.g. DATEV, Microsoft, LucaNet). Third parties may appear only
+as plain words inside the headline text, never as a rendered logo, wordmark or
+branded object in the scene. No monograms, signatures or imprinted marks.
+Reserve a clean, empty bottom-right corner (no text, no graphic) for a logo
+overlay added later.
+Keep the overall look clear, structured, premium, and brand-consistent.""",
+    "IMAGE_TYPOGRAPHY": "Roboto-style modern grotesque sans serif",
+    "DEFAULT_AUDIENCE_IMAGE": "consultants, tax advisors and controlling leads in German-speaking mid-market firms",
 }
+
+# Bild-Texte auf Deutsch (Zielgruppe DACH-Berater).
+IMAGE_LANGUAGE = "German"
+
+# SWOT-Logo (Resources/swot_logo.png, transparentes PNG von swot.de, 12.08.2026)
+# als Overlay unten rechts in generierten Bildern.
+LOGO_FILE = "swot_logo.png"
 
 FEATURES = {
     "supabase_persist": False,
