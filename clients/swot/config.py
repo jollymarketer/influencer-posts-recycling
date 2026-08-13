@@ -13,10 +13,28 @@ und Kommentar-Entwuerfe fuer Christian schreiben. Das ist ein anderer Zweck als
 Recycling. Es sucht keinen Gewinner-Post zum Nachbauen, sondern einen frischen
 Post, unter dem SWOT sichtbar wird. Die Einwaende gegen Rang 5 treffen es nicht.
 
-Die Quellenliste ist entsprechend anders zusammengesetzt als bei lisocon: keine
-Fach-Creator, sondern Wettbewerber-Seiten plus Fachverbaende. Begruendung ist
-Rang 4 derselben Notiz, "Beschwerde-Posts und Kommentare unter Vendor-Posts
+Die Quellenliste war bis 13.08.2026 anders zusammengesetzt als bei lisocon:
+keine Fach-Creator, sondern Wettbewerber-Seiten plus Fachverbaende. Begruendung
+war Rang 4 derselben Notiz, "Beschwerde-Posts und Kommentare unter Vendor-Posts
 sind Themen-Gold": unter einem LucaNet-Post liest SWOTs Zielgruppe mit.
+
+AUFGEHOBEN durch SWOT am 13.08.2026 (Notion-Kommentar an der Task "Namen fuer
+die Kommentar-Ziele nennen",
+https://app.notion.com/p/3ba1617b1baf811fb8ccf49fb0de64e7): "wir sollten nicht
+bei Jedox, Corporate Planning, Lucanet, Agicap, Tidely posten - sonst pushen wir
+ja deren Content." Vorlaeufer war die muendliche Auflage aus dem GTM-Call vom
+12.08.2026, unter der bereits vier Entwuerfe verworfen wurden.
+
+GESPERRTE ZIELE, nicht in influencers.csv aufnehmen: LucaNet, Jedox, CP
+Corporate Planning, Agicap, Tidely, dazu die gleich gelagerten CPM-Wettbewerber
+IDL (insightsoftware) und Unit4/prevero. Die Sperre gilt fuer jeden Anbieter
+konkurrierender Planungs-, Konsolidierungs- oder Liquiditaetssoftware, auch
+wenn er hier nicht namentlich steht.
+
+Uebrig bleiben zwei Fachverbands-Quellen. Das traegt den Kommentar-Pfad nicht:
+schon mit sieben Quellen lieferte ein 72-Stunden-Fenster genau 1 brauchbaren
+Post. Bis SWOT die angefragte Namensliste liefert (selbstaendige Berater und
+Beraterinnen, denen sie folgen), ist der Pfad faktisch ausgesetzt.
 
 Posten bleibt manuell. Ein Kommentar unter fremdem Namen laeuft nie
 automatisiert.
@@ -132,8 +150,13 @@ OWN_PROFILES = [
 # Kadenz wie bei lisocon nach der Korrektur vom 30.07.2026: drei Lauftage,
 # ein Entwurf pro Lauf. Drei Kommentare an einem Tag lesen sich als Kampagne,
 # und ein Kommentar wirkt nur unter einem frischen Post.
-# Nur 7 Quellen, deshalb profiles_per_day = 7: die Rotation deckt die volle
+# Nur noch 2 Quellen, deshalb profiles_per_day = 2: die Rotation deckt die volle
 # Liste in einem Lauf ab. Waechst die Liste, hier nachziehen.
+#
+# Quellen-Korrektur 2026-08-13: die 5 Wettbewerber-Seiten sind raus, SWOT hat
+# Kommentare unter Wettbewerber-Posts untersagt (siehe Modul-Docstring). Was
+# bleibt, sind ICV und Controller Institut. Der Pfad laeuft damit rechnerisch
+# leer und ist erst wieder sinnvoll, wenn SWOT eigene Wunsch-Ziele nennt.
 #
 # Mengen-Korrektur 2026-08-10 (Richard): Deckel wie bei lisocon auf 5 je
 # Lauftag, Fenster auf 72 Stunden (Abstand zwischen zwei Lauftagen).
@@ -143,7 +166,7 @@ OWN_PROFILES = [
 # influencers.csv deutlich waechst. Die Zahl ist ein Angebotsproblem, kein
 # Deckelproblem.
 COMMENT_DRAFTS = {
-    "profiles_per_day": 7,    # volle Liste; waechst die CSV, hier nachziehen
+    "profiles_per_day": 2,    # volle Liste; waechst die CSV, hier nachziehen
     "max_posts_per_profile": 2,
     "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
     "max_age_hours": 72,      # Abstand zwischen zwei Lauftagen (Mo/Mi/Fr)
