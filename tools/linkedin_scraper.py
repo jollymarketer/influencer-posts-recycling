@@ -121,7 +121,24 @@ def fetch_window_start(now: datetime | None = None) -> str:
     mark = read_watermark()
     if mark:
         cutoff = max(cutoff, mark - timedelta(hours=MIN_AGE_HOURS + WATERMARK_BUFFER_HOURS))
+    return _window_iso(cutoff)
+
+
+def _window_iso(cutoff: datetime) -> str:
     return cutoff.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def window_start_for(max_age_hours: float, now: datetime | None = None) -> str:
+    """postedLimitDate fuer einen Aufrufer mit eigenem Altersfilter (Kommentar-Pfade).
+
+    Ohne Zeitmarke, weil dort das Fenster ohnehin dem Laufabstand entspricht. Ersetzt
+    das Enum postedLimit: dessen schmalster brauchbarer Wert "week" holt 168h, waehrend
+    z.B. der Kommentar-Pfad auf 72h filtert. Gemessen 18.07.-17.08.2026: von 342
+    gelieferten Posts lagen 178 ausserhalb des 72h-Filters — bezahlt und sofort
+    verworfen. FETCH_BUFFER_HOURS haelt das Fenster echt groesser als den Filter.
+    """
+    now = now or datetime.now(timezone.utc)
+    return _window_iso(now - timedelta(hours=max_age_hours + FETCH_BUFFER_HOURS))
 
 
 def profile_key(url: str) -> str:

@@ -168,7 +168,6 @@ OWN_PROFILES = [
 COMMENT_DRAFTS = {
     "profiles_per_day": 2,    # volle Liste; waechst die CSV, hier nachziehen
     "max_posts_per_profile": 2,
-    "posted_limit": "week",   # belegter Enum-Wert; das echte Fenster ist max_age_hours
     "max_age_hours": 72,      # Abstand zwischen zwei Lauftagen (Mo/Mi/Fr)
     "posters": ["Christian"],
     "days": (0, 2, 4),        # Mo, Mi, Fr (weekday())

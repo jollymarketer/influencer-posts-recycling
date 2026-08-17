@@ -81,3 +81,62 @@ def test_poster_rotation_without_days_falls_back():
     day = _day(32, 0)
     assert set(poster_rotation(POSTERS, None, day)) == set(POSTERS)
     assert poster_rotation([], DAYS, day) == []
+
+
+# --- Fetch-Fenster des Kommentar-Pfads ---
+
+class _FakeClient:
+    """Mimikt ApifyClient: .actor(id).call(run_input=) -> run mit default_dataset_id."""
+
+    def __init__(self):
+        self.last_run_input = None
+
+    def actor(self, actor_id):
+        return self
+
+    def call(self, run_input=None):
+        self.last_run_input = run_input
+        return type("Run", (), {"default_dataset_id": "ds1"})()
+
+    def dataset(self, ds_id):
+        return self
+
+    def iterate_items(self):
+        return iter(())
+
+
+def _run_input(settings, monkeypatch):
+    from tools import comment_drafts
+    client = _FakeClient()
+    monkeypatch.setattr(comment_drafts, "APIFY_API_KEY", "test-key")
+    monkeypatch.setattr(comment_drafts, "ApifyClient", lambda key: client)
+    comment_drafts.fetch_fresh_posts(
+        [{"name": "A", "linkedin_url": "https://www.linkedin.com/in/a/"}], settings)
+    return client.last_run_input
+
+
+def _window_hours(iso: str) -> float:
+    cutoff = datetime.strptime(iso, "%Y-%m-%dT%H:%M:%S.000Z").replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - cutoff).total_seconds() / 3600
+
+
+def test_comment_run_sends_a_date_not_the_week_enum(monkeypatch):
+    """`postedLimit="week"` holt 168h, gefiltert wird auf max_age_hours — die
+    Differenz wird pro Post bezahlt und sofort verworfen."""
+    ri = _run_input({"max_age_hours": 72, "max_posts_per_profile": 2}, monkeypatch)
+    assert "postedLimit" not in ri
+    assert _window_hours(ri["postedLimitDate"]) < 168
+
+
+def test_comment_window_follows_max_age_hours(monkeypatch):
+    from tools import linkedin_scraper
+    ri = _run_input({"max_age_hours": 72, "max_posts_per_profile": 2}, monkeypatch)
+    hours = _window_hours(ri["postedLimitDate"])
+    assert 72 < hours <= 72 + linkedin_scraper.FETCH_BUFFER_HOURS + 1
+
+
+def test_comment_window_is_wider_than_the_age_filter(monkeypatch):
+    """Sonst verliert ein verspaeteter Cron-Lauf Posts am Fensterrand."""
+    for max_age in (30, 72, 168):
+        ri = _run_input({"max_age_hours": max_age, "max_posts_per_profile": 2}, monkeypatch)
+        assert _window_hours(ri["postedLimitDate"]) > max_age

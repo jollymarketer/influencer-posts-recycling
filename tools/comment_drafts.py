@@ -22,7 +22,8 @@ from apify_client import ApifyClient
 from dotenv import load_dotenv
 
 from clients import load_client
-from tools.linkedin_scraper import load_influencers, parse_post_age_hours
+from tools.linkedin_scraper import (load_influencers, parse_post_age_hours,
+                                    window_start_for)
 from tools.notion_db import create_comment_entry, get_comment_target_urls
 from tools.topic_pool import get_meta, set_meta
 
@@ -90,12 +91,14 @@ def fetch_fresh_posts(profiles: list, settings: dict) -> list:
     by_url = {p["linkedin_url"]: p["name"] for p in profiles}
     if not by_url:
         return []
+    max_age = settings.get("max_age_hours", 30)
     client = ApifyClient(APIFY_API_KEY)
     run = client.actor("harvestapi/linkedin-profile-posts").call(run_input={
         "targetUrls": list(by_url),
         "maxPosts": settings.get("max_posts_per_profile", 2),
-        # "week" ist der belegte Enum-Wert; das echte Fenster setzt max_age_hours.
-        "postedLimit": settings.get("posted_limit", "week"),
+        # Exaktes Datum statt Enum postedLimit: "week" holt 168h, gefiltert wird auf
+        # max_age_hours, und jeder gelieferte Post kostet 0,002 USD.
+        "postedLimitDate": window_start_for(max_age),
         "includeReposts": False,
         "scrapeReactions": False,
         "scrapeComments": False,
@@ -103,7 +106,6 @@ def fetch_fresh_posts(profiles: list, settings: dict) -> list:
     if run is None:
         return []
 
-    max_age = settings.get("max_age_hours", 30)
     posts = []
     for item in client.dataset(run.default_dataset_id).iterate_items():
         text = item.get("content", "") or ""
