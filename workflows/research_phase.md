@@ -33,11 +33,23 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
 1. Bestehende Post-URLs aus Notion laden
 2. Neue Posts scrapen via Apify (`harvestapi/linkedin-profile-posts`) + Substack RSS
    - `maxPosts` und Altersfenster pro Mandant aus `clients/<name>/config.py`, Block `SCRAPE`
-   - Fetch-Fenster über `postedLimitDate` = jetzt minus (`max_age_hours` + 4h), **nicht**
-     über das Enum `postedLimit`. Der Actor rechnet pro geliefertem Post ab (0,002 USD);
-     `postedLimit="week"` lieferte bei einem 36h-Filter rund vier von fünf Posts, die der
-     Altersfilter sofort verwarf und die trotzdem bezahlt wurden. Gemessen 30.07.2026:
-     gleiches Profil, `week` = 3 Posts (15h, 33h, 55h), `postedLimitDate` = 2 Posts.
+   - Fetch-Fenster über `postedLimitDate`, **nicht** über das Enum `postedLimit`. Der Actor
+     rechnet pro geliefertem Post ab (0,002 USD); `postedLimit="week"` lieferte bei einem
+     36h-Filter rund vier von fünf Posts, die der Altersfilter sofort verwarf und die
+     trotzdem bezahlt wurden. Gemessen 30.07.2026: gleiches Profil, `week` = 3 Posts
+     (15h, 33h, 55h), `postedLimitDate` = 2 Posts.
+   - Das Fenster ist das engere von zwei Werten: Obergrenze `max_age_hours` + 4h, und
+     Zeitmarke des letzten vollständigen Laufs (`engine_meta.last_scrape_at_<mandant>`)
+     minus `min_age_hours` + 1h. Ohne die Zeitmarke lief bei täglichem Cron ein festes
+     40h-Fenster gegen einen 24h-Abstand: gemessen 10.-17.08.2026 wurden 42 von 425
+     gelieferten Posts ein zweites Mal geliefert und bezahlt, nur um am Duplikat-Filter
+     zu scheitern. Die Obergrenze bleibt bindend, damit eine Cron-Pause (montags 72h seit
+     Freitag) das Fenster nicht aufbläht — was älter als `max_age_hours` ist, würde bezahlt
+     und sofort verworfen. Nach einem fehlgeschlagenen Batch bleibt die Zeitmarke stehen,
+     der nächste Lauf holt die betroffenen Profile über das breitere Fenster nach.
+   - Profile werden gebündelt: 20 pro Actor-Run über `targetUrls`, nicht ein Run pro Profil.
+     `maxPosts` gilt laut Actor-Schema pro Profil, die Abrechnung ändert sich dadurch nicht.
+     Zuordnung Post zu Influencer über `item["query"]["targetUrl"]`, Fallback `author.name`.
    - Posts unter 50 Wörtern werden gefiltert
 3. Alle neuen Posts in Notion schreiben (Status: "New")
 4. Posts scoren: 5 KI-Dimensionen + Viralität (Engagement), max. 60 Punkte

@@ -15,6 +15,7 @@ from apify_client import ApifyClient
 from dotenv import load_dotenv
 
 from clients import load_client
+from tools.topic_pool import get_meta, set_meta
 
 load_dotenv()
 
@@ -41,6 +42,19 @@ MAX_POSTS_PER_PROFILE = _cfg.SCRAPE["max_posts_per_profile"]
 # Puffer auf das Fetch-Fenster, damit ein verspaeteter Cron-Lauf keinen Post verliert.
 FETCH_BUFFER_HOURS = 4
 
+# Profile pro Apify-Run. targetUrls nimmt eine Liste, maxPosts gilt laut Actor-Schema
+# "per each profile or company" — Buendeln aendert also nichts an der Abrechnung, spart
+# aber Actor-Starts und Laufzeit (78 sequentielle Runs = ~8 Min). Klein genug, dass ein
+# fehlgeschlagener Run nur einen Teil der Liste kostet, nicht die ganze.
+BATCH_SIZE = 20
+
+# Zeitmarke des letzten vollstaendigen Laufs (engine_meta). Schluessel pro Mandant,
+# weil alle Mandanten dieselbe Supabase-Instanz teilen.
+WATERMARK_KEY = f"last_scrape_at_{os.getenv('CLIENT', 'jolly').strip().lower()}"
+
+# Kleiner Aufschlag auf die Zeitmarke gegen Uhrzeit-Drift zwischen Railway und Apify.
+WATERMARK_BUFFER_HOURS = 1
+
 
 def load_influencers():
     influencers = []
@@ -54,7 +68,31 @@ def load_influencers():
     return influencers
 
 
-def fetch_window_start() -> str:
+def read_watermark() -> datetime | None:
+    """Startzeit des letzten vollstaendigen Laufs, oder None wenn unbekannt."""
+    try:
+        raw = get_meta(WATERMARK_KEY)
+    except Exception as e:
+        print(f"  Zeitmarke nicht lesbar, nutze Standardfenster: {e}", file=sys.stderr)
+        return None
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def write_watermark(started_at: datetime) -> None:
+    """Zeitmarke auf die Startzeit dieses Laufs setzen. Nicht kritisch: schlaegt das
+    fehl, faellt der naechste Lauf auf das breitere Standardfenster zurueck."""
+    try:
+        set_meta(WATERMARK_KEY, started_at.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+    except Exception as e:
+        print(f"  Zeitmarke nicht gespeichert (nicht kritisch): {e}", file=sys.stderr)
+
+
+def fetch_window_start(now: datetime | None = None) -> str:
     """Frueheste Post-Zeit, die der Actor liefern soll, als ISO-8601-String.
 
     Apify rechnet pro geliefertem Post ab (0,002 USD). Mit dem Enum postedLimit
@@ -64,18 +102,57 @@ def fetch_window_start() -> str:
     vom Altersfilter verworfen und trotzdem bezahlt. postedLimitDate nimmt ein
     exaktes Datum und schneidet dieselben Posts serverseitig ab.
 
-    FETCH_BUFFER_HOURS haelt das Fenster echt groesser als MAX_AGE_HOURS, damit
-    ein verspaeteter Cron-Lauf keinen Post verliert.
+    Zwei Grenzen, die engere gewinnt:
+
+    1. Obergrenze MAX_AGE_HOURS + FETCH_BUFFER_HOURS. Alles Aeltere wuerde der
+       Altersfilter ohnehin verwerfen, waere aber bezahlt. Gilt auch als Fallback,
+       solange keine Zeitmarke existiert.
+    2. Zeitmarke des letzten Laufs minus MIN_AGE_HOURS. Weiter zurueck muss das
+       Fenster nicht reichen: alles Aeltere hat der letzte Lauf schon gesehen und
+       bezahlt. Nur die Posts, die er als zu jung verworfen hat, muessen erneut
+       hinein — daher der Abzug von MIN_AGE_HOURS.
+
+    Gemessen 10.-17.08.: bei festem 40h-Fenster und taeglichem Cron wurden 42 von
+    425 gelieferten Posts ein zweites Mal geliefert und bezahlt, nur um danach am
+    Duplikat-Filter zu scheitern. Grenze 2 schneidet diese Ueberlappung weg.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=MAX_AGE_HOURS + FETCH_BUFFER_HOURS)
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=MAX_AGE_HOURS + FETCH_BUFFER_HOURS)
+    mark = read_watermark()
+    if mark:
+        cutoff = max(cutoff, mark - timedelta(hours=MIN_AGE_HOURS + WATERMARK_BUFFER_HOURS))
     return cutoff.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-def scrape_posts_for_profile(client, profile_url, max_posts=3):
+def profile_key(url: str) -> str:
+    """Vergleichbarer Schluessel aus einer LinkedIn-Profil-URL (Query und / weg)."""
+    return url.split("?")[0].rstrip("/").lower()
+
+
+def target_url_of(item) -> str:
+    """Die Eingabe-URL, aus der dieses Item stammt. Der Actor spiegelt sie in
+    item["query"]["targetUrl"] — ohne sie waere im Sammel-Run nicht zuordenbar,
+    zu welchem Influencer ein Post gehoert."""
+    query = item.get("query")
+    if isinstance(query, dict):
+        return profile_key(query.get("targetUrl", "") or "")
+    return ""
+
+
+def author_name_of(item) -> str:
+    author = item.get("author")
+    if isinstance(author, dict):
+        return author.get("name") or ""
+    return ""
+
+
+def scrape_posts_for_batch(client, profile_urls, max_posts=3, window_start=None):
+    """Ein Apify-Run fuer mehrere Profile. maxPosts gilt laut Actor-Schema pro
+    Profil, das Buendeln aendert die Abrechnung also nicht."""
     run_input = {
-        "targetUrls": [profile_url],
+        "targetUrls": list(profile_urls),
         "maxPosts": max_posts,
-        "postedLimitDate": fetch_window_start(),
+        "postedLimitDate": window_start or fetch_window_start(),
         "includeQuotePosts": True,
         "includeReposts": False,
         "scrapeReactions": False,
@@ -168,38 +245,59 @@ def scrape_new_posts(existing_urls: set) -> list:
     if not APIFY_API_KEY:
         raise ValueError("APIFY_API_KEY fehlt in .env")
 
+    started_at = datetime.now(timezone.utc)
     client = ApifyClient(APIFY_API_KEY)
-    influencers = load_influencers()
+    influencers = [i for i in load_influencers() if i["linkedin_url"]]
+    name_by_url = {profile_key(i["linkedin_url"]): i["name"] for i in influencers}
+    urls = [i["linkedin_url"] for i in influencers]
+
+    # Einmal lesen: das Fenster muss ueber alle Batches identisch sein, sonst
+    # bekommen spaetere Batches ein minimal anderes Fenster als fruehere.
+    window_start = fetch_window_start(started_at)
+
     new_posts = []
+    failed_batches = 0
 
-    for influencer in influencers:
-        if not influencer["linkedin_url"]:
-            continue
-        print(f"  Scraping: {influencer['name']} ...", flush=True)
+    for start in range(0, len(urls), BATCH_SIZE):
+        batch = urls[start:start + BATCH_SIZE]
+        print(f"  Scraping Profile {start + 1}-{start + len(batch)} von {len(urls)} ...",
+              flush=True)
         try:
-            items = scrape_posts_for_profile(client, influencer["linkedin_url"],
-                                             max_posts=MAX_POSTS_PER_PROFILE)
-            for item in items:
-                post = extract_post_data(item, influencer["name"])
-                if not post:
-                    continue
-                if post["post_url"] in existing_urls:
-                    continue
-
-                # Altersfilter: nur Posts aus dem 1-5-Tage-Fenster
-                age = post.get("age_hours")
-                if age is not None and not (MIN_AGE_HOURS <= age <= MAX_AGE_HOURS):
-                    continue
-
-                new_posts.append(post)
-                eng = post["engagement"]
-                print(
-                    f"    OK: {post['post_url'][:70]} "
-                    f"| {eng['likes']} Likes, {eng['comments']} Comments"
-                )
+            items = scrape_posts_for_batch(client, batch, max_posts=MAX_POSTS_PER_PROFILE,
+                                           window_start=window_start)
         except Exception as e:
-            print(f"    FEHLER bei {influencer['name']}: {e}", file=sys.stderr)
+            failed_batches += 1
+            print(f"    FEHLER bei Batch ab {batch[0]}: {e}", file=sys.stderr)
             continue
+
+        for item in items:
+            name = name_by_url.get(target_url_of(item)) or author_name_of(item)
+            post = extract_post_data(item, name)
+            if not post:
+                continue
+            if post["post_url"] in existing_urls:
+                continue
+
+            # Altersfilter: nur Posts aus dem 1-5-Tage-Fenster
+            age = post.get("age_hours")
+            if age is not None and not (MIN_AGE_HOURS <= age <= MAX_AGE_HOURS):
+                continue
+
+            new_posts.append(post)
+            eng = post["engagement"]
+            print(
+                f"    OK: {post['post_url'][:70]} "
+                f"| {eng['likes']} Likes, {eng['comments']} Comments"
+            )
+
+    # Zeitmarke nur bei vollstaendigem Lauf setzen. Nach einem Teilausfall bleibt
+    # sie stehen, der naechste Lauf faellt auf das breitere Standardfenster zurueck
+    # und holt die Profile des ausgefallenen Batches nach.
+    if failed_batches:
+        print(f"  {failed_batches} Batch(es) fehlgeschlagen, Zeitmarke bleibt stehen.",
+              file=sys.stderr)
+    else:
+        write_watermark(started_at)
 
     return new_posts
 
