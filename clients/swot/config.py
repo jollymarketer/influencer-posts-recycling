@@ -587,3 +587,45 @@ NOTION_DB_ID_DEFAULT = None
 TOPIC_IDEAS_DB_ID_DEFAULT = "3c11617b-1baf-81f2-b521-d4bab7bc8656"
 
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
+
+# --- Monatsplan (run_monthly_plan.py, Entscheidung Richard 19.08.2026) -------
+
+# Content-Redaktionsplan Blog und LinkedIn im SWOT-Dashboard (kundensichtbar).
+# Bewusst getrennt von NOTION_DB_ID_DEFAULT: das bleibt None, damit der
+# Winner-Pfad der Recycling-Pipeline nie hierher schreibt. Der Monatsplan
+# schreibt ausschliesslich Status "Themenvorschlag"; die Freigabe-Galerie
+# filtert auf "Zur Freigabe" und zeigt Vorschlaege deshalb nicht.
+CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
+
+# Feste Beitragstage je Konto (Wochentag, Montag=0). Aus dem September-Plan.
+POSTING_SCHEDULE = {
+    "kulle":             {"kanal": "LinkedIn Christian",        "weekdays": [1, 3]},
+    "werner":            {"kanal": "LinkedIn Robert",           "weekdays": [1, 2]},
+    "baumert":           {"kanal": "LinkedIn Inga",             "weekdays": [2, 3]},
+    "unternehmensseite": {"kanal": "LinkedIn Unternehmensseite", "weekdays": [1, 3]},
+}
+
+# Achsen-Mix je Monat. Durchgesetzt im Auswahl-Code (run_monthly_plan), NICHT
+# im Scoring-Prompt: Scoring erzwingt keine Batch-Vielfalt.
+AXIS_MIX = {
+    # dominante Achse darf hoechstens ein Drittel der Slots belegen
+    "max_share": {"excel_am_limit": 1 / 3},
+    # jede Achse erscheint mindestens zweimal, sofern Themen vorliegen
+    "min_per_axis": 2,
+    # Fristen-Themen nur, wenn der Termin binnen dieser Frist liegt
+    "fristen_horizon_days": 120,
+}
+
+# Fristen-Kalender fuer die Achse "fristen". Aktiv von horizon_days vor dem
+# Termin bis 30 Tage danach (eine gerade in Kraft getretene Regel traegt noch
+# einen Rueckblick-Beitrag, danach nicht mehr).
+FRISTEN_KALENDER = [
+    {"id": "ifrs18", "deadline": "2027-01-01",
+     "label": "IFRS 18: Vergleichsjahr 2026 schliesst zum 31.12."},
+    {"id": "erechnung", "deadline": "2027-01-01",
+     "label": "E-Rechnung: Versandpflicht ab 01.01.2027, Bezugsjahr 2026"},
+    {"id": "avr_caritas", "deadline": "2027-01-01",
+     "label": "AVR Caritas: Neufassung ab 01.01.2027"},
+    {"id": "avr_dd", "deadline": "2026-09-01",
+     "label": "AVR.DD: Entgelterhoehung 3,0 Prozent zum 01.09.2026"},
+]
