@@ -13,6 +13,7 @@ import requests
 from dotenv import load_dotenv
 
 from tools.supabase_db import _base_url, _key
+from tools.topic_ideas_db import _db_id as _topic_ideas_db_id
 
 load_dotenv()
 
@@ -63,9 +64,8 @@ def _sel(props: dict, key: str) -> str:
 
 
 def _fetch_notion_rows() -> list[dict]:
-    db_id = os.getenv("TOPIC_IDEAS_DB_ID", "")
-    if not db_id:
-        raise RuntimeError("TOPIC_IDEAS_DB_ID is not set.")
+    # Mandanten-Default vor Env, Begruendung in tools/topic_ideas_db._db_id.
+    db_id = _topic_ideas_db_id()
     rows: list[dict] = []
     cursor = None
     while True:

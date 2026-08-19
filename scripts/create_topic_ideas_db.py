@@ -20,10 +20,11 @@ NOTION_VERSION = "2022-06-28"
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: python scripts/create_topic_ideas_db.py <parent_page_id>")
+    if len(sys.argv) not in (2, 3):
+        print("Usage: python scripts/create_topic_ideas_db.py <parent_page_id> [title]")
         return 1
     parent_page_id = sys.argv[1]
+    title = sys.argv[2] if len(sys.argv) == 3 else "Blog Topic Ideas (mined)"
     headers = {
         "Authorization": f"Bearer {os.environ['NOTION_TOKEN']}",
         "Content-Type": "application/json",
@@ -31,7 +32,7 @@ def main() -> int:
     }
     payload = {
         "parent": {"type": "page_id", "page_id": parent_page_id},
-        "title": [{"type": "text", "text": {"content": "Blog Topic Ideas (mined)"}}],
+        "title": [{"type": "text", "text": {"content": title}}],
         "properties": {
             "Title": {"title": {}},
             "Suggested Title EN": {"rich_text": {}},

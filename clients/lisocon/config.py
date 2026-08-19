@@ -436,6 +436,11 @@ ABM_COMMENT_DRAFTS = {
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene Lisocon-Content-DB).
 NOTION_DB_ID_DEFAULT = None
 
+# Kein Topic-Mining (FEATURES["topic_mining"] = False), deshalb keine eigene
+# Themen-DB. None statt der globalen Env-Variable, damit ein versehentlich
+# aktiviertes Mining hart abbricht statt in Jollys Blog Pipeline zu schreiben.
+TOPIC_IDEAS_DB_ID_DEFAULT = None
+
 # Eigene Integration "lisocon-content-engine" (nur auf die Lisocon-Content-DB berechtigt).
 NOTION_TOKEN_ENV = "NOTION_TOKEN_LISOCON"
 MAKE_WEBHOOK_ENV = "MAKE_REVIEW_WEBHOOK_LISOCON"

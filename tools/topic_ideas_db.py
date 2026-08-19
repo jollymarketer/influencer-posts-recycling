@@ -7,6 +7,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from clients import load_client
 from tools.notion_db import _utf16_truncate
 from tools.topic_clusterer import ThemeCandidate
 
@@ -25,9 +26,25 @@ def _token() -> str:
 
 
 def _db_id() -> str:
-    db = os.getenv("TOPIC_IDEAS_DB_ID", "")
+    """Mandanten-Default schlaegt die Env-Variable. Bewusst umgekehrt zu
+    tools/notion_db.py: TOPIC_IDEAS_DB_ID ist EINE globale Variable und stand
+    bis 19.08.2026 auf Jollys Blog Pipeline. Bei Env-Vorrang haette ein
+    lokaler Lauf mit CLIENT=swot seine Themen dort hineingeschrieben, dasselbe
+    Muster wie die Apify-Cross-Billing-Luecke. Nicht auf Env-Vorrang
+    zurueckdrehen."""
+    cfg = load_client()
+    if hasattr(cfg, "TOPIC_IDEAS_DB_ID_DEFAULT"):
+        # Gesetzt heisst gesetzt, auch wenn der Wert None ist. Ein Mandant ohne
+        # eigene Themen-DB (lisocon) muss abbrechen und darf NICHT auf die
+        # globale Env-Variable durchfallen.
+        db = cfg.TOPIC_IDEAS_DB_ID_DEFAULT or ""
+    else:
+        db = os.getenv("TOPIC_IDEAS_DB_ID", "")
     if not db:
-        raise RuntimeError("TOPIC_IDEAS_DB_ID is not set.")
+        raise RuntimeError(
+            f"Keine Topic-Ideas-DB fuer CLIENT={getattr(cfg, 'NAME', '?')}. "
+            "TOPIC_IDEAS_DB_ID_DEFAULT in der Client-Config setzen."
+        )
     return db
 
 

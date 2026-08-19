@@ -67,9 +67,10 @@ Beschaeftigte angehoben, SWOTs Mittelstands-Zielgruppe faellt heraus.
 Belegmaterial: 52 Anwenderberichte, davon 43 online, 8 aus der Sozialwirtschaft.
 """.strip()
 
-# Einziger Poster, deshalb keine CONTENT_PERSONAS und kein POSTER_BY_PERSONA.
-# `_voice()` in tools/comment_drafts.py faellt in diesem Fall auf PERSONA_DE
-# zurueck, das ist hier der gewollte Pfad.
+# Seit 19.08.2026 vier Konten statt einem (Entscheidung Richard). Die Personas
+# stehen weiter unten in CONTENT_PERSONAS. Die TOKENS-Werte fuer AUDIENCE_DE,
+# DECISION_MAKERS_DE und FOCUS_TOPICS_DE bleiben der Fallback, den eine Persona
+# ueberschreiben darf (siehe post_scorer.persona_prompt_tokens).
 TOKENS = {
     # Stimme auf Robert Werner umgestellt (GTM-Call 29.07.2026: Posts und
     # Kommentare laufen ueber Roberts Account, Monat 1 ausschliesslich
@@ -80,6 +81,112 @@ TOKENS = {
         "Beratungsgesellschaften, Steuerberatern und Wirtschaftspruefern, die "
         "Planung, Konsolidierung und Liquiditaet fuer ihre Mandate aufbauen. "
         "Du sprichst aus der Praxis, nicht aus der Produktbroschuere."
+    ),
+
+    # --- Scoring (Freigabe Richard 2026-08-19) -------------------------------
+    "SCORING_ROLE": (
+        "Du bist Content-Stratege bei SWOT Controlling (Software fuer "
+        "Konsolidierung, integrierte Finanz- und Personalkostenplanung, "
+        "Liquiditaetsplanung und Reporting im deutschsprachigen Mittelstand)."
+    ),
+    "TOPIC_FIT_QUESTION": (
+        "Passt das Thema zu Konsolidierung, integrierter Planung ueber GuV, "
+        "Bilanz und Liquiditaet, Personalkostenplanung, Forecast, Reporting, "
+        "Kostenstellenrechnung oder Schnittstellen zu DATEV und ERP? Bonus, "
+        "wenn es einen im KONTEXT belegten Schmerz trifft: Excel-Modelle, die "
+        "niemand uebergeben kann, Daten, die zwischen zwei Systemen haengen "
+        "bleiben, ein Planungsmodell, das nur eine Person versteht, oder eine "
+        "datierte Frist (IFRS 18, E-Rechnung, AVR)."
+    ),
+    "ICP_RELEVANZ_QUESTION": (
+        "Wuerde eine kaufmaennische Leitung, eine Controlling-Leitung oder "
+        "eine Geschaeftsfuehrung im deutschsprachigen Mittelstand diesen "
+        "Inhalt wollen, oder ein Steuerberater, Wirtschaftspruefer oder "
+        "Unternehmensberater mit Planungsmandaten?"
+    ),
+
+    # --- Zielgruppe und Ton (Fallback, Personas duerfen ueberschreiben) ------
+    "AUDIENCE_DE": (
+        "Kaufmaennische Leitung, Controlling-Leitung und Geschaeftsfuehrung im "
+        "deutschsprachigen Mittelstand, dazu Steuerberater, Wirtschaftspruefer "
+        "und Unternehmensberater mit Planungsmandaten. Eigene Vertikale: "
+        "diakonische und caritative Traeger und Pflegeeinrichtungen."
+    ),
+    "DECISION_MAKERS_DE": (
+        "Kaufmaennische Leitung, Controlling-Leitung und Geschaeftsfuehrung, "
+        "bei Beratungsgesellschaften die Partner und Mandatsverantwortlichen"
+    ),
+    "FOCUS_TOPICS_DE": (
+        "Belastbarkeit der Zahlen: Datenherkunft und Schnittstellen, "
+        "integrierte Planung ueber GuV, Bilanz und Liquiditaet, "
+        "Forecast-Genauigkeit, Uebergabefaehigkeit des Modells, datierte Fristen"
+    ),
+    "FIRST_PERSON_ROLE_DE": (
+        "du arbeitest seit Jahren an Planungs- und Konsolidierungsprojekten im "
+        "Mittelstand und in der Sozialwirtschaft"
+    ),
+    "CONTEXT_TRANSFER_DE": (
+        "Auf den Alltag von Controlling und Rechnungswesen im Mittelstand "
+        "uebertragen, ohne die Branche plakativ zu betonen"
+    ),
+    "BELIEF_ACTORS_DE": "Controlling- und Rechnungswesen-Teams",
+    "COMPARISON_SUBJECT_DE": (
+        "ein Weg zur Planung (gewachsene Excel-Modelle, ein Modul des "
+        "Vorsystems oder eine eigenstaendige Planungssoftware)"
+    ),
+    "SCENE_ACTOR_DE": (
+        "eine kaufmaennische Leitung oder ein Berater mit Planungsmandaten"
+    ),
+    "HASHTAG_LINE_DE": (
+        "Keine Hashtags verwenden. Der Post endet mit dem letzten "
+        "Inhalts-Satz."
+    ),
+
+    # Sperrliste. Die Wettbewerber-Sperre stammt von Christian Kulle
+    # (Notion-Kommentar 13.08.2026) und ist von uns auf IDL und Unit4 mit
+    # prevero ausgeweitet worden.
+    "LANGUAGE_BANS_DE": """- Niemals Preise, Lizenzkosten oder Budget-Groessenordnungen nennen (auch keine ungefaehren Zahlen und keine Spannen)
+- Keine Wettbewerbernamen: Jedox, Corporate Planning, LucaNet, Agicap, Tidely, IDL, Unit4 mit prevero, cubus. Gilt fuer jeden Anbieter konkurrierender Planungs-, Konsolidierungs- oder Liquiditaetssoftware. Ausnahmen nur, wenn sie fuer einen einzelnen Beitrag ausdruecklich freigegeben sind
+- Niemals auf fremde Beitraege verlinken oder daraus zitieren. Aufgegriffen wird das Thema, nie der fremde Text
+- SWOT nie als BI-Tool, Reporting-Tool oder DATEV-Ersatz bezeichnen
+- CSRD ist kein Thema: das Omnibus-I-Paket hat die Schwelle angehoben, die Zielgruppe faellt heraus
+- Kein Em-Dash. Echte Umlaute schreiben
+- Keine erfundenen Zahlen. Belegt sind ausschliesslich die Angaben aus dem KONTEXT""",
+
+    # --- Englisch: SWOT ist DACH-only (FEATURES["en_draft"] = False). Die
+    # Tokens muessen trotzdem existieren, weil apply_tokens beim Import auch
+    # ueber EN_POST_PROMPT laeuft und bei jedem offenen Marker abbricht.
+    "PERSONA_EN": (
+        "You are Robert Werner, head of sales and academy at SWOT Controlling "
+        "GmbH in Berlin. You speak daily with consultancies, tax advisors and "
+        "auditors who build planning, consolidation and liquidity models for "
+        "their clients."
+    ),
+    "AUDIENCE_EN": (
+        "finance directors, heads of controlling and managing directors at "
+        "German-speaking mid-market companies, plus tax advisors, auditors and "
+        "consultants with planning mandates."
+    ),
+    "WRITE_FOR_EN": (
+        "finance and controlling decision-makers, not for IT or for marketers"
+    ),
+    "FOCUS_TOPICS_EN": (
+        "reliability of the numbers: data lineage and interfaces, integrated "
+        "planning across P&L, balance sheet and liquidity, forecast accuracy, "
+        "handover of the model, dated deadlines"
+    ),
+    "FIRST_PERSON_ROLE_EN": (
+        "you speak from years of planning and consolidation projects in the "
+        "mid-market and in the social economy"
+    ),
+    "BELIEF_ACTORS_EN": "controlling and accounting teams",
+    "COMPARISON_SUBJECT_EN": (
+        "a way to plan (grown spreadsheet models, a module of the source "
+        "system, or dedicated planning software)"
+    ),
+    "SCENE_ACTOR_EN": "a finance director or a consultant with planning mandates",
+    "HASHTAG_LINE_EN": (
+        "No hashtags. The post ends with the last content sentence."
     ),
 
     # --- Bild-Prompts (Freigabe Richard 2026-08-12) --------------------------
@@ -113,7 +220,166 @@ overlay added later.
 Keep the overall look clear, structured, premium, and brand-consistent.""",
     "IMAGE_TYPOGRAPHY": "Roboto-style modern grotesque sans serif",
     "DEFAULT_AUDIENCE_IMAGE": "consultants, tax advisors and controlling leads in German-speaking mid-market firms",
+    "DEFAULT_AUDIENCE_ARCHETYPE": "finance directors, heads of controlling and consultants with planning mandates",
+    "ARCHETYPE_BRAND_RULES": """SWOT Controlling brand rules:
+- Background: White (#FFFFFF) or very light cool grey (#F5F6F8); deep navy
+  (#182047) allowed for dark compositions. No gradients, no generic corporate
+  light-blue.
+- Headline / key type: Anthracite (#202020) or Navy (#182047) on light
+  backgrounds, White on navy, ultra-bold, Roboto-style grotesque sans-serif.
+- Accent (one only): SWOT Yellow (#FCC100), used for a key numeral, one
+  highlight element or one accent shape. Never flood the image with yellow.
+- Supporting neutrals: mid grey (#6B7280), light grey (#E5E7EB). Max 3
+  prominent colors.
+- No brand, tool or company logos anywhere, neither SWOT's own nor third
+  parties'. No monograms, no signatures, no imprinted marks. Third-party names
+  may appear as plain words inside headline text only.
+- Reserve a clean, empty bottom-right corner for a logo overlay added later.""",
+    "INFOGRAPHIC_BRAND_RULES": """SWOT Controlling brand rules for diagrams and infographics:
+- Background: White (#FFFFFF) or very light cool grey (#F5F6F8). No gradients.
+- Labels and headings: Anthracite (#202020) or Navy (#182047), bold.
+- Structural elements (lines, boxes, arrows): Navy (#182047); mid grey
+  (#6B7280) for secondary structure.
+- Accent: SWOT Yellow (#FCC100) for the one element the reader should look at
+  first. Never more than one accent per diagram.
+- At most 3 colors prominently in the same composition.
+- No logos of any kind, neither SWOT's own nor third parties'. Third-party
+  names may appear as plain label text only.
+- Numbers and axis labels must stay legible at LinkedIn feed size.""",
 }
+
+# Vier Konten ab September 2026 (Entscheidung Richard 19.08.2026). Die Rollen
+# sind aus LinkedIn, Impressum und dem Call vom 27.07.2026 belegt.
+#
+# `axis` ist der Winkel, nach dem der Classifier einen Kandidaten einsortiert,
+# nicht die Person. Derselbe Fachbereich kann je nach Winkel auf einer anderen
+# Achse landen.
+#
+# HARTE REGEL: Baumert bekommt keine Fach-Aussagen zu AVR, IFRS oder
+# E-Rechnung. Eine Marketing-Operations-Rolle hat vor Controllern und Beratern
+# keine eigene Fachautoritaet, geliehene Autoritaet faellt in dieser Zielgruppe
+# sofort auf. Regulierungsthemen laufen ueber Kulle und die Unternehmensseite.
+CONTENT_PERSONAS = [
+    {
+        "id": "werner",
+        "label": "Robert Werner, Leiter Vertrieb und Akademie",
+        "share": "dominant",
+        "axis": ("Projekt- und Schulungspraxis: was in Planungsprojekten und "
+                 "Mandaten typischerweise schiefgeht und woran es liegt"),
+        "audience_de": ("Steuerberater, Wirtschaftspruefer und "
+                        "Unternehmensberater mit Planungsmandaten im "
+                        "deutschsprachigen Raum."),
+        "decision_makers_de": ("Partner und Mandatsverantwortliche in "
+                               "Kanzleien und Beratungsgesellschaften"),
+        "focus_topics_de": ("Praxis im Mandat: Datenzugang, Uebergabe von "
+                            "Modellen, Standardvorlage gegen Einzelanfertigung, "
+                            "Einfuehrungsdauer"),
+        "pains": ("Excel-Modelle, die den Berater ueberleben, das Wissen darin "
+                  "aber nicht; Planungsmodelle, die nur eine Person versteht; "
+                  "Daten, die aus dem Vorsystem nicht sauber ankommen"),
+        "kpis": ("Zeit bis zum ersten produktiven Mandat, Aufwand je "
+                 "Folgemandat, Vertretungsfaehigkeit im Team"),
+        "vocabulary_use": ("Mandat, Planungsmandat, Kontenrahmen, Vorlage, "
+                           "Uebergabe, Schnittstelle, DATEV"),
+        "vocabulary_avoid": "Feature-Listen, Lizenzmodelle, Produktnamen als Held",
+        "scene_de": ("ein Berater, der ein uebernommenes Excel-Modell zum "
+                     "ersten Mal oeffnet"),
+        "scene_en": ("a consultant opening an inherited spreadsheet model for "
+                     "the first time"),
+        "cta_style": "reply",
+    },
+    {
+        "id": "kulle",
+        "label": "Christian Kulle, Geschaeftsfuehrer",
+        "share": "secondary",
+        "axis": ("Fristen, Regulierung und Marktbewegungen, eingeordnet aus "
+                 "Geschaeftsfuehrungssicht"),
+        "audience_de": ("Geschaeftsfuehrung und kaufmaennische Leitung im "
+                        "deutschsprachigen Mittelstand und bei Traegern der "
+                        "Sozialwirtschaft."),
+        "decision_makers_de": ("Geschaeftsfuehrung, kaufmaennische Leitung, "
+                               "Leitung Rechnungswesen"),
+        "focus_topics_de": ("datierte Fristen und ihre Vorlaufzeit: IFRS 18, "
+                            "E-Rechnung, AVR; dazu Eigentuemerwechsel im "
+                            "Anbietermarkt und was sie fuer Bestandskunden "
+                            "bedeuten"),
+        "pains": ("Fristen, deren Arbeit ein Jahr vor dem Stichtag anfaellt; "
+                  "Planung, die nach einem Anbieterwechsel keine eigene "
+                  "Roadmap mehr hat"),
+        "kpis": ("Vorlauf bis zum Stichtag, doppelte Rechenlaeufe vermieden, "
+                 "Planungssicherheit ueber die Vertragslaufzeit"),
+        "vocabulary_use": ("Vergleichsjahr, Stichtag, Gliederung, "
+                           "Eingruppierung, Bestandskunde, Roadmap"),
+        "vocabulary_avoid": ("Tagesgeschaeft aus dem Projekt, Schulungsanekdoten, "
+                             "Produktbedienung"),
+        "scene_de": ("eine Geschaeftsfuehrung, die den Kalender fuer 2027 "
+                     "aufschlaegt und drei Fristen im selben Quartal findet"),
+        "scene_en": ("a managing director opening the 2027 calendar and "
+                     "finding three deadlines in the same quarter"),
+        "cta_style": "reply",
+    },
+    {
+        "id": "baumert",
+        "label": "Inga Baumert, Marketing Operations Manager",
+        "share": "secondary",
+        "axis": ("Auswertungen aus vorhandenem Material, Nutzen einer Funktion "
+                 "im Alltag, Fragen an die Community. Referiert Befunde, "
+                 "urteilt nicht fachlich"),
+        "audience_de": ("Anwenderinnen und Anwender in Controlling und "
+                        "Rechnungswesen, dazu die Fachoeffentlichkeit im "
+                        "deutschsprachigen Raum."),
+        "decision_makers_de": ("Controlling- und Rechnungswesen-Teams, die mit "
+                               "der Planung taeglich arbeiten"),
+        "focus_topics_de": ("was in den eigenen Anwenderberichten steht, "
+                            "Funktionen und ihr Nutzen im Alltag, offene "
+                            "Fragen an die Community"),
+        "pains": ("Funktionen, die vorhanden sind und trotzdem nicht genutzt "
+                  "werden; Vorarbeit vor der eigentlichen Planung, die in "
+                  "keinem Projektplan steht"),
+        "kpis": ("Antworten und Kommentare je Frage, Nutzung vorhandener "
+                 "Funktionen"),
+        "vocabulary_use": ("Anwenderbericht, ausgezaehlt, Befund, Lesart, "
+                           "Versionsvergleich, Berichtsverteilung"),
+        "vocabulary_avoid": ("AVR, IFRS, E-Rechnung und jede andere fachliche "
+                             "Bewertung von Regulierung oder Tarifrecht; "
+                             "Aussagen ueber Bilanzierung"),
+        "scene_de": ("jemand, der die eigenen Anwenderberichte auszaehlt und "
+                     "ein unerwartetes Muster findet"),
+        "scene_en": ("someone counting their own customer stories and finding "
+                     "an unexpected pattern"),
+        "cta_style": "question",
+    },
+    {
+        "id": "unternehmensseite",
+        "label": "SWOT Unternehmensseite",
+        "share": "secondary",
+        "axis": ("Anwenderberichte aus einzelnen Branchen und Marktueberblick, "
+                 "gesprochen als Unternehmen"),
+        "audience_de": ("Controlling und kaufmaennische Leitung quer durch die "
+                        "Branchen der 52 Anwenderberichte, mit Schwerpunkt "
+                        "Sozialwirtschaft."),
+        "decision_makers_de": ("kaufmaennische Leitung und Controlling-Leitung "
+                               "in Mittelstand, Sozialwirtschaft und "
+                               "Wohnungswirtschaft"),
+        "focus_topics_de": ("belegte Kundenprojekte: was vorher war, was sich "
+                            "gemessen geaendert hat, worauf bei der Auswahl zu "
+                            "achten ist"),
+        "pains": ("abgebrochene Controlling-Projekte; Einfuehrungen, die an "
+                  "Schnittstellen haengen bleiben; Auswahlkriterien, die die "
+                  "Besonderheiten der eigenen Branche nicht abbilden"),
+        "kpis": ("Dauer bis zur produktiven Nutzung, Aufwand je Berichtszyklus, "
+                 "Zahl der angebundenen Vorsysteme"),
+        "vocabulary_use": ("Anwenderbericht, Einfuehrung, Schnittstelle, "
+                           "Gesellschaften, Kostenstellen, Berichtszyklus"),
+        "vocabulary_avoid": ("Ich-Form, persoenliche Anekdote, Meinung ohne "
+                             "Beleg aus einem Kundenprojekt"),
+        "scene_de": ("ein Controller, der nach der Umstellung das erste Mal "
+                     "monatlich statt jaehrlich berichtet"),
+        "scene_en": ("a controller reporting monthly instead of annually for "
+                     "the first time after the switch"),
+        "cta_style": "reply",
+    },
+]
 
 # Bild-Texte auf Deutsch (Zielgruppe DACH-Berater).
 IMAGE_LANGUAGE = "German"
@@ -253,5 +519,10 @@ COMMENT_DRAFTS = {
 
 # Kein Default: NOTION_DB_ID muss als Env gesetzt sein (eigene SWOT-Content-DB).
 NOTION_DB_ID_DEFAULT = None
+
+# Eigene Themen-DB "SWOT Topic Ideas (mined)", angelegt 19.08.2026 unter
+# Jolly Blogging Engine. Bewusst NICHT im SWOT-Dashboard: das ist das
+# Kundenportal, ungepruefte Themenvorschlaege gehoeren dort nicht hin.
+TOPIC_IDEAS_DB_ID_DEFAULT = "3c11617b-1baf-81f2-b521-d4bab7bc8656"
 
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")

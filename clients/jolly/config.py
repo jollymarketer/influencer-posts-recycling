@@ -150,6 +150,11 @@ SCRAPE = {
 
 NOTION_DB_ID_DEFAULT = "778bd719db9147ff994ddbf8a4ecac34"
 
+# Themen-DB "Blog Pipeline" unter Jolly Blogging Engine. Stand bis 19.08.2026
+# nur als globale Env-Variable TOPIC_IDEAS_DB_ID und war damit der Wert, den
+# JEDER Mandant getroffen haette.
+TOPIC_IDEAS_DB_ID_DEFAULT = "3741617b-1baf-81e3-a7b0-efc87db4a283"
+
 NOTION_TOKEN_ENV = "NOTION_TOKEN"
 MAKE_WEBHOOK_ENV = "MAKE_REVIEW_WEBHOOK"
 
