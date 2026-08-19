@@ -13,14 +13,16 @@ Standalone / on-demand. Does NOT touch the daily run_research flow.
     python run_keyword_scrape.py --no-write            # scrape only, skip Supabase upsert
 """
 import argparse
+import os
 import sys
 
+from clients import load_client
 from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.supabase_db import upsert_posts
 
 # Locked 2026-06-08 with Richard. Derived from the AI-visibility scoreboard gaps + beachheads.
 # Commercial pillars + mechanism long-tails + AI/KI-applied-to-GTM. No HubSpot, no cold calling.
-KEYWORDS = [
+JOLLY_KEYWORDS = [
     # Commercial pillars
     "revenue operations",
     "b2b lead generation",
@@ -49,6 +51,26 @@ KEYWORDS = [
 # single broad term via --author-keywords (e.g. "sales") if you want it. Off-industry/hiring noise is
 # better handled post-scrape (see virality filter + downstream blog_score clusterer).
 AUTHOR_KEYWORDS = ""
+
+
+def resolve_keywords(cfg, client_name: str) -> list:
+    """Keyword-Set des Mandanten. JOLLY_KEYWORDS ist jollys eigene, am 08.06.2026
+    gelockte Liste und gilt NUR fuer jolly. Jeder andere Mandant muss KEYWORDS in
+    seiner clients/<name>/config.py definieren - kein stiller Fallback, sonst
+    scrapt ein Fremdmandant gegen jollys Themen (Richard, 19.08.2026)."""
+    own = getattr(cfg, "KEYWORDS", None)
+    if own:
+        return list(own)
+    if client_name == "jolly":
+        return list(JOLLY_KEYWORDS)
+    raise SystemExit(
+        f"Abbruch: Mandant '{client_name}' hat keine KEYWORDS in clients/{client_name}/config.py. "
+        f"JOLLY_KEYWORDS gilt nur fuer jolly."
+    )
+
+
+_CLIENT = os.getenv("CLIENT", "jolly").strip().lower()
+KEYWORDS = resolve_keywords(load_client(), _CLIENT)
 
 
 def scrape_and_persist(keywords=None, max_posts=20, posted_limit="month",

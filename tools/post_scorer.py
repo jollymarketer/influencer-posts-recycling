@@ -26,6 +26,12 @@ CLIENT_CONTEXT = _cfg.CONTEXT
 # jolly bleibt auf Haiku (keine stille Kostenerhoehung beim Fremd-Mandanten).
 SCORING_MODEL = getattr(_cfg, "SCORING_MODEL", "claude-haiku-4-5-20251001")
 
+# Viralitaets-Gewicht pro Mandant (Richard 2026-08-19). Default 1.0 = unveraendert.
+# In stillen Nischen wie DACH-Controlling spuelt volles Gewicht Vendor-Marketing
+# nach oben; SWOT faehrt deshalb gedaempft. Content-Anteil bleibt immer max 50.
+VIRALITY_WEIGHT = float(getattr(_cfg, "VIRALITY_WEIGHT", 1.0))
+MAX_SCORE = int(round(50 + 10 * VIRALITY_WEIGHT))
+
 # Der Scoring-Prompt ist in zwei Bloecke geteilt, damit Prompt-Caching greift:
 # der Kopf (Rolle + KONTEXT) ist ueber alle Posts eines Laufs byte-identisch, alles
 # ab "Bewerte diesen..." wechselt pro Post. Reihenfolge und Wortlaut sind gegenueber
@@ -1117,6 +1123,11 @@ def build_infographic_prompt(skeleton: str, language: str = "German") -> str:
     )
 
 
+def weighted_total(content_total: int, virality_score: int, weight: float) -> int:
+    """Gesamtscore aus Inhalt (max 50) und gewichteter Viralitaet (max 10*weight)."""
+    return int(content_total + round(virality_score * weight))
+
+
 def calculate_virality_score(engagement: dict) -> int:
     """
     Berechnet einen Viralitaets-Score (0-10) basierend auf Engagement-Metriken.
@@ -1201,7 +1212,7 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
                 + scores["einzigartigkeit"]
                 + scores.get("themen_diversitaet", 8)
             )
-            total = content_total + virality_score
+            total = weighted_total(content_total, virality_score, VIRALITY_WEIGHT)
             extra = {}
             if classify:
                 extra = {f: str(scores.get(f, "") or "") for f in _CLASSIFY_FIELDS}

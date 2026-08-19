@@ -123,15 +123,50 @@ IMAGE_LANGUAGE = "German"
 LOGO_FILE = "swot_logo.png"
 
 FEATURES = {
-    "supabase_persist": False,
-    "keyword_scrape": False,
-    "topic_mining": False,
+    # Themen-Recherche scharfgestellt am 19.08.2026 (Richard). Der Kommentar-Pfad
+    # bleibt unveraendert; neu ist die Themenfindung ueber Stichwort-Scrape plus
+    # woechentliches Clustering, damit die Folgemonate nicht von Hand gefuellt werden.
+    "supabase_persist": True,
+    "keyword_scrape": True,
+    "topic_mining": True,
     "keyword_source_daily": False,
     "en_draft": False,
     "grammar_check": True,
     # Kein Slate- und kein Winner-Pfad, siehe Modul-Docstring.
     "slate_mode": False,
 }
+
+# Stichwortliste SWOT, gesetzt 19.08.2026. Deutsch, weil die Zielgruppe deutsch
+# postet. Bewusst keine Head-Terms wie "Controlling Software": dort dominieren
+# LucaNet und Jedox, und der Scrape zieht dann Vendor-Marketing statt Fachstimmen.
+KEYWORDS = [
+    # Kernprozesse
+    "Liquiditaetsplanung",
+    "integrierte Finanzplanung",
+    "Konsolidierung HGB",
+    "Konzernabschluss",
+    "Kostenstellenrechnung",
+    "Szenarioplanung",
+    "Forecast Genauigkeit",
+    "Reporting Automatisierung",
+    # Datierte Ausloeser
+    "IFRS 18",
+    "E-Rechnung Pflicht",
+    "AVR Caritas",
+    "Personalkostenplanung",
+    # Zielgruppen-Kontext
+    "Wirtschaftsplan Traeger",
+    "Controlling Mittelstand",
+    "Planungssoftware Auswahl",
+]
+
+# Scoring-Justierung fuer die stille DACH-Controlling-Nische (Richard 19.08.2026,
+# Begruendung in der Vault-Notiz "SWOT Content-Research-Quellen" vom 29.07.2026).
+# Volles Viralitaets-Gewicht wuerde Vendor-Marketing nach oben spuelen; ein Beitrag
+# mit 12 Reaktionen von einem kaufmaennischen Leiter ist fuer SWOT mehr wert als
+# 800 Reaktionen unter einem Berater-Karussell. Max-Score sinkt damit auf 53.
+VIRALITY_WEIGHT = 0.3
+MIN_SCORE = 15
 
 # Wird vom Kommentar-Pfad nicht gelesen (der nutzt COMMENT_DRAFTS), steht hier
 # nur, weil tools/linkedin_scraper.py das Attribut erwartet.

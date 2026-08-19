@@ -7,7 +7,7 @@ Flow:
 1. Bestehende Post-URLs aus Notion laden (Duplikat-Filter)
 2. Neue Posts scrapen (LinkedIn + Substack)
 3. Posts scoren (in-memory, KI + Engagement)
-4. Winner waehlen (Mindest-Score: 25/60)
+4. Winner waehlen (Mindest-Score pro Mandant, Default 25/60)
 5. DACH-LinkedIn-Draft + Bild-Prompt generieren
 6. Bild generieren (kie.ai)
 7. NUR den Winner in Notion speichern (Status: "Ready to Review")
@@ -45,6 +45,7 @@ from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.substack_scraper import scrape_substack_posts
 from tools.engagement_readback import run_readback
 from tools.post_scorer import (
+    MAX_SCORE,
     score_posts,
     generate_post_and_image_prompt,
     pick_format,
@@ -80,9 +81,11 @@ from run_topic_mining import run_topic_mining
 from run_keyword_scrape import scrape_and_persist
 from tools.topic_decisions_db import sync_topic_decisions
 
-MIN_SCORE = 25
-
 _cfg = load_client()
+
+# Mindest-Score pro Mandant (Richard 2026-08-19): in stillen Nischen reisst 25
+# regelmaessig und die Kette laeuft leer. Default bleibt 25.
+MIN_SCORE = int(getattr(_cfg, "MIN_SCORE", 25))
 _EN_ENABLED = _cfg.FEATURES.get("en_draft", True)
 
 
@@ -194,10 +197,10 @@ def run_daily():
     winner = scored[0] if scored and scored[0]["score"] >= MIN_SCORE else None
     if not winner:
         top_score = scored[0]["score"] if scored else 0
-        print(f"\n  Kein Post erreicht Mindest-Score {MIN_SCORE}/60 (bester: {top_score}). Run beendet.")
+        print(f"\n  Kein Post erreicht Mindest-Score {MIN_SCORE}/{MAX_SCORE} (bester: {top_score}). Run beendet.")
         return
 
-    print(f"\nSchritt 4: Winner = {winner['influencer']} (Score: {winner['score']}/60)")
+    print(f"\nSchritt 4: Winner = {winner['influencer']} (Score: {winner['score']}/{MAX_SCORE})")
 
     # Schritt 4.35: Matrix-Ziel-Box (Quota 50/30/20 + Selection-Floor + Promotion-Kappe).
     # Non-fatal: jeder Fehler -> freier Best-Fit-Run wie bisher.
@@ -218,7 +221,7 @@ def run_daily():
             target_box = None
         else:
             winner = eligible[best_idx]
-            print(f"  Box-Winner: {winner['influencer']} (Score: {winner['score']}/60)")
+            print(f"  Box-Winner: {winner['influencer']} (Score: {winner['score']}/{MAX_SCORE})")
 
     # Schritt 4.5: Format waehlen (best-fit + anti-repeat, Pierre-Herubel Format-Varietaet)
     try:
@@ -450,7 +453,7 @@ def run_daily():
 
     duration = (datetime.now(timezone.utc) - start_time).seconds
     print(f"\n=== DONE ===")
-    print(f"Winner: {winner['influencer']} (Score: {winner['score']}/60)")
+    print(f"Winner: {winner['influencer']} (Score: {winner['score']}/{MAX_SCORE})")
     print(f"Dauer: {duration}s")
 
 
