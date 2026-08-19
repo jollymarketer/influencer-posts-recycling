@@ -32,6 +32,16 @@ class AccountMismatch(RuntimeError):
     """Der Token gehoert zu einem anderen Apify-Konto als erwartet."""
 
 
+def _feld(obj, name: str) -> str:
+    """Feld aus der Apify-Antwort lesen. Der Client liefert je nach SDK-Version
+    ein dict oder ein Pydantic-Modell (UserPrivateInfo), deshalb beide Wege."""
+    if obj is None:
+        return ""
+    if isinstance(obj, dict):
+        return str(obj.get(name) or "")
+    return str(getattr(obj, name, "") or "")
+
+
 def _client_config():
     from clients import load_client
     return load_client()
@@ -69,8 +79,8 @@ def verify_account(client, cfg=None) -> str:
     if erwartet in _verified:
         return _verified[erwartet]
 
-    me = client.user().get() or {}
-    ist = (me.get("username") or "").strip()
+    me = client.user().get()
+    ist = _feld(me, "username").strip()
     if ist.lower() != erwartet.lower():
         raise AccountMismatch(
             f"Apify-Konto '{ist or 'unbekannt'}' erwartet war '{erwartet}'. "
@@ -78,7 +88,7 @@ def verify_account(client, cfg=None) -> str:
             f"{token_env_name(cfg)} in {_ENV_PATH}."
         )
     _verified[erwartet] = ist
-    print(f"  Apify-Konto: {ist} ({me.get('email', 'ohne E-Mail')})")
+    print(f"  Apify-Konto: {ist} ({_feld(me, 'email') or 'ohne E-Mail'})")
     return ist
 
 

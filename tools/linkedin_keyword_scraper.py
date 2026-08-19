@@ -88,31 +88,57 @@ def _author_name(item) -> str:
     return item.get("authorFullName") or item.get("authorName") or ""
 
 
+def _clean_profile_url(url: str) -> str:
+    """Tracking-Parameter und /posts-Suffix entfernen.
+
+    Der Actor liefert URLs wie ".../in/max?miniProfileUrn=urn%3Ali%3A..." und
+    ".../company/x/posts". Beides gehoert nicht in influencers.csv: der Query
+    veraltet, und /posts ist eine Unterseite, kein Profil (Livelauf 19.08.2026).
+    """
+    url = (url or "").split("?")[0].split("#")[0].rstrip("/")
+    if url.endswith("/posts"):
+        url = url[: -len("/posts")]
+    return url
+
+
 def _author_url(item) -> str:
-    """Profil-URL des Autors. Der Actor benennt das Feld nicht stabil, deshalb
-    mehrere Kandidaten. Ohne URL laesst sich ein Fund nicht in influencers.csv
-    eintragen (Richard, 19.08.2026)."""
+    """Profil-URL des Autors, bevorzugt kanonisch aus publicIdentifier gebaut."""
     author = item.get("author")
     if isinstance(author, dict):
+        slug = str(author.get("publicIdentifier") or "").strip()
+        typ = str(author.get("type") or "").strip().lower()
+        if slug:
+            teil = "company" if typ == "company" else "in"
+            return f"https://www.linkedin.com/{teil}/{slug}"
         for key in ("linkedinUrl", "url", "profileUrl", "publicProfileUrl", "link"):
             val = author.get(key)
             if val:
-                return str(val)
+                return _clean_profile_url(str(val))
     for key in ("authorProfileUrl", "authorUrl", "authorLinkedinUrl"):
         val = item.get(key)
         if val:
-            return str(val)
+            return _clean_profile_url(str(val))
     return ""
 
 
 def _author_headline(item) -> str:
+    """Positionszeile des Autors. Der Actor nennt das Feld `info`, nicht
+    `headline` - im Livelauf 19.08.2026 verifiziert."""
     author = item.get("author")
     if isinstance(author, dict):
-        for key in ("headline", "occupation", "subtitle", "position"):
+        for key in ("info", "headline", "occupation", "subtitle", "position"):
             val = author.get(key)
             if val:
                 return str(val)
     return str(item.get("authorHeadline") or "")
+
+
+def _author_type(item) -> str:
+    """`profile` oder `company`. Fuer die Stimmen-Suche zaehlen Personen."""
+    author = item.get("author")
+    if isinstance(author, dict):
+        return str(author.get("type") or "").strip().lower()
+    return ""
 
 
 def _post_date(posted_at) -> str:
@@ -140,6 +166,7 @@ def extract_keyword_post(item) -> dict | None:
         "influencer": _author_name(item),
         "author_url": _author_url(item),
         "author_headline": _author_headline(item),
+        "author_type": _author_type(item),
         "post_url": post_url,
         "post_text": post_text,
         "post_excerpt": post_text[:300],

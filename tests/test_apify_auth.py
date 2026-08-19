@@ -16,17 +16,24 @@ class _Cfg:
             setattr(self, k, v)
 
 
+class _PydanticLike:
+    """Mimikt UserPrivateInfo des Apify-SDK: Attribute statt dict-Zugriff."""
+    def __init__(self, username, email):
+        self.username = username
+        self.email = email
+
+
 class _FakeUser:
-    def __init__(self, username, email="x@y.z"):
-        self._d = {"username": username, "email": email}
+    def __init__(self, username, email="x@y.z", as_model=False):
+        self._d = _PydanticLike(username, email) if as_model else {"username": username, "email": email}
 
     def get(self):
         return self._d
 
 
 class _FakeClient:
-    def __init__(self, username):
-        self._u = _FakeUser(username)
+    def __init__(self, username, as_model=False):
+        self._u = _FakeUser(username, as_model=as_model)
         self.calls = 0
 
     def user(self):
@@ -102,3 +109,16 @@ def test_jolly_config_bleibt_unveraendert():
 
     assert auth.token_env_name(jolly) == "APIFY_API_KEY"
     assert auth.expected_account(jolly) == ""
+
+
+def test_wache_versteht_auch_das_pydantic_modell_des_sdk():
+    """Das Apify-SDK liefert UserPrivateInfo, kein dict. Am 19.08.2026 im
+    Livelauf aufgefallen: .get('username') warf AttributeError."""
+    assert auth.verify_account(_FakeClient("kueswot", as_model=True),
+                               _Cfg(APIFY_ACCOUNT="kueswot")) == "kueswot"
+
+
+def test_pydantic_modell_mit_falschem_konto_bricht_ebenfalls_ab():
+    with pytest.raises(auth.AccountMismatch):
+        auth.verify_account(_FakeClient("known_pencil", as_model=True),
+                            _Cfg(APIFY_ACCOUNT="kueswot"))

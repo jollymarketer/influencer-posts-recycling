@@ -28,22 +28,52 @@ from collections import defaultdict
 # Gilt fuer jeden Anbieter konkurrierender Planungs-, Konsolidierungs- oder
 # Liquiditaetssoftware, deshalb zusaetzlich generische Produktbegriffe.
 VENDOR_TERMS = {
+    # Sperre Christian Kulle 13.08.2026 plus die von uns ergaenzten
     "jedox", "lucanet", "corporate planning", "corporate planner", "agicap",
     "tidely", "idl", "prevero", "unit4", "cubus", "swot controlling",
+    # weitere Planungs-, Konsolidierungs- und Liquiditaetssoftware
     "anaplan", "board international", "pigment", "workday adaptive",
     "oracle epm", "sap analytics cloud", "onestream", "vena solutions",
+    "nomentia", "cashlink", "treasury software", "liquiditaetssoftware",
+    # generische Produktbegriffe in Firmennamen und Positionszeilen
     "planungssoftware", "controlling-software", "controlling software",
-    "epm software", "cpm software", "fp&a software",
+    "epm software", "cpm software", "fp&a software", "saas",
+}
+
+# Vertriebsrollen bei Anbietern: die Positionszeile verraet sie, auch wenn der
+# Firmenname unbekannt ist. Im Probelauf 19.08.2026 war der erste Treffer ein
+# "Senior Sales Manager - Automotive" - fachlich fuer SWOT wertlos.
+SALES_TERMS = {
+    "sales manager", "account executive", "account manager", "vertriebsleiter",
+    "business development", "sales director", "head of sales", "sales representative",
+}
+
+# Haeufige deutsche Funktionswoerter. Der Actor sortiert nach Relevanz, nicht
+# nach Sprache; im Probelauf kamen englische und chinesische Beitraege zurueck.
+DE_STOPWORDS = {
+    "und", "die", "der", "das", "nicht", "mit", "sich", "auch", "ist", "wir",
+    "man", "aber", "wenn", "eine", "einen", "einem", "fuer", "für", "auf",
+    "dass", "bei", "sind", "wird", "werden", "haben", "kann", "noch", "schon",
 }
 
 
+def is_german(text: str, min_treffer: int = 4) -> bool:
+    """Grobe Sprachpruefung ueber Funktionswoerter. Bewusst ohne Bibliothek:
+    fuer die Frage deutsch oder nicht reicht das, und eine Abhaengigkeit mehr
+    waere fuer diesen Zweck unverhaeltnismaessig."""
+    woerter = {w.strip(".,;:!?()[]\"'").lower() for w in (text or "").split()}
+    return len(woerter & DE_STOPWORDS) >= min_treffer
+
+
 def is_vendor(name: str, headline: str) -> bool:
-    """True, wenn Name oder Headline auf einen Softwareanbieter zeigt."""
+    """True, wenn Name oder Positionszeile auf einen Softwareanbieter oder eine
+    Vertriebsrolle zeigt."""
     haystack = f"{name or ''} {headline or ''}".lower()
-    return any(term in haystack for term in VENDOR_TERMS)
+    return any(term in haystack for term in VENDOR_TERMS | SALES_TERMS)
 
 
-def aggregate_authors(posts: list, min_posts: int = 2) -> list:
+def aggregate_authors(posts: list, min_posts: int = 2, nur_personen: bool = True,
+                      nur_deutsch: bool = True) -> list:
     """Autoren nach Haeufigkeit und Viralitaet buendeln, Vendor-Treffer raus.
 
     Autoren ohne Profil-URL fallen weg: ohne URL laesst sich niemand in
@@ -53,6 +83,10 @@ def aggregate_authors(posts: list, min_posts: int = 2) -> list:
     for p in posts:
         url = (p.get("author_url") or "").strip()
         if not url:
+            continue
+        if nur_personen and p.get("author_type") == "company":
+            continue
+        if nur_deutsch and not is_german(p.get("post_text") or p.get("post_excerpt") or ""):
             continue
         name = p.get("influencer") or ""
         headline = p.get("author_headline") or ""
@@ -92,6 +126,10 @@ def main() -> int:
                     help="0 lassen: in der stillen Nische zaehlt Fachlichkeit, nicht Reichweite")
     ap.add_argument("--keywords", nargs="*", help="Teilmenge, fuer guenstige Probelaeufe")
     ap.add_argument("--out", default="kandidaten_stimmen.csv")
+    ap.add_argument("--mit-firmen", action="store_true",
+                    help="Firmenseiten mitnehmen (Default: nur Personen)")
+    ap.add_argument("--alle-sprachen", action="store_true",
+                    help="Sprachfilter aus (Default: nur deutschsprachige Beitraege)")
     args = ap.parse_args()
 
     from clients import load_client
@@ -113,7 +151,9 @@ def main() -> int:
     if ohne_url:
         print(f"  Hinweis: {ohne_url} Beitraege ohne Autoren-URL, fallen raus.")
 
-    rows = aggregate_authors(posts, min_posts=args.min_posts)
+    rows = aggregate_authors(posts, min_posts=args.min_posts,
+                             nur_personen=not args.mit_firmen,
+                             nur_deutsch=not args.alle_sprachen)
     print(f"  {len(rows)} Kandidaten mit mindestens {args.min_posts} Beitraegen.")
     write_candidates(rows, args.out)
     print(f"  geschrieben: {args.out}")
