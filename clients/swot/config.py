@@ -136,28 +136,62 @@ FEATURES = {
     "slate_mode": False,
 }
 
-# Stichwortliste SWOT, gesetzt 19.08.2026. Deutsch, weil die Zielgruppe deutsch
-# postet. Bewusst keine Head-Terms wie "Controlling Software": dort dominieren
-# LucaNet und Jedox, und der Scrape zieht dann Vendor-Marketing statt Fachstimmen.
+# Stichwortliste SWOT. Erweitert 19.08.2026 von 15 auf 40 Begriffe.
+# Die Begriffe sind nicht geraten, sondern aus der Kundensprache gemessen:
+# 71 Dateien aus Case-Studies/_markdown, voc-run-1-berater/evidence und
+# voc-sales-calls, 2,36 Mio Zeichen. Trefferzahlen im Korpus in Klammern.
+# Bewusst keine Head-Terms wie "Controlling Software": dort dominieren LucaNet
+# und Jedox, und der Scrape zieht Vendor-Marketing statt Fachstimmen.
 KEYWORDS = [
-    # Kernprozesse
-    "Liquiditaetsplanung",
+    # Planung und Abschluss (Kernprozesse)
+    "Liquiditaetsplanung",              # 35
+    "Liquiditaetsvorschau",
     "integrierte Finanzplanung",
-    "Konsolidierung HGB",
-    "Konzernabschluss",
-    "Kostenstellenrechnung",
+    "integrierte Planung",              # 23
+    "Unternehmensplanung",              # 8
+    "Cashflow Planung",                 # 17 cashflow
     "Szenarioplanung",
-    "Forecast Genauigkeit",
-    "Reporting Automatisierung",
+    "Investitionsplanung",
+    "Budgetierung Mittelstand",
+    "Mittelfristplanung",
+    "Konsolidierung",                   # 27
+    "Konzernabschluss",
+    "Monatsabschluss",                  # 8
+    # Rechnungswesen und Steuerung
+    "Kostenstellenrechnung",            # 101 kostenstellen
+    "Kostentraegerrechnung",            # 23
+    "Deckungsbeitragsrechnung",         # 7
+    "Soll-Ist-Vergleich",               # 31
+    "Hochrechnung Jahresende",          # 20
+    "Forecast Genauigkeit",             # 64 forecast
+    "Kennzahlensystem",                 # 84 kennzahlen
+    # Werkzeuge und Bruchstellen (staerkstes Signal im Korpus)
+    "Excel Controlling",                # 426 excel
+    "Excel Planung abloesen",
+    "Schnittstelle DATEV",              # 191 schnittstelle, 157 datev
+    "DATEV Auswertung",
+    "ERP Schnittstelle Controlling",    # 40 erp
+    "Berichtswesen automatisieren",     # 9
+    "Reporting Automatisierung",        # 215 reporting
+    "Controlling Dashboard",            # 26 dashboard
     # Datierte Ausloeser
     "IFRS 18",
     "E-Rechnung Pflicht",
     "AVR Caritas",
-    "Personalkostenplanung",
-    # Zielgruppen-Kontext
-    "Wirtschaftsplan Traeger",
+    "AVR Diakonie",
+    "Personalkostenplanung",            # 11
+    "Tarifsteigerung Planung",
+    # Zielgruppen und Branchen
+    "Wirtschaftsplan Traeger",          # 40 wirtschaftsplan
+    "Controlling Sozialwirtschaft",     # 71 sozialwirtschaft
+    "Controlling Wohnungswirtschaft",   # 7
     "Controlling Mittelstand",
     "Planungssoftware Auswahl",
+    # Berater-Kontext (Welle 1)
+    "Planungsmandat",                   # 440 mandant/mandanten
+    "Bankgespraech Planung",            # 32 banken
+    "Restrukturierung Mittelstand",     # 17 restrukturierung
+    "Sanierungsberatung",               # 26 sanierung
 ]
 
 # Scoring-Justierung fuer die stille DACH-Controlling-Nische (Richard 19.08.2026,
