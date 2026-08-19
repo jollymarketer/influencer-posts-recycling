@@ -103,7 +103,7 @@ def required_env(cfg) -> list:
     env = [
         (getattr(cfg, "NOTION_TOKEN_ENV", "NOTION_TOKEN"), HARD),
         ("ANTHROPIC_API_KEY", HARD),
-        ("APIFY_API_KEY", HARD),
+        (getattr(cfg, "APIFY_TOKEN_ENV", "APIFY_API_KEY"), HARD),
         ("KIEAI_API_KEY", SOFT),
         (getattr(cfg, "MAKE_WEBHOOK_ENV", "MAKE_REVIEW_WEBHOOK"), SOFT),
     ]
@@ -171,9 +171,12 @@ def check_notion(cfg) -> list:
 
 
 def check_apify(cfg) -> list:
-    token = os.getenv("APIFY_API_KEY")
+    # Tokenname pro Mandant, sonst prueft der Health-Check Jollys Konto,
+    # waehrend der Lauf auf dem Mandantenkonto stattfindet.
+    name = getattr(cfg, "APIFY_TOKEN_ENV", "APIFY_API_KEY")
+    token = os.getenv(name)
     if not token:
-        return [_result("apify", False, HARD, "APIFY_API_KEY fehlt - Check uebersprungen")]
+        return [_result("apify", False, HARD, f"{name} fehlt - Check uebersprungen")]
     out = []
     try:
         resp = requests.get("https://api.apify.com/v2/users/me",

@@ -199,6 +199,13 @@ KEYWORDS = [
 # Volles Viralitaets-Gewicht wuerde Vendor-Marketing nach oben spuelen; ein Beitrag
 # mit 12 Reaktionen von einem kaufmaennischen Leiter ist fuer SWOT mehr wert als
 # 800 Reaktionen unter einem Berater-Karussell. Max-Score sinkt damit auf 53.
+# Apify-Konto SWOT, getrennt von Jolly seit 12.08.2026 (Konto "kueswot",
+# kue@swot.de). Der Tokenname weicht bewusst ab, damit ein fehlender SWOT-Token
+# NICHT still auf Jollys APIFY_API_KEY zurueckfaellt. Die Wache in
+# tools/apify_auth.py prueft zusaetzlich den Kontonamen vor dem ersten Lauf.
+APIFY_TOKEN_ENV = "APIFY_API_TOKEN_SWOT"
+APIFY_ACCOUNT = "kueswot"
+
 VIRALITY_WEIGHT = 0.3
 MIN_SCORE = 15
 

@@ -13,7 +13,7 @@ import math
 import os
 import sys
 
-from apify_client import ApifyClient
+from tools.apify_auth import apify_client
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,7 +22,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+# Token und Kontowache pro Mandant, siehe tools/apify_auth.py
 ACTOR_ID = "harvestapi/linkedin-post-search"
 MIN_WORDS = 50
 
@@ -88,6 +88,33 @@ def _author_name(item) -> str:
     return item.get("authorFullName") or item.get("authorName") or ""
 
 
+def _author_url(item) -> str:
+    """Profil-URL des Autors. Der Actor benennt das Feld nicht stabil, deshalb
+    mehrere Kandidaten. Ohne URL laesst sich ein Fund nicht in influencers.csv
+    eintragen (Richard, 19.08.2026)."""
+    author = item.get("author")
+    if isinstance(author, dict):
+        for key in ("linkedinUrl", "url", "profileUrl", "publicProfileUrl", "link"):
+            val = author.get(key)
+            if val:
+                return str(val)
+    for key in ("authorProfileUrl", "authorUrl", "authorLinkedinUrl"):
+        val = item.get(key)
+        if val:
+            return str(val)
+    return ""
+
+
+def _author_headline(item) -> str:
+    author = item.get("author")
+    if isinstance(author, dict):
+        for key in ("headline", "occupation", "subtitle", "position"):
+            val = author.get(key)
+            if val:
+                return str(val)
+    return str(item.get("authorHeadline") or "")
+
+
 def _post_date(posted_at) -> str:
     if isinstance(posted_at, dict):
         return posted_at.get("date", "")
@@ -111,6 +138,8 @@ def extract_keyword_post(item) -> dict | None:
     }
     return {
         "influencer": _author_name(item),
+        "author_url": _author_url(item),
+        "author_headline": _author_headline(item),
         "post_url": post_url,
         "post_text": post_text,
         "post_excerpt": post_text[:300],
@@ -141,9 +170,7 @@ def scrape_keyword_posts(
     """
     existing = existing_urls or set()
     if client is None:
-        if not APIFY_API_KEY:
-            raise ValueError("APIFY_API_KEY fehlt in .env")
-        client = ApifyClient(APIFY_API_KEY)
+        client = apify_client()
 
     run_input = build_run_input(keywords, max_posts, posted_limit, sort_by, author_keywords)
     run = client.actor(ACTOR_ID).call(run_input=run_input)

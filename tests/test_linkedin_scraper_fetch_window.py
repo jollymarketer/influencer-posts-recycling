@@ -178,7 +178,6 @@ def _item(target_url, post_id, age_hours):
 def scraper_env(monkeypatch, no_watermark):
     """Verdrahtet scrape_new_posts ohne Netz: feste Influencer-Liste, Fake-Apify,
     aufgezeichnete Zeitmarken-Schreibvorgaenge."""
-    monkeypatch.setattr(linkedin_scraper, "APIFY_API_KEY", "test-key")
     monkeypatch.setattr(linkedin_scraper, "MIN_AGE_HOURS", 6)
     monkeypatch.setattr(linkedin_scraper, "MAX_AGE_HOURS", 36)
     monkeypatch.setattr(linkedin_scraper, "BATCH_SIZE", 2)
@@ -187,7 +186,7 @@ def scraper_env(monkeypatch, no_watermark):
 
     def _build(influencers, batch_results):
         monkeypatch.setattr(linkedin_scraper, "load_influencers", lambda: influencers)
-        monkeypatch.setattr(linkedin_scraper, "ApifyClient", lambda key: object())
+        monkeypatch.setattr(linkedin_scraper, "apify_client", lambda: object())
         calls = []
 
         def fake_batch(client, urls, max_posts=3, window_start=None):

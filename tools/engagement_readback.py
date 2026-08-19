@@ -13,7 +13,7 @@ import re
 import sys
 from datetime import datetime, timezone
 
-from apify_client import ApifyClient
+from tools.apify_auth import apify_client
 from dotenv import load_dotenv
 
 from clients import load_client
@@ -23,7 +23,7 @@ from tools.notion_db import ENGAGEMENT_DIMENSIONS, get_published_rows, update_en
 load_dotenv()
 
 _cfg = load_client()
-APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+# Token und Kontowache pro Mandant, siehe tools/apify_auth.py
 
 # LinkedIn-Share-/Activity-IDs sind 19-stellig. Die Notion-Zeile traegt die
 # Feed-URL des Make-Publishers (urn:li:share:...), der Scraper liefert
@@ -55,12 +55,10 @@ def match_row(row: dict, items: list) -> dict | None:
 
 def fetch_own_posts(profiles: list, max_posts: int, posted_limit: str) -> list:
     """Ein Apify-Run fuer alle eigenen Profile (Batch ist billiger als je Profil)."""
-    if not APIFY_API_KEY:
-        raise ValueError("APIFY_API_KEY fehlt in .env")
     urls = [p["url"] for p in profiles if p.get("url")]
     if not urls:
         return []
-    client = ApifyClient(APIFY_API_KEY)
+    client = apify_client()
     run = client.actor("harvestapi/linkedin-profile-posts").call(run_input={
         "targetUrls": urls,
         "maxPosts": max_posts,

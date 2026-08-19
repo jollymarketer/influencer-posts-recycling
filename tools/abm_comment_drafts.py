@@ -21,7 +21,7 @@ import os
 import sys
 from datetime import datetime, timezone
 
-from apify_client import ApifyClient
+from tools.apify_auth import apify_client
 from dotenv import load_dotenv
 
 from clients import load_client
@@ -33,7 +33,7 @@ from tools.topic_pool import get_meta, set_meta
 
 load_dotenv()
 
-APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+# Token und Kontowache pro Mandant, siehe tools/apify_auth.py
 
 
 def load_watchlist(path: str) -> list:
@@ -48,12 +48,10 @@ def load_watchlist(path: str) -> list:
 def fetch_watchlist_posts(rows: list, settings: dict) -> list:
     """Ein Apify-Run ueber alle Watchlist-Profile, danach harter Altersfilter.
     Rueckgabe je Post inklusive Watchlist-Zeile (Domain, Name, Prio)."""
-    if not APIFY_API_KEY:
-        raise ValueError("APIFY_API_KEY fehlt in .env")
     by_url = {r["linkedin_url"]: r for r in rows}
     if not by_url:
         return []
-    client = ApifyClient(APIFY_API_KEY)
+    client = apify_client()
     run = client.actor("harvestapi/linkedin-profile-posts").call(run_input={
         "targetUrls": list(by_url),
         "maxPosts": settings.get("max_posts_per_profile", 2),

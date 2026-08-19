@@ -11,7 +11,7 @@ import os
 import sys
 from datetime import datetime, timezone, timedelta
 
-from apify_client import ApifyClient
+from tools.apify_auth import apify_client
 from dotenv import load_dotenv
 
 from clients import load_client
@@ -25,7 +25,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+# Token und Kontowache pro Mandant, siehe tools/apify_auth.py
 _cfg = load_client()
 INFLUENCERS_CSV = _cfg.INFLUENCERS_CSV
 
@@ -259,11 +259,9 @@ def scrape_new_posts(existing_urls: set) -> list:
     Filtert auf Posts die 1-5 Tage alt sind (optimale Viralitaets-Messung).
     existing_urls: Set von Post-URLs die bereits in Notion vorhanden sind.
     """
-    if not APIFY_API_KEY:
-        raise ValueError("APIFY_API_KEY fehlt in .env")
 
     started_at = datetime.now(timezone.utc)
-    client = ApifyClient(APIFY_API_KEY)
+    client = apify_client()
     influencers = [i for i in load_influencers() if i["linkedin_url"]]
     name_by_url = {profile_key(i["linkedin_url"]): i["name"] for i in influencers}
     urls = [i["linkedin_url"] for i in influencers]

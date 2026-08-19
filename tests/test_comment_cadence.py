@@ -108,8 +108,7 @@ class _FakeClient:
 def _run_input(settings, monkeypatch):
     from tools import comment_drafts
     client = _FakeClient()
-    monkeypatch.setattr(comment_drafts, "APIFY_API_KEY", "test-key")
-    monkeypatch.setattr(comment_drafts, "ApifyClient", lambda key: client)
+    monkeypatch.setattr(comment_drafts, "apify_client", lambda: client)
     comment_drafts.fetch_fresh_posts(
         [{"name": "A", "linkedin_url": "https://www.linkedin.com/in/a/"}], settings)
     return client.last_run_input

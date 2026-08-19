@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 import anthropic
 import requests
-from apify_client import ApifyClient
+from tools.apify_auth import apify_client
 from dotenv import load_dotenv
 
 from clients import load_client
@@ -31,7 +31,7 @@ load_dotenv()
 
 _cfg = load_client()
 _llm = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-APIFY_API_KEY = os.getenv("APIFY_API_KEY")
+# Token und Kontowache pro Mandant, siehe tools/apify_auth.py
 
 COMMENT_MODEL = "claude-sonnet-4-6"
 
@@ -86,13 +86,11 @@ def rotate_profiles(influencers: list, per_day: int, day_index: int) -> list:
 
 def fetch_fresh_posts(profiles: list, settings: dict) -> list:
     """Ein Apify-Run fuer alle Profile des Tages, danach harter Altersfilter."""
-    if not APIFY_API_KEY:
-        raise ValueError("APIFY_API_KEY fehlt in .env")
     by_url = {p["linkedin_url"]: p["name"] for p in profiles}
     if not by_url:
         return []
     max_age = settings.get("max_age_hours", 30)
-    client = ApifyClient(APIFY_API_KEY)
+    client = apify_client()
     run = client.actor("harvestapi/linkedin-profile-posts").call(run_input={
         "targetUrls": list(by_url),
         "maxPosts": settings.get("max_posts_per_profile", 2),
