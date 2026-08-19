@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import requests
 from dotenv import load_dotenv
 
-from tools.supabase_db import _base_url, _key
+from tools.supabase_db import _base_url, _client_name, _key
 from tools.topic_ideas_db import _db_id as _topic_ideas_db_id
 
 load_dotenv()
@@ -107,6 +107,7 @@ def _to_decision_row(page: dict, now_iso: str) -> dict:
     )
     return {
         "notion_page_id": page["id"],
+        "client": _client_name(),
         "batch_date": created[:10] or None,
         "theme_label": title_prop,
         "title_de": _rt(p, "Suggested Title DE"),
@@ -142,8 +143,10 @@ def sync_topic_decisions() -> int:
 
 
 def get_taste_corpus(limit_each: int = 20) -> dict:
-    """Recent picked/rejected DE titles for mining few-shot. Auto-classifier
-    rejects are excluded — they encode policy, not Richard's taste."""
+    """Recent picked/rejected DE titles for mining few-shot, scoped to the
+    active client: Richards Jolly-Picks kalibrieren nie einen anderen
+    Mandanten. Auto-classifier rejects are excluded — they encode policy,
+    not Richard's taste."""
     key = _key()
     headers = {"apikey": key, "Authorization": f"Bearer {key}", "Accept-Profile": SCHEMA}
 
@@ -152,6 +155,7 @@ def get_taste_corpus(limit_each: int = 20) -> dict:
             f"{_base_url()}/rest/v1/{TABLE}",
             headers=headers,
             params={"select": "title_de,title_en",
+                    "client": f"eq.{_client_name()}",
                     "order": "decided_at.desc.nullslast",
                     "limit": str(limit_each), **params},
             timeout=TIMEOUT,

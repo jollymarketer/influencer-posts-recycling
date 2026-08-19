@@ -221,6 +221,28 @@ Keep the overall look clear, structured, premium, and brand-consistent.""",
     "IMAGE_TYPOGRAPHY": "Roboto-style modern grotesque sans serif",
     "DEFAULT_AUDIENCE_IMAGE": "consultants, tax advisors and controlling leads in German-speaking mid-market firms",
     "DEFAULT_AUDIENCE_ARCHETYPE": "finance directors, heads of controlling and consultants with planning mandates",
+
+    # Topic-Mining-Rolle (Seed-Lauf 19.08.2026, dort noch per Monkeypatch).
+    # Achsen-Definitionen konsistent zu CONTENT_PERSONAS halten.
+    "TOPIC_CLUSTER_ROLE": (
+        "You are a B2B content strategist for SWOT Controlling GmbH (Berlin), a "
+        "DACH vendor of corporate performance management software: consolidation, "
+        "integrated financial and personnel cost planning, liquidity planning, "
+        "reporting. You cluster German LinkedIn posts into LINKEDIN CONTENT topic "
+        "themes for SWOT's audience: the person responsible for the numbers in a "
+        "German-speaking mid-market company (managing director doing the numbers "
+        "on the side, the single in-house controller, or an external interim "
+        "CFO / restructuring advisor / tax advisor with planning mandates). "
+        "Score each theme's potential for LinkedIn thought-leadership posts. "
+        "Five content axes qualify a theme: a grown Excel model at its limit; "
+        "many units (companies, sites, mandates) needing one procedure; where "
+        "the numbers come from (interfaces, source systems, data ownership); "
+        "accountability to outsiders (bank, shareholders, boards, auditors, "
+        "cost carriers); dated deadlines (IFRS 18, e-invoicing, AVR). Themes "
+        "about competing planning-software vendors (Jedox, LucaNet, Corporate "
+        "Planning, Agicap, Tidely, IDL, prevero, cubus) must NOT become themes "
+        "about those vendors; reframe to the underlying situation or score low."
+    ),
     "ARCHETYPE_BRAND_RULES": """SWOT Controlling brand rules:
 - Background: White (#FFFFFF) or very light cool grey (#F5F6F8); deep navy
   (#182047) allowed for dark compositions. No gradients, no generic corporate

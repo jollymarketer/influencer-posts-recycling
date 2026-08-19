@@ -37,12 +37,22 @@ class ThemeCandidate:
     evidence_quote: str = ""
 
 
-SYSTEM_PROMPT = (
-    "You are a B2B content strategist for Jolly Marketer, a Berlin-based B2B "
-    "RevOps/GTM agency serving the DACH market (B2B SaaS, tech services, "
-    "industrial SMEs). You cluster LinkedIn/Substack posts into blog-topic "
-    "themes for jollymarketer.com and score each theme's blog potential."
-)
+def _system_prompt() -> str:
+    """Mandanten-Prompt aus TOKENS["TOPIC_CLUSTER_ROLE"]. Aufloesung zur
+    Laufzeit, nicht beim Import: ein Mandant ohne Token (lisocon,
+    topic_mining=False) muss dieses Modul importieren koennen und darf erst
+    beim tatsaechlichen Clustern hart scheitern. Bis 2026-08-19 stand hier
+    ein fest verdrahteter Jolly-Prompt; der SWOT-Seed-Lauf musste ihn per
+    Monkeypatch ueberschreiben."""
+    from clients import load_client
+    cfg = load_client()
+    role = cfg.TOKENS.get("TOPIC_CLUSTER_ROLE", "")
+    if not role:
+        raise RuntimeError(
+            f"Mandant '{cfg.NAME}' hat kein TOKENS['TOPIC_CLUSTER_ROLE'] in "
+            f"clients/{cfg.NAME}/config.py. Ohne Rolle kein Topic-Clustering."
+        )
+    return role
 
 
 def _build_user_prompt(posts: list[dict], recent_titles: list[str],
@@ -293,7 +303,7 @@ def cluster_topics(posts: list[dict], recent_titles: list[str],
     resp = client.messages.create(
         model=MODEL,
         max_tokens=MAX_TOKENS,
-        system=SYSTEM_PROMPT,
+        system=_system_prompt(),
         messages=[{"role": "user", "content": _build_user_prompt(posts, recent_titles, taste=taste)}],
     )
     raw = resp.content[0].text if resp.content else ""

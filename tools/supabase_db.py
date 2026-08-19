@@ -3,6 +3,11 @@
 Mirrors the raw-requests style of tools/notion_db.py. Reads SUPABASE_URL and
 SUPABASE_SERVICE_KEY from .env. The service-role key bypasses RLS; this is
 internal tooling only.
+
+Mandantenfaehig seit 2026-08-19: jede Zeile traegt `client`, Primaerschluessel
+ist (client, post_url), jeder Lese- und Schreibpfad geht durch _client_name().
+Vorher war das Schema implizit jolly-only; ein SWOT-Lauf haette seine Beitraege
+in Jollys Freitag-Mining gespuelt.
 """
 import os
 from datetime import datetime, timedelta, timezone
@@ -10,11 +15,20 @@ from datetime import datetime, timedelta, timezone
 import requests
 from dotenv import load_dotenv
 
+from clients import load_client
+
 load_dotenv()
 
 SCHEMA = "blog_content_mining"
 TABLE = "influencer_posts"
 TIMEOUT = 30
+
+
+def _client_name() -> str:
+    """Aufloesung zur Laufzeit, nicht beim Import (Lehre aus run_keyword_scrape:
+    Modulebenen-Aufloesung legte lisocon lahm). Eigene Funktion, damit Tests sie
+    monkeypatchen koennen, ohne den load_client-Cache anzufassen."""
+    return load_client().NAME
 
 
 def _base_url() -> str:
@@ -60,6 +74,7 @@ def _to_row(post: dict, source: str) -> dict | None:
     date_raw = post.get("date", "")
     post_date = date_raw[:10] if date_raw else None  # ISO -> YYYY-MM-DD
     return {
+        "client": _client_name(),
         "post_url": url,
         "source": source,
         "influencer": post.get("influencer", ""),
@@ -76,7 +91,7 @@ def upsert_posts(posts: list[dict], source: str) -> int:
     rows = [r for r in (_to_row(p, source) for p in posts) if r is not None]
     if not rows:
         return 0
-    url = f"{_base_url()}/rest/v1/{TABLE}?on_conflict=post_url"
+    url = f"{_base_url()}/rest/v1/{TABLE}?on_conflict=client,post_url"
     resp = requests.post(url, headers=_headers_write(), json=rows, timeout=TIMEOUT)
     if not (200 <= resp.status_code < 300):
         raise RuntimeError(f"Supabase upsert {resp.status_code}: {resp.text[:300]}")
@@ -84,10 +99,11 @@ def upsert_posts(posts: list[dict], source: str) -> int:
 
 
 def get_posts_since(days: int) -> list[dict]:
-    """Return all posts with post_date >= now - days."""
+    """Return this client's posts with post_date >= now - days."""
     since = (datetime.now(timezone.utc) - timedelta(days=days)).date().isoformat()
     url = f"{_base_url()}/rest/v1/{TABLE}"
-    params = {"select": "*", "post_date": f"gte.{since}"}
+    params = {"select": "*", "post_date": f"gte.{since}",
+              "client": f"eq.{_client_name()}"}
     resp = requests.get(url, headers=_headers_read(), params=params, timeout=TIMEOUT)
     if not (200 <= resp.status_code < 300):
         raise RuntimeError(f"Supabase get {resp.status_code}: {resp.text[:300]}")

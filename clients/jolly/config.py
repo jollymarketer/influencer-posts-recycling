@@ -123,6 +123,15 @@ Keep the overall look bright, clean, and brand-consistent""",
 - It must read clearly at LinkedIn thumbnail size. Premium editorial feel, never a workshop slide.""",
     "DEFAULT_AUDIENCE_IMAGE": "B2B CEOs and founders",
     "DEFAULT_AUDIENCE_ARCHETYPE": "B2B founders, CEOs, revenue leaders",
+
+    # Topic-Mining-Rolle (bis 2026-08-19 fest in tools/topic_clusterer.py,
+    # Wortlaut unveraendert uebernommen).
+    "TOPIC_CLUSTER_ROLE": (
+        "You are a B2B content strategist for Jolly Marketer, a Berlin-based B2B "
+        "RevOps/GTM agency serving the DACH market (B2B SaaS, tech services, "
+        "industrial SMEs). You cluster LinkedIn/Substack posts into blog-topic "
+        "themes for jollymarketer.com and score each theme's blog potential."
+    ),
 }
 
 # Blanket-CTA unter jedem Post (Richard 2026-07-27). LinkedIn kann kein Wort

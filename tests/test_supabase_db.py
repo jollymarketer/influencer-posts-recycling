@@ -33,7 +33,9 @@ def test_upsert_posts_maps_rows_and_source(monkeypatch):
     assert body[0]["comments"] == 2
     assert body[0]["shares"] == 1
     assert body[0]["post_date"] == "2026-06-01"
-    assert "on_conflict=post_url" in mock_post.call_args.args[0]
+    # Seit 19.08.2026 ist der Schluessel (client, post_url), siehe
+    # test_client_scoping_supabase.py.
+    assert "on_conflict=client,post_url" in mock_post.call_args.args[0]
     assert mock_post.call_args.kwargs["headers"]["Content-Profile"] == "blog_content_mining"
 
 
