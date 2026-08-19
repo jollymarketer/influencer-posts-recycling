@@ -24,6 +24,7 @@ def _run(now):
     with patch.object(run_research, "run_daily") as rd, \
          patch.object(run_research, "scrape_and_persist") as ks, \
          patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "run_readback"), \
          patch.object(run_research, "sync_topic_decisions"):
         run_research.main(now=now)
         return rd, ks, tm
@@ -56,6 +57,7 @@ def test_daily_sysexit_does_not_kill_friday_mining():
     with patch.object(run_research, "run_daily", side_effect=SystemExit(1)), \
          patch.object(run_research, "scrape_and_persist") as ks, \
          patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "run_readback"), \
          patch.object(run_research, "sync_topic_decisions"):
         with pytest.raises(SystemExit) as exc:
             run_research.main(now=FRIDAY)
@@ -67,6 +69,7 @@ def test_daily_sysexit_does_not_kill_friday_mining():
 def test_daily_crash_does_not_kill_friday_mining():
     with patch.object(run_research, "run_daily", side_effect=RuntimeError("boom")), \
          patch.object(run_research, "run_topic_mining") as tm, \
+         patch.object(run_research, "run_readback"), \
          patch.object(run_research, "sync_topic_decisions"):
         with pytest.raises(SystemExit) as exc:
             run_research.main(now=FRIDAY)
@@ -77,10 +80,43 @@ def test_daily_crash_does_not_kill_friday_mining():
 def test_decisions_sync_runs_daily_and_is_nonfatal():
     """Sync runs on any weekday (topic_mining feature on) and must never raise."""
     with patch.object(run_research, "run_daily"), \
+         patch.object(run_research, "run_readback"), \
          patch.object(run_research, "sync_topic_decisions",
                       side_effect=RuntimeError("supabase down")) as sync:
         run_research.main(now=MONDAY)  # must not raise
     sync.assert_called_once()
+
+
+def test_readback_runs_on_every_weekday():
+    """Phase D lief bisher nur im Slate-Pfad (lisocon). Im Winner-Flow (jolly)
+    muss sie an jedem Lauftag greifen, sonst bleiben die Zahlen leer."""
+    with patch.object(run_research, "run_daily"), \
+         patch.object(run_research, "sync_topic_decisions"), \
+         patch.object(run_research, "run_readback") as rb:
+        run_research.main(now=MONDAY)
+    rb.assert_called_once()
+
+
+def test_readback_failure_is_nonfatal():
+    """Ein toter Apify-Run darf den Daily nicht zum Fehlschlag machen: der
+    Post ist zu dem Zeitpunkt laengst veroeffentlicht."""
+    with patch.object(run_research, "run_daily"), \
+         patch.object(run_research, "sync_topic_decisions"), \
+         patch.object(run_research, "run_readback",
+                      side_effect=RuntimeError("apify down")) as rb:
+        run_research.main(now=MONDAY)  # must not raise
+    rb.assert_called_once()
+
+
+def test_readback_runs_even_if_daily_crashed():
+    """Gleiche Logik wie bei den Wochen-Jobs: der Readback misst bereits
+    veroeffentlichte Posts und haengt nicht am heutigen Draft."""
+    with patch.object(run_research, "run_daily", side_effect=SystemExit(1)), \
+         patch.object(run_research, "sync_topic_decisions"), \
+         patch.object(run_research, "run_readback") as rb:
+        with pytest.raises(SystemExit):
+            run_research.main(now=MONDAY)
+    rb.assert_called_once()
 
 
 def test_daily_ok_exits_cleanly():

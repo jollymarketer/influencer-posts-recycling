@@ -155,6 +155,23 @@ MAKE_WEBHOOK_ENV = "MAKE_REVIEW_WEBHOOK"
 
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
 
+# --- Engagement-Readback (Richard 2026-08-19) --------------------------------
+# Bis hierher lief der Readback ausschliesslich im Slate-Modus, also nur fuer
+# lisocon: 85 veroeffentlichte jolly-Zeilen trugen keine einzige Zahl. Ein
+# Poster (Richard), ein URL-Feld, keine Poster-Property in dieser DB.
+# Impressionen liefert die LinkedIn-API nicht, die kommen aus den nativen
+# Analytics und muessen separat nachgetragen werden.
+POSTED_URL_PROPS = {"Richard": "Richard LinkedIn Posted URL"}
+
+OWN_PROFILES = [
+    {"poster": "Richard", "url": "https://www.linkedin.com/in/richardbuettner/"},
+]
+
+ENGAGEMENT_READBACK = {
+    "max_posts_per_profile": 30,
+    "posted_limit": "month",
+}
+
 # --- Content-Matrix (Spec 2026-07-08) ---------------------------------------
 # 9 Boxen deklariert; Boxen mit leerem Asset-Block schaltet der Whitelist-Guard
 # in tools/content_matrix.py automatisch ab (aktuell: CaseProof/Magnet/Offer).

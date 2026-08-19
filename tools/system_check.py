@@ -38,9 +38,10 @@ CORE_NOTION_PROPS = (
 )
 EN_NOTION_PROPS = ("LinkedIn Draft EN",)
 SLATE_NOTION_PROPS = ("Score", "Themen-Winkel", "VoC-Treffer", "Matrix-Prio", "Poster")
+# Die URL-Felder der eigenen Veroeffentlichung stehen hier bewusst NICHT: sie
+# heissen pro Mandant anders und kommen aus cfg.POSTED_URL_PROPS.
 READBACK_NOTION_PROPS = ("Likes", "Kommentare", "Shares", "Engagement-Stand",
-                         "Date Posted", "Poster",
-                         "Posted URL (Reinhard)", "Posted URL (Jae)")
+                         "Date Posted")
 COMMENT_NOTION_PROPS = ("Kommentar-Ziel", "Poster")
 ABM_COMMENT_NOTION_PROPS = ("Kommentar-Ziel", "Poster", "ABM-Autor", "ABM-Domain")
 
@@ -66,6 +67,12 @@ def required_notion_props(cfg) -> tuple:
         props += list(SLATE_NOTION_PROPS)
     if getattr(cfg, "ENGAGEMENT_READBACK", None):
         props += list(READBACK_NOTION_PROPS)
+        url_props = getattr(cfg, "POSTED_URL_PROPS", None) or {}
+        props += list(url_props.values())
+        # Routing-Spalte nur bei mehreren Postern; bei einem einzigen gibt es
+        # nichts zu routen und die DB fuehrt das Feld gar nicht.
+        if len(url_props) > 1:
+            props.append("Poster")
     if getattr(cfg, "COMMENT_DRAFTS", None):
         props += list(COMMENT_NOTION_PROPS)
     if getattr(cfg, "ABM_COMMENT_DRAFTS", None):

@@ -353,6 +353,13 @@ CTA_EN = "Sounds interesting? Visit us at www.in2go.io"
 # sich mit MATRIX["promotion_cap"].
 MAGNET_SLOTS_PER_SLATE = 2
 
+# Poster -> Notion-URL-Property der eigenen Veroeffentlichung. Der Readback
+# matcht ueber die Objekt-ID in dieser URL.
+POSTED_URL_PROPS = {
+    "Reinhard": "Posted URL (Reinhard)",
+    "Jae": "Posted URL (Jae)",
+}
+
 # Eigene Profile fuer den Engagement-Readback (Phase D).
 OWN_PROFILES = [
     {"poster": "Reinhard", "url": "https://www.linkedin.com/in/reinhard-lindner"},

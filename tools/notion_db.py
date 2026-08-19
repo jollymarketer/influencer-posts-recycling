@@ -952,10 +952,17 @@ PUBLISHED_STATUSES = ("Posted", "Posting")
 ENGAGEMENT_DIMENSIONS = ("Format", "Persona", "Bild-Variante", "Infografik-Typ",
                          "Matrix-Job", "Matrix-Stage", "Poster")
 
+# Poster -> Notion-URL-Property. Pro Mandant, weil die DBs unterschiedlich
+# gebaut sind: lisocon hat zwei Poster-Spalten, jolly eine einzige fuer Richard
+# und gar keine Poster-Property. Vorher standen hier die lisocon-Feldnamen fest
+# verdrahtet, weshalb der Readback in der jolly-DB nie eine Zeile fand.
+POSTED_URL_PROPS = getattr(_cfg, "POSTED_URL_PROPS", {})
+
 
 def get_published_rows() -> list[dict]:
-    """Veröffentlichte Zeilen inkl. beider Poster-URL-Felder (Engagement-Readback).
-    live_url ist die URL des Feldes, das zum Poster gehört.
+    """Veröffentlichte Zeilen inkl. der Poster-URL-Felder (Engagement-Readback).
+    live_url ist die URL des Feldes, das zum Poster gehört; ohne Poster-Property
+    gewinnt das erste gefüllte URL-Feld des Mandanten.
 
     Trägt zusätzlich die bereits gemessenen Engagement-Zahlen und die
     Auswertungs-Dimensionen (`dims`) — beides kommt aus derselben Query, ein
@@ -966,10 +973,8 @@ def get_published_rows() -> list[dict]:
     for page in pages:
         props = page.get("properties", {})
         poster = _select_name(props, "Poster")
-        by_poster = {
-            "Reinhard": (props.get("Posted URL (Reinhard)") or {}).get("url") or "",
-            "Jae": (props.get("Posted URL (Jae)") or {}).get("url") or "",
-        }
+        by_poster = {name: (props.get(prop) or {}).get("url") or ""
+                     for name, prop in POSTED_URL_PROPS.items()}
         rows.append({
             "page_id": page["id"],
             "poster": poster,

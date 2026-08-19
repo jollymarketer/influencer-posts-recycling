@@ -43,6 +43,7 @@ from tools.notion_db import (
 from tools.linkedin_scraper import scrape_new_posts
 from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.substack_scraper import scrape_substack_posts
+from tools.engagement_readback import run_readback
 from tools.post_scorer import (
     score_posts,
     generate_post_and_image_prompt,
@@ -483,6 +484,14 @@ def main(now=None):
         daily_exit = 1
         print(f"Daily-Run crashte — Wochen-Jobs laufen trotzdem:\n{traceback.format_exc()}",
               file=sys.stderr)
+    # Engagement-Readback: misst bereits veroeffentlichte Posts und haengt
+    # deshalb nicht am heutigen Draft. run_readback() steigt selbst aus, wenn
+    # der Mandant ENGAGEMENT_READBACK/OWN_PROFILES nicht gesetzt hat.
+    print("\n=== Engagement-Readback ===")
+    try:
+        run_readback(_cfg)
+    except Exception as e:
+        print(f"  Readback fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     weekday = (now or datetime.now(timezone.utc)).weekday()
     if weekday == 3 and _cfg.FEATURES.get("keyword_scrape"):  # Thursday, UTC: keyword scrape feeds Friday's 7-day clustering window
         print("\n=== Donnerstag: starte Keyword-Scrape ===")

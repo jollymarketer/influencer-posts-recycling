@@ -39,6 +39,25 @@ def test_readback_props_only_when_configured():
     assert "Likes" in sc.required_notion_props(_cfg(readback={"posted_limit": "month"}))
 
 
+def test_readback_url_props_come_from_the_client():
+    """Die URL-Felder heissen pro Mandant anders. Fest verdrahtete lisocon-Namen
+    haben den Check fuer jolly auf NO-GO gestellt, obwohl dort nichts fehlte."""
+    jolly_like = _cfg(readback={"posted_limit": "month"},
+                      POSTED_URL_PROPS={"Richard": "Richard LinkedIn Posted URL"})
+    props = sc.required_notion_props(jolly_like)
+    assert "Richard LinkedIn Posted URL" in props
+    assert "Posted URL (Reinhard)" not in props
+
+
+def test_poster_column_only_required_with_several_posters():
+    """Ein einzelner Poster braucht keine Routing-Spalte."""
+    one = _cfg(readback={"x": 1}, POSTED_URL_PROPS={"Richard": "Richard LinkedIn Posted URL"})
+    two = _cfg(readback={"x": 1}, POSTED_URL_PROPS={"Reinhard": "Posted URL (Reinhard)",
+                                                    "Jae": "Posted URL (Jae)"})
+    assert "Poster" not in sc.required_notion_props(one)
+    assert "Poster" in sc.required_notion_props(two)
+
+
 def test_comment_props_only_when_configured():
     assert "Kommentar-Ziel" not in sc.required_notion_props(_cfg())
     assert "Kommentar-Ziel" in sc.required_notion_props(_cfg(comments={"per_run": 12}))
