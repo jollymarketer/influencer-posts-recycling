@@ -80,7 +80,7 @@ Zusaetzlich klassifiziere den Post (Felder im selben JSON):
 - "persona": genau eine der folgenden Achsen. Entscheide nach dem Winkel, den
   UNSER Post fahren wuerde (topic_angle_de), nicht nach der Zielgruppe des
   Original-Posts. Fachthemen gehoeren keiner Achse fest: derselbe Themenbereich
-  kann je nach Winkel auf beiden liegen.
+  kann je nach Winkel auf einer anderen Achse liegen.
 [[CLASSIFY_PERSONA_MENU]]
 - "voc_hit": trifft das Thema einen der im KONTEXT belegten VoC-Schmerzen?
   Dann benenne ihn kurz woertlich, sonst leerer String.

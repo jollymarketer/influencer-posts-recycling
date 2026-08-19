@@ -248,138 +248,199 @@ Keep the overall look clear, structured, premium, and brand-consistent.""",
 - Numbers and axis labels must stay legible at LinkedIn feed size.""",
 }
 
-# Vier Konten ab September 2026 (Entscheidung Richard 19.08.2026). Die Rollen
-# sind aus LinkedIn, Impressum und dem Call vom 27.07.2026 belegt.
+# Content-Achsen (Entscheidung Richard 19.08.2026). Die Achse ist eine
+# SITUATION, ueber die ein Beitrag handelt, nicht eine Person. Rollen sind
+# Auspraegungen der Persona, nie eine eigene Achse: sonst liegt derselbe Fund
+# in mehreren Achsen und die Einsortierung ist nicht mehr eindeutig.
 #
-# `axis` ist der Winkel, nach dem der Classifier einen Kandidaten einsortiert,
-# nicht die Person. Derselbe Fachbereich kann je nach Winkel auf einer anderen
-# Achse landen.
+# Abgeleitet aus allen 52 Anwenderberichten, also branchenuebergreifend, nicht
+# aus den zwei Kampagnen-Playbooks. Gemessene Anteile stehen je Achse dabei.
+# Die frueheren vier Personas nach Absender (Kulle, Werner, Baumert,
+# Unternehmensseite) sind ersetzt: die Achse bestimmt die Persona, die Persona
+# bestimmt das Konto, nicht umgekehrt. Kontozuordnung in AXIS_TO_ACCOUNT.
 #
-# HARTE REGEL: Baumert bekommt keine Fach-Aussagen zu AVR, IFRS oder
-# E-Rechnung. Eine Marketing-Operations-Rolle hat vor Controllern und Beratern
-# keine eigene Fachautoritaet, geliehene Autoritaet faellt in dieser Zielgruppe
-# sofort auf. Regulierungsthemen laufen ueber Kulle und die Unternehmensseite.
+# ALLGEMEINE CONTENT-PERSONA, drei Auspraegungen:
+#   1. der Chef, der die Zahlen nebenbei macht (in 22 von 52 Berichten die
+#      zitierte Rolle) und Entlastung sucht
+#   2. der eine Controller oder die kaufmaennische Leitung im Haus, sucht
+#      Handwerk
+#   3. der externe Zahlenverantwortliche: Interim-CFO, Restrukturierer,
+#      Steuerberater mit Planungsmandat. Auf LinkedIn die aktivste Gruppe
+#      (Messung 19.08.: von 31 rollenpassenden Autoren 6 Interim- oder externe
+#      Finanzleitungen, 4 Restrukturierer, 4 Controller, 4 Steuerberater)
 CONTENT_PERSONAS = [
     {
-        "id": "werner",
-        "label": "Robert Werner, Leiter Vertrieb und Akademie",
-        "share": "dominant",
-        "axis": ("Projekt- und Schulungspraxis: was in Planungsprojekten und "
-                 "Mandaten typischerweise schiefgeht und woran es liegt"),
-        "audience_de": ("Steuerberater, Wirtschaftspruefer und "
-                        "Unternehmensberater mit Planungsmandaten im "
-                        "deutschsprachigen Raum."),
-        "decision_makers_de": ("Partner und Mandatsverantwortliche in "
-                               "Kanzleien und Beratungsgesellschaften"),
-        "focus_topics_de": ("Praxis im Mandat: Datenzugang, Uebergabe von "
-                            "Modellen, Standardvorlage gegen Einzelanfertigung, "
-                            "Einfuehrungsdauer"),
-        "pains": ("Excel-Modelle, die den Berater ueberleben, das Wissen darin "
-                  "aber nicht; Planungsmodelle, die nur eine Person versteht; "
-                  "Daten, die aus dem Vorsystem nicht sauber ankommen"),
-        "kpis": ("Zeit bis zum ersten produktiven Mandat, Aufwand je "
-                 "Folgemandat, Vertretungsfaehigkeit im Team"),
-        "vocabulary_use": ("Mandat, Planungsmandat, Kontenrahmen, Vorlage, "
-                           "Uebergabe, Schnittstelle, DATEV"),
-        "vocabulary_avoid": "Feature-Listen, Lizenzmodelle, Produktnamen als Held",
-        "scene_de": ("ein Berater, der ein uebernommenes Excel-Modell zum "
-                     "ersten Mal oeffnet"),
-        "scene_en": ("a consultant opening an inherited spreadsheet model for "
-                     "the first time"),
+        "id": "excel_am_limit",
+        "label": "Excel am Limit",
+        "share": "dominant",   # 46 von 52 Anwenderberichten
+        "axis": ("Das gewachsene Tabellenmodell traegt die Aufgabe nicht mehr. "
+                 "Es rechnet noch, aber niemand kann es uebergeben, pruefen "
+                 "oder erweitern"),
+        "audience_de": ("Wer im Haus fuer die Zahlen geradesteht: "
+                        "Geschaeftsfuehrung im Mittelstand, die eine "
+                        "Controlling-Stelle, kaufmaennische Leitung. Dazu "
+                        "externe Zahlenverantwortliche mit Planungsmandat."),
+        "decision_makers_de": ("Geschaeftsfuehrung und kaufmaennische Leitung, "
+                               "bei Beratungen die Mandatsverantwortlichen"),
+        "focus_topics_de": ("Uebergabefaehigkeit und Pruefbarkeit eines "
+                            "Planungsmodells, Trennung von Annahme und "
+                            "Rechenlogik, Versionen"),
+        "pains": ("ein Modell, das an einer Person haengt; Zellen, deren Grund "
+                  "niemand mehr kennt; ein Nachfolger, der neu baut statt zu "
+                  "uebernehmen"),
+        "kpis": ("Zeit bis ein Dritter das Modell aktualisieren kann, "
+                 "Nacharbeit nach einem Wechsel"),
+        "vocabulary_use": ("Modell, Annahme, Rechenlogik, Version, Uebergabe, "
+                           "nachvollziehbar, Excel"),
+        "vocabulary_avoid": ("Excel-Schelte, Formeltricks, Toolvergleiche, "
+                             "Feature-Listen"),
+        "scene_de": ("jemand, der eine uebernommene Datei zum ersten Mal "
+                     "oeffnet und die Verknuepfungen nicht versteht"),
+        "scene_en": ("someone opening an inherited spreadsheet for the first "
+                     "time and not understanding the links"),
         "cta_style": "reply",
     },
     {
-        "id": "kulle",
-        "label": "Christian Kulle, Geschaeftsfuehrer",
-        "share": "secondary",
-        "axis": ("Fristen, Regulierung und Marktbewegungen, eingeordnet aus "
-                 "Geschaeftsfuehrungssicht"),
-        "audience_de": ("Geschaeftsfuehrung und kaufmaennische Leitung im "
-                        "deutschsprachigen Mittelstand und bei Traegern der "
-                        "Sozialwirtschaft."),
-        "decision_makers_de": ("Geschaeftsfuehrung, kaufmaennische Leitung, "
-                               "Leitung Rechnungswesen"),
-        "focus_topics_de": ("datierte Fristen und ihre Vorlaufzeit: IFRS 18, "
-                            "E-Rechnung, AVR; dazu Eigentuemerwechsel im "
-                            "Anbietermarkt und was sie fuer Bestandskunden "
-                            "bedeuten"),
-        "pains": ("Fristen, deren Arbeit ein Jahr vor dem Stichtag anfaellt; "
-                  "Planung, die nach einem Anbieterwechsel keine eigene "
-                  "Roadmap mehr hat"),
-        "kpis": ("Vorlauf bis zum Stichtag, doppelte Rechenlaeufe vermieden, "
-                 "Planungssicherheit ueber die Vertragslaufzeit"),
-        "vocabulary_use": ("Vergleichsjahr, Stichtag, Gliederung, "
-                           "Eingruppierung, Bestandskunde, Roadmap"),
-        "vocabulary_avoid": ("Tagesgeschaeft aus dem Projekt, Schulungsanekdoten, "
-                             "Produktbedienung"),
-        "scene_de": ("eine Geschaeftsfuehrung, die den Kalender fuer 2027 "
+        "id": "viele_einheiten",
+        "label": "Viele Einheiten, ein Verfahren",
+        "share": "secondary",   # 37 von 52 Anwenderberichten
+        "axis": ("Mehrere Gesellschaften, Standorte oder Mandate muessen nach "
+                 "demselben Verfahren gerechnet werden. Nutzen ist die "
+                 "konsolidierte Zahl und, beim externen "
+                 "Zahlenverantwortlichen, dass der zweite Fall billiger wird "
+                 "als der erste"),
+        "audience_de": ("Verantwortliche in Haeusern mit mehr als einer "
+                        "Einheit: Gesellschaften, Standorte, Spartenrechnung. "
+                        "Dazu Beratungen, die dasselbe Verfahren ueber mehrere "
+                        "Mandate fahren."),
+        "decision_makers_de": ("Geschaeftsfuehrung, Leitung Rechnungswesen, "
+                               "Konsolidierungsverantwortliche, bei Beratungen "
+                               "Partner und Mandatsleitung"),
+        "focus_topics_de": ("Konsolidierung ueber Rechtstraeger, einheitlicher "
+                            "Kontenrahmen, Standardvorlage statt "
+                            "Einzelanfertigung, Vergleichbarkeit zwischen "
+                            "Einheiten"),
+        "pains": ("jede Einheit rechnet anders; das zweite Mandat kostet so "
+                  "viel wie das erste; Vergleiche zwischen Standorten sind "
+                  "nicht belastbar"),
+        "kpis": ("Aufwand je zusaetzlicher Einheit, Dauer des "
+                 "Konsolidierungslaufs, Anteil wiederverwendeter Struktur"),
+        "vocabulary_use": ("Gesellschaft, Standort, Mandat, Kontenrahmen, "
+                           "Vorlage, Konsolidierung, Verfahren"),
+        "vocabulary_avoid": ("Konzern-Jargon fuer Haeuser mit einer Einheit, "
+                             "Skalierung als Schlagwort"),
+        "scene_de": ("eine Leitung, die dieselbe Kennzahl aus drei Einheiten "
+                     "bekommt und drei verschiedene Definitionen vorfindet"),
+        "scene_en": ("a finance lead receiving the same metric from three "
+                     "units and finding three different definitions"),
+        "cta_style": "reply",
+    },
+    {
+        "id": "woher_die_zahlen",
+        "label": "Woher die Zahlen kommen",
+        "share": "secondary",   # 35 von 52 Anwenderberichten
+        "axis": ("Die Daten liegen in einem System, das dem "
+                 "Zahlenverantwortlichen nicht gehoert. Schnittstelle, "
+                 "Mapping, Datenuebergabe, was beim Systemwechsel passiert"),
+        "audience_de": ("Wer Zahlen aus Vorsystemen zusammenfuehrt: "
+                        "Controlling, Rechnungswesen, kaufmaennische Leitung, "
+                        "dazu Berater, die Mandantendaten uebernehmen."),
+        "decision_makers_de": ("Leitung Controlling und Rechnungswesen, "
+                               "Geschaeftsfuehrung bei Systementscheidungen"),
+        "focus_topics_de": ("Schnittstellen zu Buchhaltung, ERP und "
+                            "Personalsystem, Mapping und Kontenzuordnung, "
+                            "Datenhoheit, Aufwand vor dem ersten Bericht"),
+        "pains": ("Daten bleiben zwischen zwei Systemen haengen; die Vorarbeit "
+                  "steht in keinem Projektplan; beim Systemwechsel ist unklar, "
+                  "wem die Historie gehoert"),
+        "kpis": ("Zeit bis zum ersten belastbaren Bericht, Zahl der "
+                 "angebundenen Vorsysteme, Anteil manueller Nacharbeit"),
+        "vocabulary_use": ("Schnittstelle, Vorsystem, Mapping, "
+                           "Kontenzuordnung, Datenhoheit, DATEV, ERP"),
+        "vocabulary_avoid": ("reine IT-Themen ohne Bezug zur Steuerung, "
+                             "Produktnamen als Held"),
+        "scene_de": ("jemand, der den Monatsbericht nicht anfangen kann, weil "
+                     "eine Datei aus dem Vorsystem fehlt"),
+        "scene_en": ("someone unable to start the monthly report because one "
+                     "file from the source system is missing"),
+        "cta_style": "reply",
+    },
+    {
+        "id": "rechenschaft",
+        "label": "Wem man Rechenschaft schuldet",
+        "share": "secondary",   # 35 von 52 Anwenderberichten
+        "axis": ("Der Empfaenger der Zahlen sitzt ausserhalb des Hauses: Bank, "
+                 "Gesellschafter, Aufsichtsgremium, Wirtschaftspruefer, "
+                 "Kostentraeger"),
+        "audience_de": ("Wer Zahlen nach aussen vertreten muss: "
+                        "Geschaeftsfuehrung, kaufmaennische Leitung, dazu "
+                        "Berater, die ihre Mandanten in solche Termine "
+                        "begleiten."),
+        "decision_makers_de": ("Geschaeftsfuehrung, Vorstand, kaufmaennische "
+                               "Leitung"),
+        "focus_topics_de": ("Bankgespraech und Finanzierung, Gesellschafter- "
+                            "und Gremienberichte, Pruefungsvorbereitung, "
+                            "Verhandlungen mit Kostentraegern"),
+        "pains": ("im Termin nachreichen statt rechnen zu koennen; eine "
+                  "Abweichung begruenden muessen, deren Ursache niemand mehr "
+                  "kennt; Unterlagen, die der Empfaenger anders schneidet"),
+        "kpis": ("Nachreichungen je Termin, Vorbereitungszeit, Zahl der "
+                 "Rueckfragen von Bank oder Pruefer"),
+        "vocabulary_use": ("Bankgespraech, Gesellschafter, Aufsichtsgremium, "
+                           "Pruefer, Kostentraeger, Nachweis, belastbar"),
+        "vocabulary_avoid": ("internes Reporting ohne externen Adressaten, "
+                             "Compliance als Schlagwort"),
+        "scene_de": ("eine Geschaeftsfuehrung, die im Bankgespraech eine "
+                     "Anpassung nachreichen muss statt sie zu zeigen"),
+        "scene_en": ("a managing director having to follow up after a bank "
+                     "meeting instead of showing the change live"),
+        "cta_style": "reply",
+    },
+    {
+        "id": "fristen",
+        "label": "Fristen mit Datum",
+        "share": "secondary",   # kein Anteil: eigener Kalender
+        "axis": ("Ein gesetzlicher oder tariflicher Termin steht fest und die "
+                 "Vorarbeit faellt vorher an. Nur mit Datum und nur bei "
+                 "Betroffenheit der Zielgruppe"),
+        "audience_de": ("Wer die Vorarbeit zu einer Frist leisten muss: "
+                        "Leitung Rechnungswesen, Controlling, "
+                        "Geschaeftsfuehrung, dazu Berater, die ihre Mandanten "
+                        "durch die Umstellung fuehren."),
+        "decision_makers_de": ("Geschaeftsfuehrung, Leitung Rechnungswesen, "
+                               "bei Beratungen die Mandatsverantwortlichen"),
+        "focus_topics_de": ("IFRS 18 mit laufendem Vergleichsjahr 2026, "
+                            "E-Rechnungspflicht ab 2027, AVR Caritas und "
+                            "AVR.DD, jeweils Vorlaufzeit statt Stichtag"),
+        "pains": ("die Arbeit faellt ein Jahr vor dem Stichtag an und ist im "
+                  "Kalender nicht sichtbar; mehrere Fristen treffen dieselben "
+                  "wenigen Personen; doppeltes Rechnen bei spaeter "
+                  "Umstellung"),
+        "kpis": ("Vorlauf bis zum Stichtag, vermiedene zweite Rechenlaeufe"),
+        "vocabulary_use": ("Vergleichsjahr, Bezugsjahr, Stichtag, Gliederung, "
+                           "Eingruppierung, Vorlauf"),
+        "vocabulary_avoid": ("Regulierung ohne Datum, CSRD (Zielgruppe faellt "
+                             "durch Omnibus I heraus), Panikmache"),
+        "scene_de": ("eine Leitung, die den Kalender fuers naechste Jahr "
                      "aufschlaegt und drei Fristen im selben Quartal findet"),
-        "scene_en": ("a managing director opening the 2027 calendar and "
-                     "finding three deadlines in the same quarter"),
-        "cta_style": "reply",
-    },
-    {
-        "id": "baumert",
-        "label": "Inga Baumert, Marketing Operations Manager",
-        "share": "secondary",
-        "axis": ("Auswertungen aus vorhandenem Material, Nutzen einer Funktion "
-                 "im Alltag, Fragen an die Community. Referiert Befunde, "
-                 "urteilt nicht fachlich"),
-        "audience_de": ("Anwenderinnen und Anwender in Controlling und "
-                        "Rechnungswesen, dazu die Fachoeffentlichkeit im "
-                        "deutschsprachigen Raum."),
-        "decision_makers_de": ("Controlling- und Rechnungswesen-Teams, die mit "
-                               "der Planung taeglich arbeiten"),
-        "focus_topics_de": ("was in den eigenen Anwenderberichten steht, "
-                            "Funktionen und ihr Nutzen im Alltag, offene "
-                            "Fragen an die Community"),
-        "pains": ("Funktionen, die vorhanden sind und trotzdem nicht genutzt "
-                  "werden; Vorarbeit vor der eigentlichen Planung, die in "
-                  "keinem Projektplan steht"),
-        "kpis": ("Antworten und Kommentare je Frage, Nutzung vorhandener "
-                 "Funktionen"),
-        "vocabulary_use": ("Anwenderbericht, ausgezaehlt, Befund, Lesart, "
-                           "Versionsvergleich, Berichtsverteilung"),
-        "vocabulary_avoid": ("AVR, IFRS, E-Rechnung und jede andere fachliche "
-                             "Bewertung von Regulierung oder Tarifrecht; "
-                             "Aussagen ueber Bilanzierung"),
-        "scene_de": ("jemand, der die eigenen Anwenderberichte auszaehlt und "
-                     "ein unerwartetes Muster findet"),
-        "scene_en": ("someone counting their own customer stories and finding "
-                     "an unexpected pattern"),
-        "cta_style": "question",
-    },
-    {
-        "id": "unternehmensseite",
-        "label": "SWOT Unternehmensseite",
-        "share": "secondary",
-        "axis": ("Anwenderberichte aus einzelnen Branchen und Marktueberblick, "
-                 "gesprochen als Unternehmen"),
-        "audience_de": ("Controlling und kaufmaennische Leitung quer durch die "
-                        "Branchen der 52 Anwenderberichte, mit Schwerpunkt "
-                        "Sozialwirtschaft."),
-        "decision_makers_de": ("kaufmaennische Leitung und Controlling-Leitung "
-                               "in Mittelstand, Sozialwirtschaft und "
-                               "Wohnungswirtschaft"),
-        "focus_topics_de": ("belegte Kundenprojekte: was vorher war, was sich "
-                            "gemessen geaendert hat, worauf bei der Auswahl zu "
-                            "achten ist"),
-        "pains": ("abgebrochene Controlling-Projekte; Einfuehrungen, die an "
-                  "Schnittstellen haengen bleiben; Auswahlkriterien, die die "
-                  "Besonderheiten der eigenen Branche nicht abbilden"),
-        "kpis": ("Dauer bis zur produktiven Nutzung, Aufwand je Berichtszyklus, "
-                 "Zahl der angebundenen Vorsysteme"),
-        "vocabulary_use": ("Anwenderbericht, Einfuehrung, Schnittstelle, "
-                           "Gesellschaften, Kostenstellen, Berichtszyklus"),
-        "vocabulary_avoid": ("Ich-Form, persoenliche Anekdote, Meinung ohne "
-                             "Beleg aus einem Kundenprojekt"),
-        "scene_de": ("ein Controller, der nach der Umstellung das erste Mal "
-                     "monatlich statt jaehrlich berichtet"),
-        "scene_en": ("a controller reporting monthly instead of annually for "
-                     "the first time after the switch"),
+        "scene_en": ("a finance lead opening next year's calendar and finding "
+                     "three deadlines in the same quarter"),
         "cta_style": "reply",
     },
 ]
+
+# Welches Konto eine Achse faehrt. Die Achse entscheidet, nicht das Konto.
+# Mehrere Konten je Achse sind erlaubt, die Reihenfolge ist die Praeferenz.
+# Baumert bekommt bewusst keine Regulierungs-Achse: eine
+# Marketing-Operations-Rolle hat vor Controllern keine eigene Fachautoritaet.
+# Sie faehrt Auswertungen aus vorhandenem Material und Fragen an die Community.
+AXIS_TO_ACCOUNT = {
+    "excel_am_limit":   ["werner", "unternehmensseite"],
+    "viele_einheiten":  ["werner", "unternehmensseite"],
+    "woher_die_zahlen": ["werner", "baumert", "unternehmensseite"],
+    "rechenschaft":     ["kulle", "unternehmensseite"],
+    "fristen":          ["kulle", "unternehmensseite"],
+}
 
 # Bild-Texte auf Deutsch (Zielgruppe DACH-Berater).
 IMAGE_LANGUAGE = "German"
