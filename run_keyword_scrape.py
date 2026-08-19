@@ -70,7 +70,18 @@ def resolve_keywords(cfg, client_name: str) -> list:
 
 
 _CLIENT = os.getenv("CLIENT", "jolly").strip().lower()
-KEYWORDS = resolve_keywords(load_client(), _CLIENT)
+
+
+def client_keywords() -> list:
+    """Aufloesung erst beim Aufruf, nicht beim Import.
+
+    Bis 19.08.2026 stand hier `KEYWORDS = resolve_keywords(...)` auf
+    Modulebene. run_research importiert dieses Modul unbedingt, also ist damit
+    JEDER Mandant ohne eigene KEYWORDS schon am blossen Import gestorben, auch
+    wenn er gar nicht scrapt. Das traf lisocon (FEATURES["keyword_scrape"] =
+    False) und legte dessen Railway-Lauf lahm. Nicht auf Modulebene
+    zurueckdrehen."""
+    return resolve_keywords(load_client(), _CLIENT)
 
 
 def scrape_and_persist(keywords=None, max_posts=20, posted_limit="month",
@@ -78,7 +89,7 @@ def scrape_and_persist(keywords=None, max_posts=20, posted_limit="month",
     """Scrape the keyword set and upsert to Supabase (source=linkedin_search). Returns rows written.
     Reused by the CLI and by run_research's weekly cadence branch."""
     posts = scrape_keyword_posts(
-        keywords or KEYWORDS, max_posts=max_posts, posted_limit=posted_limit,
+        keywords or client_keywords(), max_posts=max_posts, posted_limit=posted_limit,
         min_virality=min_virality, author_keywords=author_keywords,
     )
     n = upsert_posts(posts, source="linkedin_search")
@@ -98,7 +109,7 @@ def main() -> int:
     ap.add_argument("--no-write", action="store_true", help="scrape only, skip Supabase upsert")
     args = ap.parse_args()
 
-    keywords = args.keywords or KEYWORDS
+    keywords = args.keywords or client_keywords()
     print(f"Scraping {len(keywords)} keyword queries, max {args.max_posts}/query, "
           f"posted_limit={args.posted_limit}, min_virality={args.min_virality}, "
           f"author_keywords={args.author_keywords!r} ...", flush=True)
