@@ -410,8 +410,8 @@ FEATURES = {
 # und Jedox, und der Scrape zieht Vendor-Marketing statt Fachstimmen.
 KEYWORDS = [
     # Planung und Abschluss (Kernprozesse)
-    "Liquiditaetsplanung",              # 35
-    "Liquiditaetsvorschau",
+    "Liquiditätsplanung",              # 35
+    "Liquiditätsvorschau",
     "integrierte Finanzplanung",
     "integrierte Planung",              # 23
     "Unternehmensplanung",              # 8
@@ -425,7 +425,7 @@ KEYWORDS = [
     "Monatsabschluss",                  # 8
     # Rechnungswesen und Steuerung
     "Kostenstellenrechnung",            # 101 kostenstellen
-    "Kostentraegerrechnung",            # 23
+    "Kostenträgerrechnung",            # 23
     "Deckungsbeitragsrechnung",         # 7
     "Soll-Ist-Vergleich",               # 31
     "Hochrechnung Jahresende",          # 20
@@ -433,7 +433,7 @@ KEYWORDS = [
     "Kennzahlensystem",                 # 84 kennzahlen
     # Werkzeuge und Bruchstellen (staerkstes Signal im Korpus)
     "Excel Controlling",                # 426 excel
-    "Excel Planung abloesen",
+    "Excel Planung ablösen",
     "Schnittstelle DATEV",              # 191 schnittstelle, 157 datev
     "DATEV Auswertung",
     "ERP Schnittstelle Controlling",    # 40 erp
@@ -448,14 +448,14 @@ KEYWORDS = [
     "Personalkostenplanung",            # 11
     "Tarifsteigerung Planung",
     # Zielgruppen und Branchen
-    "Wirtschaftsplan Traeger",          # 40 wirtschaftsplan
+    "Wirtschaftsplan Träger",          # 40 wirtschaftsplan
     "Controlling Sozialwirtschaft",     # 71 sozialwirtschaft
     "Controlling Wohnungswirtschaft",   # 7
     "Controlling Mittelstand",
     "Planungssoftware Auswahl",
     # Berater-Kontext (Welle 1)
     "Planungsmandat",                   # 440 mandant/mandanten
-    "Bankgespraech Planung",            # 32 banken
+    "Bankgespräch Planung",            # 32 banken
     "Restrukturierung Mittelstand",     # 17 restrukturierung
     "Sanierungsberatung",               # 26 sanierung
 ]
