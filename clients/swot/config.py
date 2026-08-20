@@ -543,6 +543,41 @@ KEYWORDS = [
     "Sanierungsberatung",               # 26 sanierung
 ]
 
+# Zuordnung der 43 Begriffe auf die fuenf Achsen (Richard, 20.08.2026).
+# Grund: der Seed-Lauf vom 19.08. clusterte alle Begriffe in einem Topf, und
+# 10 der 15 Themen wurden Liquiditaet. Die AXIS_MIX-Regel (min 2 je Achse) kann
+# aus einem schiefen Pool nichts geraderuecken, die Vielfalt muss vorher
+# entstehen. Der Scrape laeuft deshalb je Achse und schreibt
+# source="linkedin_search:<achse>", damit das Clustern die Herkunft kennt.
+KEYWORDS_BY_AXIS = {
+    "excel_am_limit": [
+        "Excel Controlling", "Excel Planung ablösen", "Berichtswesen automatisieren",
+        "Reporting Automatisierung", "Controlling Dashboard", "Planungssoftware Auswahl",
+        "integrierte Finanzplanung", "integrierte Planung", "Szenarioplanung",
+        "Mittelfristplanung", "Forecast Genauigkeit", "Liquiditätsplanung",
+        "Liquiditätsvorschau", "Cashflow Planung",
+    ],
+    "woher_die_zahlen": [
+        "Schnittstelle DATEV", "DATEV Auswertung", "ERP Schnittstelle Controlling",
+        "Kostenstellenrechnung", "Kostenträgerrechnung", "Deckungsbeitragsrechnung",
+        "Kennzahlensystem",
+    ],
+    "viele_einheiten": [
+        "Konsolidierung", "Konzernabschluss", "Planungsmandat",
+        "Controlling Sozialwirtschaft", "Controlling Wohnungswirtschaft",
+        "Controlling Mittelstand", "Wirtschaftsplan Träger",
+    ],
+    "rechenschaft": [
+        "Bankgespräch Planung", "Restrukturierung Mittelstand", "Sanierungsberatung",
+        "Soll-Ist-Vergleich", "Hochrechnung Jahresende", "Monatsabschluss",
+        "Unternehmensplanung", "Budgetierung Mittelstand", "Investitionsplanung",
+    ],
+    "fristen": [
+        "IFRS 18", "E-Rechnung Pflicht", "AVR Caritas", "AVR Diakonie",
+        "Personalkostenplanung", "Tarifsteigerung Planung",
+    ],
+}
+
 # Scoring-Justierung fuer die stille DACH-Controlling-Nische (Richard 19.08.2026,
 # Begruendung in der Vault-Notiz "SWOT Content-Research-Quellen" vom 29.07.2026).
 # Volles Viralitaets-Gewicht wuerde Vendor-Marketing nach oben spuelen; ein Beitrag
