@@ -41,6 +41,27 @@ def _row(pid, titel="T", achse="fristen"):
     }}
 
 
+def test_rewrite_flag_forces_new_text_despite_existing():
+    from datetime import date
+    row = _row("a")
+    row["properties"]["Post-Text"] = {"rich_text": [{"plain_text": "alter Text"}]}
+    row["properties"]["Kanal"] = {"select": {"name": "LinkedIn Robert"}}
+    slots = [_slot(date(2026, 9, 1), "LinkedIn Robert", "fristen", "a")]
+    result = {"text": "NEU", "soundbyte": "S", "kontext": "", "skeleton": ""}
+    cfg = MagicMock()
+    cfg.CONTENT_PLAN_DB_ID = "db"
+    resp = MagicMock(ok=True)
+    with patch.object(run_plan_fill, "read_plan", return_value=[row]), \
+         patch.object(run_plan_fill, "build_slots", return_value=[]), \
+         patch.object(run_plan_fill, "select", side_effect=lambda s, *a, **kw: slots), \
+         patch.object(run_plan_fill, "pick_format", return_value="Opinion"), \
+         patch.object(run_plan_fill, "write_post", return_value=result) as mock_write, \
+         patch("run_plan_fill.requests.patch", return_value=resp):
+        r = run_plan_fill.fill([(2026, 9)], write=True, cfg=cfg, rewrite=True)
+    assert mock_write.called
+    assert r["neu_geschrieben"] == 1
+
+
 def _fill(rows, slots, write_result, fmt="Story"):
     from datetime import date
     cfg = MagicMock()

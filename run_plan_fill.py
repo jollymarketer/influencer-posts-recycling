@@ -118,7 +118,8 @@ def plan_topics(rows: list[dict]) -> tuple[list[Topic], dict]:
     return topics, meta
 
 
-def fill(months: list[tuple[int, int]], write: bool = False, cfg=None) -> dict:
+def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
+         rewrite: bool = False) -> dict:
     cfg = cfg or load_client()
     rows = read_plan(cfg.CONTENT_PLAN_DB_ID)
     topics, meta = plan_topics(rows)
@@ -141,7 +142,9 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None) -> dict:
     recent_types: dict[str, list] = {}
     for s in sorted(belegt, key=lambda s: s.day):
         m = meta[s.topic["page_id"]]
-        neu_noetig = (not m["hat_text"]) or m["kanal_alt"] != s.kanal
+        # rewrite erzwingt Neuerstellung (Richard 20.08.2026: Bestandstexte aus
+        # dem alten Schlank-Prompt durch die volle Maschinerie ersetzen).
+        neu_noetig = rewrite or (not m["hat_text"]) or m["kanal_alt"] != s.kanal
         marke = "NEU" if neu_noetig else "alt"
         print(f"  {s.day} {s.kanal:20s} {marke} {m['titel'][:55]}", flush=True)
         if not write:
@@ -193,10 +196,12 @@ def main() -> int:
                     help="Zielmonate, z.B. 2026-09 2026-10")
     ap.add_argument("--write", action="store_true",
                     help="in Notion schreiben (Default: Trockenlauf)")
+    ap.add_argument("--rewrite", action="store_true",
+                    help="auch Zeilen mit Bestandstext neu schreiben")
     args = ap.parse_args()
     months = [tuple(int(x) for x in m.split("-")) for m in args.months]
 
-    r = fill(months, write=args.write)
+    r = fill(months, write=args.write, rewrite=args.rewrite)
     print(f"\nbelegt {r['belegt']} | geschrieben {r['gefuellt']} | "
           f"Texte neu {r['neu_geschrieben']} | ohne Termin {r['ohne_termin']}")
     if not args.write:
