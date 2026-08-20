@@ -243,6 +243,37 @@ Keep the overall look clear, structured, premium, and brand-consistent.""",
         "Planning, Agicap, Tidely, IDL, prevero, cubus) must NOT become themes "
         "about those vendors; reframe to the underlying situation or score low."
     ),
+
+    # Mining-Brief (20.08.2026): LinkedIn-Post-Themen, KEINE Blog-SEO-Fragen.
+    # Bis dahin lief SWOTs Mining durch den fest verdrahteten Jolly-Brief
+    # ("blog-post topics for jollymarketer.com" samt Smartlead/GTM-Beispielen).
+    "TOPIC_MINING_BRIEF": (
+        "Extract 8-15 SPECIFIC German-language LinkedIn POST topics for SWOT's "
+        "audience. This is NOT blog SEO: no search-query phrasing, no 'Wie "
+        "viele X...?' Google questions. Each topic is ONE concrete situation "
+        "from the working life of the person responsible for the numbers - the "
+        "kind of moment a reader recognizes from last week.\n"
+        "Anchor every topic in at least one concrete specific: a named source "
+        "system (DATEV, ERP, Excel), a named counterpart (Bank, Gesellschafter, "
+        "Wirtschaftspruefer, Kostentraeger), a role (Interim-CFO, Steuerberater "
+        "mit Planungsmandat, der einzige Controller im Haus), a dated deadline "
+        "(IFRS 18, E-Rechnung, AVR) - or a NUMBER, but ONLY if one of the posts "
+        "above states that exact number with the same unit and meaning. NEVER "
+        "invent a number. A topic with no source-backed number simply uses a "
+        "non-numeric anchor.\n"
+        "Good shape: 'Das Excel-Modell rechnet noch, aber der Erbauer geht in "
+        "Rente: was eine Uebergabe wirklich braucht'. Bad shape: 'Excel vs. "
+        "Planungssoftware: der grosse Vergleich' (generic head term) or "
+        "'Warum LucaNet-Kunden wechseln' (vendor hook).\n"
+        "EXCLUDE topics whose hero is a competing planning-software vendor "
+        "(Jedox, LucaNet, Corporate Planning, Agicap, Tidely, IDL, prevero, "
+        "cubus): reframe to the underlying situation or drop the topic. "
+        "EXCLUDE CSRD (audience falls outside Omnibus-I threshold). EXCLUDE "
+        "prices and licence costs.\n"
+        "suggested_title_de is the primary field and must be German; "
+        "suggested_title_en is its English translation, and it must not be "
+        "longer than the German original."
+    ),
     "ARCHETYPE_BRAND_RULES": """SWOT Controlling brand rules:
 - Background: White (#FFFFFF) or very light cool grey (#F5F6F8); deep navy
   (#182047) allowed for dark compositions. No gradients, no generic corporate
@@ -478,6 +509,11 @@ FEATURES = {
     "supabase_persist": True,
     "keyword_scrape": True,
     "topic_mining": True,
+    # Scoring-Gate vor dem Clustering (Richard 20.08.2026): jeder Post im
+    # Mining-Fenster laeuft durch score_posts (topic_fit, icp_relevanz usw.,
+    # VIRALITY_WEIGHT 0.3); unter MIN_SCORE faellt er raus, bevor er Themen
+    # praegen kann. Haiku, grob unter 1 EUR je Wochenlauf.
+    "mining_score_gate": True,
     "keyword_source_daily": False,
     "en_draft": False,
     "grammar_check": True,

@@ -564,18 +564,21 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
                     assets_de: str = "", assets_en: str = "",
                     persona_de: str = "", persona_en: str = "",
                     persona_voice_de: str = "",
-                    persona_tokens_de: dict | None = None) -> tuple[str, str]:
+                    persona_tokens_de: dict | None = None,
+                    de_template: str | None = None) -> tuple[str, str]:
     """Pure builder: returns (de_prompt, en_prompt) with the format structure,
     the infographic anti-repeat line, and optional persona/asset blocks
     injected. persona_voice_de overrides the DE author voice (Persona-Split);
     empty falls back to TOKENS["PERSONA_DE"]. persona_tokens_de overrides
     audience/addressee/focus in the DE prompt (persona_prompt_tokens); None
     falls back to the tenant's static TOKENS. Unknown format keys fall back
-    to Opinion. No API calls."""
+    to Opinion. No API calls.
+    de_template ersetzt das DE-Template (Themen-Pfad, tools/post_writer.py:
+    gleicher Slot-Satz, anderes Framing); None bleibt DACH_POST_PROMPT."""
     structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
     is_long = post_format in LONG_FORMATS
-    de = DACH_POST_PROMPT.format(
+    de = (de_template or DACH_POST_PROMPT).format(
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
@@ -1396,7 +1399,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    persona_voice_de: str = "",
                                    persona_tokens_de: dict | None = None,
                                    asset: dict | None = None,
-                                   persona_id: str = "") -> tuple[str, str, str, str, str, str]:
+                                   persona_id: str = "",
+                                   de_template: str | None = None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
@@ -1419,6 +1423,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         persona_de=persona_de, persona_en=persona_en,
         persona_voice_de=persona_voice_de,
         persona_tokens_de=persona_tokens_de,
+        de_template=de_template,
     )
 
     de_resp = client.messages.create(

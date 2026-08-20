@@ -15,6 +15,12 @@ Zwei Regeln, beide bewusst:
 2. Ein Text wird nur neu geschrieben, wenn die Zeile das Konto wechselt oder
    noch keinen Text hat. Der Text traegt die Stimme des Kontos, ein Wir-Text
    der Unternehmensseite passt nicht unter Roberts Namen.
+
+Seit 20.08.2026 laeuft der Text durch die volle DACH-Maschinerie
+(tools/post_writer.py): Format-Router mit Anti-Repeat je Kanal, Persona der
+Achse, Soundbyte und Infografik-Skelett landen als eigene Properties in der
+Zeile. Die drei Properties (Format, Soundbyte, Infografik-Skelett) legt
+scripts/add_plan_fill_properties.py an; in den Kunden-Views ausblenden.
 """
 import argparse
 import sys
@@ -27,10 +33,39 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from clients import load_client
 from tools.monthly_plan import NOTION_API, TIMEOUT, Topic, build_slots, select
+from tools.post_scorer import (
+    normalize_infographic_type,
+    parse_infographic_type,
+    pick_format,
+)
 from tools.post_writer import write_post
 from tools.topic_ideas_db import _headers as notion_headers
 
 BEZUG = "Basis"
+
+# Notion deckelt einen rich_text-Baustein bei 2000 UTF-16-Einheiten; der alte
+# harte Schnitt bei 1990 Zeichen kappte jeden Story-Post. Jetzt Chunks.
+_CHUNK_LIMIT = 1990
+
+
+def _chunks(text: str, limit: int = _CHUNK_LIMIT) -> list[str]:
+    """Zerlegt Text in Stuecke von hoechstens `limit` UTF-16-Einheiten
+    (Notion-Mass; Emojis zaehlen doppelt). Verlustfrei: join == Original."""
+    out, cur, units = [], [], 0
+    for ch in text:
+        u = len(ch.encode("utf-16-le")) // 2
+        if units + u > limit:
+            out.append("".join(cur))
+            cur, units = [], 0
+        cur.append(ch)
+        units += u
+    if cur:
+        out.append("".join(cur))
+    return out or [""]
+
+
+def _rich(text: str) -> dict:
+    return {"rich_text": [{"text": {"content": c}} for c in _chunks(text)]}
 
 
 def _title(props, key="Titel") -> str:
@@ -99,7 +134,12 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None) -> dict:
     print(f"belegt: {len(belegt)} von {len(slots)}")
 
     gefuellt, neu_geschrieben = 0, 0
-    for s in belegt:
+    # Anti-Repeat je Kanal (neuestes zuerst): Formate fuer pick_format,
+    # Infografik-Typen fuer das Skelett. Nur innerhalb dieses Laufs; ein
+    # Monats-Batch entsteht ohnehin in einem Stueck.
+    recent_formats: dict[str, list] = {}
+    recent_types: dict[str, list] = {}
+    for s in sorted(belegt, key=lambda s: s.day):
         m = meta[s.topic["page_id"]]
         neu_noetig = (not m["hat_text"]) or m["kanal_alt"] != s.kanal
         marke = "NEU" if neu_noetig else "alt"
@@ -113,11 +153,24 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None) -> dict:
             "Status": {"select": {"name": "Entwurf"}},
         }
         if neu_noetig:
-            text = write_post(m["titel"], m["kurz"], s.kanal, s.axis, cfg=cfg)
-            if not text:
+            fmts = recent_formats.setdefault(s.kanal, [])
+            typs = recent_types.setdefault(s.kanal, [])
+            material = f"{m['titel']}\n{m['kurz']}"
+            fmt = pick_format({"influencer": "Plan", "post_text": material}, list(fmts))
+            r = write_post(m["titel"], m["kurz"], s.kanal, s.axis,
+                           post_format=fmt, recent_infographic_types=list(typs),
+                           cfg=cfg)
+            if not r["text"]:
                 print(f"    kein Text erhalten, Zeile uebersprungen")
                 continue
-            props["Post-Text"] = {"rich_text": [{"text": {"content": text[:1990]}}]}
+            props["Post-Text"] = _rich(r["text"])
+            props["Format"] = {"select": {"name": fmt}}
+            props["Soundbyte"] = _rich(r["soundbyte"])
+            props["Infografik-Skelett"] = _rich(r["skeleton"])
+            fmts.insert(0, fmt)
+            ityp = normalize_infographic_type(parse_infographic_type(r["skeleton"]))
+            if ityp:
+                typs.insert(0, ityp)
             neu_geschrieben += 1
         resp = requests.patch(f"{NOTION_API}/pages/{s.topic['page_id']}",
                               headers=notion_headers(), json={"properties": props},

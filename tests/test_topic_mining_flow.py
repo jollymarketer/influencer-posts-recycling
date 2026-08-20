@@ -45,13 +45,17 @@ def test_mining_skips_when_too_few_posts():
 
 
 def test_mining_filters_and_writes_top5():
+    # Explizites cfg ohne Gate und ohne Achsen: der Default (load_client) haengt
+    # in der Suite vom Import-Zeitpunkt ab und ist hier nicht Testgegenstand.
+    from types import SimpleNamespace
+    cfg = SimpleNamespace(NAME="t", FEATURES={}, KEYWORDS_BY_AXIS=None)
     posts = [{"post_url": str(i)} for i in range(5)]
     cands = [_cand(9, "A"), _cand(1, "B"), _cand(5, "C")]
     with patch("run_topic_mining.get_posts_since", return_value=posts), \
          patch("run_topic_mining.get_recent_idea_titles", return_value=[]), \
          patch("run_topic_mining.cluster_topics", return_value=cands), \
          patch("run_topic_mining.write_candidates") as mock_write:
-        run_topic_mining.run_topic_mining()
+        run_topic_mining.run_topic_mining(cfg=cfg)
     written = mock_write.call_args.args[0]
     labels = [c.theme_label for c in written]
     assert labels == ["A", "C"]

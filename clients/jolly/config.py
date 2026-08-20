@@ -132,6 +132,34 @@ Keep the overall look bright, clean, and brand-consistent""",
         "industrial SMEs). You cluster LinkedIn/Substack posts into blog-topic "
         "themes for jollymarketer.com and score each theme's blog potential."
     ),
+
+    # Mining-Brief (bis 2026-08-20 fest in tools/topic_clusterer.py, Wortlaut
+    # unveraendert uebernommen; nur die AVOID-Zeile ist in den generischen Teil
+    # des Prompts gewandert).
+    "TOPIC_MINING_BRIEF": (
+        "Extract 15-25 HYPER-SPECIFIC, ULTRA-LONG-TAIL blog-post topics for jollymarketer.com.\n"
+        "Each must be ONE single concrete buyer question - the kind someone types verbatim into Google "
+        "or ChatGPT when they have exactly that problem. Anchor every topic to at least one concrete "
+        "specific: a NAMED tool (Smartlead, Apollo, n8n, Claude), a specific CHANNEL, a specific "
+        "ROLE/segment, a specific SCENARIO - or a NUMBER/threshold, but ONLY if one of the posts above "
+        "states that exact number with the same unit and meaning. NEVER invent a number, and NEVER "
+        "change its unit or what it measures (a post saying '20.000 EUR contract value' does NOT "
+        "license a title about '20.000 accounts'). A topic with no source-backed number simply uses a "
+        "non-numeric anchor. 6-10 word keyword. "
+        "Do not stop at the topic level - go one level deeper into the exact sub-question.\n"
+        "Apply this three-level transformation and always output LEVEL 3:\n"
+        "  L1 head 'Cold email deliverability'\n"
+        "  L2 long-tail 'Warum B2B Cold Emails im Spam landen: SPF, DKIM, DMARC setzen'\n"
+        "  L3 ULTRA 'Wie viele Cold Emails pro Domain und Tag 2026, ohne im Spam zu landen?'\n"
+        "  L1 'RevOps process design' -> L3 'Ab wie vielen Pflichtfeldern im CRM-Deal kippt die "
+        "Datenqualitaet (und welche 5 reichen)?'\n"
+        "  L1 'GTM engineering' -> L3 'Ab welchem ARR lohnt sich der erste GTM Engineer statt eines "
+        "zweiten SDR im DACH-SaaS?'\n"
+        "  L1 'ICP' -> L3 'ICP aus 20 Closed-Won-Deals in Claude extrahieren: das Prompt-Template'\n\n"
+        "EXCLUDE any topic whose core hook is the HubSpot tool (Richard 2026-07-12: no HubSpot-centric "
+        "blog topics). Do not propose them at all; a passing HubSpot mention inside a broader "
+        "RevOps/CRM topic is fine."
+    ),
 }
 
 # Blanket-CTA unter jedem Post (Richard 2026-07-27). LinkedIn kann kein Wort

@@ -54,8 +54,26 @@ def _system_prompt() -> str:
     return role
 
 
+def _mining_brief(cfg=None) -> str:
+    """Mandanten-Mittelteil des Mining-Prompts aus TOKENS["TOPIC_MINING_BRIEF"]:
+    Extraktionsziel, Anker-Regeln, Beispiele, Ausschluesse. Aufloesung zur
+    Laufzeit wie bei TOPIC_CLUSTER_ROLE; bis 2026-08-20 stand hier fest
+    verdrahteter Jolly-Text (Blog-Themen fuer jollymarketer.com), den jeder
+    andere Mandant mitbekam."""
+    if cfg is None:
+        from clients import load_client
+        cfg = load_client()
+    brief = cfg.TOKENS.get("TOPIC_MINING_BRIEF", "")
+    if not brief:
+        raise RuntimeError(
+            f"Mandant '{cfg.NAME}' hat kein TOKENS['TOPIC_MINING_BRIEF'] in "
+            f"clients/{cfg.NAME}/config.py. Ohne Brief kein Topic-Mining."
+        )
+    return brief
+
+
 def _build_user_prompt(posts: list[dict], recent_titles: list[str],
-                       taste: dict | None = None) -> str:
+                       taste: dict | None = None, cfg=None) -> str:
     lines = []
     for p in posts:
         eng = p.get("engagement") or {}
@@ -82,32 +100,14 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str],
             f"He APPROVED these (generate topics matching this taste): {liked}\n"
             f"He REJECTED these (do NOT propose similar angles): {disliked}\n\n"
         )
+    # Mandanten-Brief (Ziel, Anker, Beispiele, Ausschluesse) zwischen Posts und
+    # AVOID-Liste. Die AVOID-Zeile stand bis 20.08.2026 mitten im Jolly-Text
+    # (vor dem HubSpot-Absatz); semantisch identisch, nur die Reihenfolge ist neu.
     return (
         taste_block +
         f"Here are recent, high-engagement B2B LinkedIn/Substack posts:\n\n{posts_block}\n\n"
-        "Extract 15-25 HYPER-SPECIFIC, ULTRA-LONG-TAIL blog-post topics for jollymarketer.com.\n"
-        "Each must be ONE single concrete buyer question - the kind someone types verbatim into Google "
-        "or ChatGPT when they have exactly that problem. Anchor every topic to at least one concrete "
-        "specific: a NAMED tool (Smartlead, Apollo, n8n, Claude), a specific CHANNEL, a specific "
-        "ROLE/segment, a specific SCENARIO - or a NUMBER/threshold, but ONLY if one of the posts above "
-        "states that exact number with the same unit and meaning. NEVER invent a number, and NEVER "
-        "change its unit or what it measures (a post saying '20.000 EUR contract value' does NOT "
-        "license a title about '20.000 accounts'). A topic with no source-backed number simply uses a "
-        "non-numeric anchor. 6-10 word keyword. "
-        "Do not stop at the topic level - go one level deeper into the exact sub-question.\n"
-        "Apply this three-level transformation and always output LEVEL 3:\n"
-        "  L1 head 'Cold email deliverability'\n"
-        "  L2 long-tail 'Warum B2B Cold Emails im Spam landen: SPF, DKIM, DMARC setzen'\n"
-        "  L3 ULTRA 'Wie viele Cold Emails pro Domain und Tag 2026, ohne im Spam zu landen?'\n"
-        "  L1 'RevOps process design' -> L3 'Ab wie vielen Pflichtfeldern im CRM-Deal kippt die "
-        "Datenqualitaet (und welche 5 reichen)?'\n"
-        "  L1 'GTM engineering' -> L3 'Ab welchem ARR lohnt sich der erste GTM Engineer statt eines "
-        "zweiten SDR im DACH-SaaS?'\n"
-        "  L1 'ICP' -> L3 'ICP aus 20 Closed-Won-Deals in Claude extrahieren: das Prompt-Template'\n\n"
+        + _mining_brief(cfg) + "\n\n"
         f"AVOID topics that duplicate any of these recently-suggested titles: {avoid}.\n\n"
-        "EXCLUDE any topic whose core hook is the HubSpot tool (Richard 2026-07-12: no HubSpot-centric "
-        "blog topics). Do not propose them at all; a passing HubSpot mention inside a broader "
-        "RevOps/CRM topic is fine.\n\n"
         "For each topic return an object with EXACTLY these keys:\n"
         "  theme_label (string = short internal label), support_count (int = how many posts back it), "
         "sample_influencers (array of strings), "
@@ -286,7 +286,7 @@ def filter_candidates(
 
 
 def cluster_topics(posts: list[dict], recent_titles: list[str],
-                   taste: dict | None = None) -> list[ThemeCandidate]:
+                   taste: dict | None = None, cfg=None) -> list[ThemeCandidate]:
     """One Claude call clustering posts into theme candidates. Returns [] if too
     few posts or on unparseable output. Caller applies filter_candidates()."""
     if len(posts) < MIN_POSTS:
@@ -295,7 +295,8 @@ def cluster_topics(posts: list[dict], recent_titles: list[str],
         model=MODEL,
         max_tokens=MAX_TOKENS,
         system=_system_prompt(),
-        messages=[{"role": "user", "content": _build_user_prompt(posts, recent_titles, taste=taste)}],
+        messages=[{"role": "user",
+                   "content": _build_user_prompt(posts, recent_titles, taste=taste, cfg=cfg)}],
     )
     raw = resp.content[0].text if resp.content else ""
     return _parse_clusters(raw)

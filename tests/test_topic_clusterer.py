@@ -162,7 +162,11 @@ def _theme(**overrides):
 
 
 def test_build_user_prompt_pins_tool_anchor_examples():
-    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}], recent_titles=[])
+    # Seit 20.08.2026 mandantenspezifisch (TOKENS["TOPIC_MINING_BRIEF"]),
+    # deshalb explizit gegen die Jolly-Config geprueft.
+    import clients.jolly.config as jolly
+    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}],
+                                recent_titles=[], cfg=jolly)
     assert "a NAMED tool (Smartlead, Apollo, n8n, Claude)" in prompt
 
 
@@ -193,7 +197,10 @@ def test_jolly_context_pins_clay_policy():
 def test_build_user_prompt_pins_hubspot_ban():
     # HubSpot ban (Richard 2026-07-12): prompt must exclude HubSpot-hook topics and
     # must not seed HubSpot via the tool-anchor example list or the L3 examples.
-    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}], recent_titles=[])
+    # Seit 20.08.2026 traegt der Jolly-Brief die Regel (TOPIC_MINING_BRIEF).
+    import clients.jolly.config as jolly
+    prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}],
+                                recent_titles=[], cfg=jolly)
     assert "EXCLUDE any topic whose core hook is the HubSpot tool" in prompt
     assert "HubSpot-Deal" not in prompt
     assert "(HubSpot," not in prompt

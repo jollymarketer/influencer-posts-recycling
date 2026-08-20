@@ -71,13 +71,17 @@ def test_build_prompt_refuses_unknown_channel():
 
 
 def test_build_prompt_carries_voice_persona_and_bans():
-    os.environ["CLIENT"] = "swot"
-    from clients import load_client
-    cfg = load_client()
+    """Stimme und Persona kommen aus dem cfg-Argument; die Sprach-Verbote sind
+    seit 20.08.2026 zur Importzeit in das Template gebacken (Prozess-Mandant,
+    CLIENT-Env beim Start). Der Test prueft deshalb die Bans des Template-
+    Mandanten, nicht die eines zur Laufzeit gereichten cfg."""
+    import importlib
+    swot = importlib.import_module("clients.swot.config")
+    from tools import post_scorer
     prompt = post_writer.build_prompt("Ein Titel", "Herkunft", "LinkedIn Christian",
-                                      "fristen", cfg=cfg)
+                                      "fristen", cfg=swot)
     assert "Christian Kulle" in prompt
     assert "Fristen mit Datum" in prompt
-    assert "Niemals Preise" in prompt
-    assert "Keine Hashtags" in prompt
+    baked_ban = post_scorer._cfg.TOKENS["LANGUAGE_BANS_DE"].splitlines()[0]
+    assert baked_ban in prompt
     assert "Ein Titel" in prompt
