@@ -132,9 +132,16 @@ def _parse_clusters(raw: str) -> list[ThemeCandidate]:
         text = fence.group(1).strip()
     try:
         data = json.loads(text)
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as e:
+        # Laut sein, nicht still. Am 20.08.2026 lieferten zwei Achsen-Laeufe
+        # "0 Kandidaten", und das las sich wie ein Nullbefund im Material. Der
+        # Wiederholungslauf ergab je 15 Kandidaten: es war ein Parse-Fehler.
+        print(f"  Cluster-Antwort nicht lesbar ({e}); {len(text)} Zeichen roh, "
+              f"Anfang: {text[:120]!r}", flush=True)
         return []
     if not isinstance(data, list):
+        print(f"  Cluster-Antwort ist kein JSON-Array, sondern {type(data).__name__}.",
+              flush=True)
         return []
     out = []
     for d in data:
