@@ -14,7 +14,6 @@ def _cand():
         theme_label="AI SDR adoption",
         support_count=4,
         sample_influencers=["Alice", "Bob"],
-        blog_score=82,
         suggested_title_en="Why AI SDRs Fail Without RevOps",
         suggested_title_de="Warum AI-SDRs ohne RevOps scheitern",
         keyword_en="ai sdr",
@@ -37,7 +36,6 @@ def test_write_candidates_maps_properties(monkeypatch):
     # Page title = readable DE article title (not the internal snake_case theme_label).
     assert props["Title"]["title"][0]["text"]["content"] == "Warum AI-SDRs ohne RevOps scheitern"
     assert props["Suggested Title EN"]["rich_text"][0]["text"]["content"] == "Why AI SDRs Fail Without RevOps"
-    assert props["Blog Score"]["number"] == 82
     assert props["Cluster Size"]["number"] == 4
     assert props["Status"]["select"]["name"] == "Hub needed"
     assert props["Type"]["select"]["name"] == "Spoke"

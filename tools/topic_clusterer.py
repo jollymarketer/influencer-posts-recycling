@@ -25,7 +25,6 @@ class ThemeCandidate:
     theme_label: str
     support_count: int
     sample_influencers: list[str]
-    blog_score: int
     suggested_title_en: str
     suggested_title_de: str
     keyword_en: str
@@ -71,15 +70,15 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str],
     posts_block = "\n".join(lines)
     avoid = "; ".join(recent_titles) if recent_titles else "(none)"
     # Richard's revealed taste (from his real picks/rejects in the Blog Pipeline);
-    # shapes topic generation AND blog_score calibration. Hard rules (Clay cap,
-    # HubSpot ban) stay as deterministic filters regardless of this block.
+    # shapes topic generation. Der HubSpot-Bann bleibt deterministischer Filter,
+    # unabhaengig von diesem Block.
     taste_block = ""
     if taste and (taste.get("picked") or taste.get("rejected")):
         liked = "; ".join(taste.get("picked") or []) or "(none yet)"
         disliked = "; ".join(taste.get("rejected") or []) or "(none yet)"
         taste_block = (
             "RICHARD'S REVEALED TASTE — learned from his real approve/reject decisions "
-            "on past candidates. Weigh this heavily in topic choice and blog_score:\n"
+            "on past candidates. Weigh this heavily in topic choice:\n"
             f"He APPROVED these (generate topics matching this taste): {liked}\n"
             f"He REJECTED these (do NOT propose similar angles): {disliked}\n\n"
         )
@@ -106,15 +105,12 @@ def _build_user_prompt(posts: list[dict], recent_titles: list[str],
         "zweiten SDR im DACH-SaaS?'\n"
         "  L1 'ICP' -> L3 'ICP aus 20 Closed-Won-Deals in Claude extrahieren: das Prompt-Template'\n\n"
         f"AVOID topics that duplicate any of these recently-suggested titles: {avoid}.\n\n"
-        "Jolly no longer uses or promotes Clay: DE-PRIORITIZE any topic whose core hook is the Clay "
-        "tool specifically (cap its blog_score at 40). Passing mentions are fine; stay tool-agnostic.\n\n"
         "EXCLUDE any topic whose core hook is the HubSpot tool (Richard 2026-07-12: no HubSpot-centric "
         "blog topics). Do not propose them at all; a passing HubSpot mention inside a broader "
         "RevOps/CRM topic is fine.\n\n"
         "For each topic return an object with EXACTLY these keys:\n"
         "  theme_label (string = short internal label), support_count (int = how many posts back it), "
-        "sample_influencers (array of strings), blog_score (int 0-100 weighing long-tail search "
-        "intent, evergreen potential, cluster support depth, and fit to Jolly B2B-DACH ICP), "
+        "sample_influencers (array of strings), "
         "suggested_title_en, suggested_title_de (the full long-tail article title), "
         "keyword_en, keyword_de (the 4-8 word long-tail keyword), "
         "evidence_quote (string: if either title contains a number, the VERBATIM sentence from one of "
@@ -152,7 +148,6 @@ def _parse_clusters(raw: str) -> list[ThemeCandidate]:
                 theme_label=str(d.get("theme_label", "")).strip(),
                 support_count=int(d.get("support_count", 0) or 0),
                 sample_influencers=list(d.get("sample_influencers", []) or []),
-                blog_score=int(d.get("blog_score", 0) or 0),
                 suggested_title_en=str(d.get("suggested_title_en", "")).strip(),
                 suggested_title_de=str(d.get("suggested_title_de", "")).strip(),
                 keyword_en=str(d.get("keyword_en", "")).strip(),
@@ -169,29 +164,15 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.lower()).strip()
 
 
-# Deterministic backstop for the prompt's "cap its blog_score at 40" Clay rule:
-# the prompt line is advisory (LLM can ignore it), this clamp is not. With
-# SCORE_THRESHOLD = 70 in run_topic_mining.py the capped topics are dropped;
-# under a threshold <= 40 they survive but sort last (de-prioritized).
-CLAY_SCORE_CAP = 40
-_CLAY_RE = re.compile(r"\bclay\b", re.IGNORECASE)
-
 # Hard ban (Richard 2026-07-12): no HubSpot-hook blog topics at all. The prompt
-# excludes them; this filter is the deterministic backstop. Unlike the Clay cap
-# (de-prioritise), a HubSpot hook drops the candidate outright at ANY threshold.
+# excludes them; this filter is the deterministic backstop. Ein HubSpot-Haken
+# verwirft den Kandidaten sofort, unabhaengig von der Schwelle.
 _HUBSPOT_RE = re.compile(r"\bhubspot\b", re.IGNORECASE)
 
 
 def _hook_fields(c: ThemeCandidate) -> tuple:
     return (c.theme_label, c.suggested_title_en, c.suggested_title_de,
             c.keyword_en, c.keyword_de)
-
-
-def _cap_clay_topics(candidates: list[ThemeCandidate]) -> list[ThemeCandidate]:
-    for c in candidates:
-        if any(_CLAY_RE.search(f or "") for f in _hook_fields(c)):
-            c.blog_score = min(c.blog_score, CLAY_SCORE_CAP)
-    return candidates
 
 
 def _drop_hubspot_topics(candidates: list[ThemeCandidate]) -> list[ThemeCandidate]:
@@ -275,14 +256,17 @@ def filter_candidates(
     top_n: int,
     recent_titles: list[str],
 ) -> list[ThemeCandidate]:
-    """Drop below-threshold themes, dedup against recent titles (case-insensitive
-    normalized substring either direction), sort by score desc, cap at top_n.
-    HubSpot-hook themes are dropped outright; Clay-hook themes are clamped to
-    CLAY_SCORE_CAP first; themes whose title numbers lack a verbatim source
-    quote are dropped (number provenance)."""
+    """Themen mit weniger als `threshold` Fundstellen fallen raus, Dedup gegen
+    recent titles (case-insensitive normalized substring either direction),
+    Sortierung nach Fundstellen absteigend, Deckel bei top_n. HubSpot-Themen
+    fliegen ganz raus; Themen mit Zahl im Titel ohne Quellsatz ebenfalls.
+
+    threshold zaehlt seit 20.08.2026 Fundstellen (support_count), nicht mehr den
+    blog_score. Der war Modellurteil und im Prompt auf Jollys ICP verdrahtet,
+    also fuer jeden anderen Mandanten falsch kalibriert. Fundstellen sind
+    gezaehlt, nicht geraten."""
     candidates = _drop_hubspot_topics(candidates)
     candidates = _drop_unbacked_number_topics(candidates)
-    candidates = _cap_clay_topics(candidates)
     recent_norm = [_norm(t) for t in recent_titles if t]
 
     def is_dupe(c: ThemeCandidate) -> bool:
@@ -296,8 +280,8 @@ def filter_candidates(
                     return True
         return False
 
-    kept = [c for c in candidates if c.blog_score >= threshold and not is_dupe(c)]
-    kept.sort(key=lambda c: c.blog_score, reverse=True)
+    kept = [c for c in candidates if c.support_count >= threshold and not is_dupe(c)]
+    kept.sort(key=lambda c: c.support_count, reverse=True)
     return kept[:top_n]
 
 

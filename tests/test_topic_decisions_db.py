@@ -27,7 +27,6 @@ def _page(status, classification="", created="2026-07-10T07:25:00.000Z",
             "Suggested Title EN": rt("EN title"),
             "Keyword DE": rt("kw de"),
             "Keyword EN": rt("kw en"),
-            "Blog Score": {"number": 85},
             "Cluster Size": {"number": 4},
             "Source Influencers": rt("A, B"),
             "Parent Hub URL": {"url": "https://x/hub/"},
@@ -71,7 +70,6 @@ def test_learn_flag_cutoff():
 def test_field_mapping():
     row = _to_decision_row(_page("Freigabe offen"), NOW)
     assert row["title_de"] == "DE-Titel"
-    assert row["blog_score"] == 85
     assert row["cluster_size"] == 4
     assert row["parent_hub_url"] == "https://x/hub/"
     assert row["batch_date"] == "2026-07-10"

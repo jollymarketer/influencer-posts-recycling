@@ -39,7 +39,6 @@ def main() -> int:
             "Suggested Title DE": {"rich_text": {}},
             "Keyword EN": {"rich_text": {}},
             "Keyword DE": {"rich_text": {}},
-            "Blog Score": {"number": {}},
             "Cluster Size": {"number": {}},
             "Source Influencers": {"rich_text": {}},
             "Supporting Posts": {"rich_text": {}},

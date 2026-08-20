@@ -81,7 +81,6 @@ def write_candidates(candidates: list[ThemeCandidate], achse: str | None = None)
             "Suggested Title DE": _rt(c.suggested_title_de),
             "Keyword EN": _rt(c.keyword_en),
             "Keyword DE": _rt(c.keyword_de),
-            "Blog Score": {"number": c.blog_score},
             "Cluster Size": {"number": c.support_count},
             "Source Influencers": _rt(", ".join(c.sample_influencers)),
             "Supporting Posts": _rt("\n".join(c.supporting_post_urls)),

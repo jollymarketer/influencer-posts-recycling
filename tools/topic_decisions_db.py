@@ -114,7 +114,6 @@ def _to_decision_row(page: dict, now_iso: str) -> dict:
         "title_en": _rt(p, "Suggested Title EN"),
         "keyword_de": _rt(p, "Keyword DE"),
         "keyword_en": _rt(p, "Keyword EN"),
-        "blog_score": (p.get("Blog Score", {}) or {}).get("number"),
         "cluster_size": (p.get("Cluster Size", {}) or {}).get("number"),
         "source_influencers": _rt(p, "Source Influencers"),
         "parent_hub_url": (p.get("Parent Hub URL", {}) or {}).get("url") or "",

@@ -49,7 +49,7 @@ JOLLY_KEYWORDS = [
 # Server-side author-headline filter. NOTE: the actor treats authorKeywords as a SINGLE term, not a
 # multi-term OR-list (a space/comma list returns 0 results). So this is disabled by default; pass a
 # single broad term via --author-keywords (e.g. "sales") if you want it. Off-industry/hiring noise is
-# better handled post-scrape (see virality filter + downstream blog_score clusterer).
+# better handled post-scrape (see virality filter + downstream clusterer).
 AUTHOR_KEYWORDS = ""
 
 

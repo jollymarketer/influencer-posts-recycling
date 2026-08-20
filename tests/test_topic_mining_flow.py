@@ -26,10 +26,11 @@ import run_topic_mining
 from tools.topic_clusterer import ThemeCandidate
 
 
-def _cand(score, label="T"):
+def _cand(support, label="T"):
+    # support = Fundstellen; seit 20.08.2026 die Filter- und Sortiergroesse.
     return ThemeCandidate(
-        theme_label=label, support_count=3, sample_influencers=["A"],
-        blog_score=score, suggested_title_en="t", suggested_title_de="t",
+        theme_label=label, support_count=support, sample_influencers=["A"],
+        suggested_title_en="t", suggested_title_de="t",
         keyword_en="k", keyword_de="k", supporting_post_urls=["u"],
     )
 
@@ -45,7 +46,7 @@ def test_mining_skips_when_too_few_posts():
 
 def test_mining_filters_and_writes_top5():
     posts = [{"post_url": str(i)} for i in range(5)]
-    cands = [_cand(90, "A"), _cand(50, "B"), _cand(75, "C")]
+    cands = [_cand(9, "A"), _cand(1, "B"), _cand(5, "C")]
     with patch("run_topic_mining.get_posts_since", return_value=posts), \
          patch("run_topic_mining.get_recent_idea_titles", return_value=[]), \
          patch("run_topic_mining.cluster_topics", return_value=cands), \

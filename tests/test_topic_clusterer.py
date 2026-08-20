@@ -19,7 +19,6 @@ SAMPLE = [
         "theme_label": "AI SDR adoption",
         "support_count": 4,
         "sample_influencers": ["Alice", "Bob"],
-        "blog_score": 82,
         "suggested_title_en": "Why AI SDRs Fail Without RevOps",
         "suggested_title_de": "Warum AI-SDRs ohne RevOps scheitern",
         "keyword_en": "ai sdr",
@@ -30,7 +29,6 @@ SAMPLE = [
         "theme_label": "Cold email deliverability",
         "support_count": 2,
         "sample_influencers": ["Cara"],
-        "blog_score": 55,
         "suggested_title_en": "Deliverability in 2026",
         "suggested_title_de": "Zustellbarkeit 2026",
         "keyword_en": "email deliverability",
@@ -45,7 +43,6 @@ def test_parse_clusters_plain_json():
     assert len(out) == 2
     assert isinstance(out[0], ThemeCandidate)
     assert out[0].theme_label == "AI SDR adoption"
-    assert out[0].blog_score == 82
 
 
 def test_parse_clusters_strips_code_fence():
@@ -59,8 +56,9 @@ def test_parse_clusters_bad_json_returns_empty():
 
 
 def test_filter_candidates_threshold_and_topn():
+    # Schwelle zaehlt Fundstellen: SAMPLE[0] hat 4, SAMPLE[1] nur 2.
     cands = _parse_clusters(_raw(SAMPLE))
-    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
+    out = filter_candidates(cands, threshold=3, top_n=5, recent_titles=[])
     assert len(out) == 1
     assert out[0].theme_label == "AI SDR adoption"
 
@@ -68,7 +66,7 @@ def test_filter_candidates_threshold_and_topn():
 def test_filter_candidates_dedup_case_insensitive_substring():
     cands = _parse_clusters(_raw(SAMPLE))
     out = filter_candidates(
-        cands, threshold=50, top_n=5,
+        cands, threshold=1, top_n=5,
         recent_titles=["why ai sdrs fail without revops"],
     )
     labels = [c.theme_label for c in out]
@@ -80,14 +78,14 @@ def test_filter_candidates_topn_caps_after_sort():
     many = []
     for i in range(10):
         t = dict(SAMPLE[0])
-        t["blog_score"] = 70 + i
+        t["support_count"] = 1 + i
         t["theme_label"] = f"Theme {i}"
         t["suggested_title_en"] = f"Title {i}"
         many.append(t)
     cands = _parse_clusters(_raw(many))
-    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
+    out = filter_candidates(cands, threshold=2, top_n=5, recent_titles=[])
     assert len(out) == 5
-    assert out[0].blog_score == 79
+    assert out[0].support_count == 10
 
 
 def test_filter_candidates_short_label_does_not_false_dedup():
@@ -97,7 +95,6 @@ def test_filter_candidates_short_label_does_not_false_dedup():
         "theme_label": "Cold email",
         "support_count": 3,
         "sample_influencers": ["X"],
-        "blog_score": 80,
         "suggested_title_en": "Cold Email Copywriting Tactics That Convert",
         "suggested_title_de": "Cold-Email-Copywriting das konvertiert",
         "keyword_en": "cold email copywriting",
@@ -106,7 +103,7 @@ def test_filter_candidates_short_label_does_not_false_dedup():
     }
     cands = _parse_clusters(_raw([t]))
     out = filter_candidates(
-        cands, threshold=50, top_n=5,
+        cands, threshold=1, top_n=5,
         recent_titles=["Cold email deliverability best practices in 2026"],
     )
     assert len(out) == 1  # distinct theme kept, not false-deduped
@@ -149,26 +146,23 @@ def test_build_user_prompt_does_not_request_or_echo_urls():
     assert "Do NOT echo post URLs" in prompt
 
 
-def _clay_theme(**overrides):
+def _theme(**overrides):
     t = {
-        "theme_label": "Clay waterfall enrichment setup",
+        "theme_label": "Waterfall enrichment setup",
         "support_count": 3,
         "sample_influencers": ["X"],
-        "blog_score": 85,
-        "suggested_title_en": "How to build a Clay waterfall for DACH SaaS",
-        "suggested_title_de": "Clay-Waterfall fuer DACH-SaaS aufbauen",
-        "keyword_en": "clay waterfall enrichment",
-        "keyword_de": "clay waterfall anreicherung",
+        "suggested_title_en": "How to build an enrichment waterfall for DACH SaaS",
+        "suggested_title_de": "Anreicherungs-Waterfall fuer DACH-SaaS aufbauen",
+        "keyword_en": "waterfall enrichment",
+        "keyword_de": "waterfall anreicherung",
         "supporting_post_urls": [],
     }
     t.update(overrides)
     return t
 
 
-def test_build_user_prompt_pins_clay_policy():
-    # Clay de-emphasis policy is prompt text; this pins it against silent refactor loss.
+def test_build_user_prompt_pins_tool_anchor_examples():
     prompt = _build_user_prompt([{"influencer": "A", "post_text": "p"}], recent_titles=[])
-    assert "DE-PRIORITIZE any topic whose core hook is the Clay" in prompt
     assert "a NAMED tool (Smartlead, Apollo, n8n, Claude)" in prompt
 
 
@@ -188,6 +182,14 @@ def test_build_user_prompt_no_taste_block_when_empty():
         assert "RICHARD'S REVEALED TASTE" not in prompt
 
 
+def test_jolly_context_pins_clay_policy():
+    # Jollys eigene Schreib-Regel, unabhaengig vom entfernten Blog-Score-Cap:
+    # Clay-zentrische Posts bleiben fuer den Jolly-Kanal unerwuenscht.
+    from clients.jolly.config import CONTEXT
+    assert "NICHT pushen: Clay" in CONTEXT
+    assert "tool-agnostisch" in CONTEXT
+
+
 def test_build_user_prompt_pins_hubspot_ban():
     # HubSpot ban (Richard 2026-07-12): prompt must exclude HubSpot-hook topics and
     # must not seed HubSpot via the tool-anchor example list or the L3 examples.
@@ -197,33 +199,9 @@ def test_build_user_prompt_pins_hubspot_ban():
     assert "(HubSpot," not in prompt
 
 
-def test_jolly_context_pins_clay_policy():
-    from clients.jolly.config import CONTEXT
-    assert "NICHT pushen: Clay" in CONTEXT
-    assert "tool-agnostisch" in CONTEXT
-
-
-def test_filter_candidates_caps_clay_hook_topics():
-    # Deterministic backstop: even if the model ignores the cap-at-40 instruction,
-    # a Clay-hook theme scored 85 must not pass the threshold-70 filter.
-    cands = _parse_clusters(_raw([_clay_theme(), SAMPLE[0]]))
-    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
-    labels = [c.theme_label for c in out]
-    assert "Clay waterfall enrichment setup" not in labels
-    assert "AI SDR adoption" in labels
-
-
-def test_filter_candidates_clay_cap_keeps_topic_below_low_threshold():
-    # With a low threshold the capped topic survives at exactly the cap (de-prioritized, not banned).
-    cands = _parse_clusters(_raw([_clay_theme()]))
-    out = filter_candidates(cands, threshold=30, top_n=5, recent_titles=[])
-    assert len(out) == 1
-    assert out[0].blog_score == 40
-
-
 def test_filter_candidates_drops_hubspot_hook_at_any_threshold():
     # Ban, not cap: a HubSpot-hook theme scored 85 is dropped even at threshold 30.
-    t = _clay_theme(
+    t = _theme(
         theme_label="HubSpot data model for churn",
         suggested_title_en="Which HubSpot data model changes you need before measuring churn",
         suggested_title_de="Welche HubSpot-Datenmodell-Aenderungen du brauchst",
@@ -231,7 +209,7 @@ def test_filter_candidates_drops_hubspot_hook_at_any_threshold():
         keyword_de="hubspot datenmodell churn",
     )
     cands = _parse_clusters(_raw([t, SAMPLE[0]]))
-    out = filter_candidates(cands, threshold=30, top_n=5, recent_titles=[])
+    out = filter_candidates(cands, threshold=1, top_n=5, recent_titles=[])
     labels = [c.theme_label for c in out]
     assert "HubSpot data model for churn" not in labels
     assert "AI SDR adoption" in labels
@@ -239,7 +217,7 @@ def test_filter_candidates_drops_hubspot_hook_at_any_threshold():
 
 def test_filter_candidates_hubspot_ban_word_boundary():
     # Only a real HubSpot hook triggers the ban; other CRM topics pass.
-    t = _clay_theme(
+    t = _theme(
         theme_label="CRM data quality fields",
         suggested_title_en="How many required CRM deal fields before data quality tips",
         suggested_title_de="Ab wie vielen Pflichtfeldern im CRM-Deal kippt die Datenqualitaet",
@@ -247,23 +225,8 @@ def test_filter_candidates_hubspot_ban_word_boundary():
         keyword_de="crm pflichtfelder datenqualitaet",
     )
     cands = _parse_clusters(_raw([t]))
-    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
+    out = filter_candidates(cands, threshold=3, top_n=5, recent_titles=[])
     assert len(out) == 1
-
-
-def test_filter_candidates_clay_cap_word_boundary_spares_claude():
-    # "Claude" must not trigger the Clay cap.
-    t = _clay_theme(
-        theme_label="ICP extraction with Claude",
-        suggested_title_en="Extract your ICP from 20 closed-won deals in Claude",
-        suggested_title_de="ICP aus 20 Closed-Won-Deals in Claude extrahieren",
-        keyword_en="claude icp extraction",
-        keyword_de="claude icp extraktion",
-    )
-    cands = _parse_clusters(_raw([t]))
-    out = filter_candidates(cands, threshold=70, top_n=5, recent_titles=[])
-    assert len(out) == 1
-    assert out[0].blog_score == 85
 
 
 # --- Gate A: number provenance (2026-07-13, 46313 post-mortem) ---------------
@@ -300,14 +263,13 @@ def test_unbacked_number_candidate_is_dropped():
         theme_label="abm_tam",
         support_count=3,
         sample_influencers=["Maja"],
-        blog_score=86,
         suggested_title_en="ABM only under 20,000 accounts TAM",
         suggested_title_de="ABM nur bei TAM unter 20.000 Accounts",
         keyword_en="abm tam threshold",
         keyword_de="abm tam schwelle",
         evidence_quote="ABM lohnt sich ab 50.000 € Kundenwert.",
     )
-    out = filter_candidates([c], threshold=60, top_n=10, recent_titles=[])
+    out = filter_candidates([c], threshold=2, top_n=10, recent_titles=[])
     assert out == []
 
 
@@ -316,14 +278,13 @@ def test_backed_number_candidate_survives():
         theme_label="acv_threshold",
         support_count=3,
         sample_influencers=["Maja"],
-        blog_score=86,
         suggested_title_en="ABM pays off above €50,000 ACV",
         suggested_title_de="ABM lohnt sich ab 50.000 € ACV",
         keyword_en="abm acv threshold",
         keyword_de="abm acv schwelle",
         evidence_quote="Waehle ABM, wenn dein durchschnittlicher Kundenwert 50.000 € uebersteigt.",
     )
-    out = filter_candidates([c], threshold=60, top_n=10, recent_titles=[])
+    out = filter_candidates([c], threshold=2, top_n=10, recent_titles=[])
     assert len(out) == 1
 
 
@@ -332,7 +293,6 @@ def test_k_suffix_in_evidence_backs_dotted_title_number():
         theme_label="k_suffix",
         support_count=2,
         sample_influencers=["Dan"],
-        blog_score=75,
         suggested_title_en="Why 20,000 emails per month break your domain",
         suggested_title_de="Warum 20.000 Mails pro Monat die Domain killen",
         keyword_en="email volume domain",
@@ -347,14 +307,13 @@ def test_number_free_candidate_needs_no_evidence():
         theme_label="icp_clarity",
         support_count=2,
         sample_influencers=["Brigitta"],
-        blog_score=70,
         suggested_title_en="Why ICP clarity beats tooling",
         suggested_title_de="Warum ICP-Klarheit vor Tooling kommt",
         keyword_en="icp clarity",
         keyword_de="icp klarheit",
         evidence_quote="",
     )
-    out = filter_candidates([c], threshold=60, top_n=10, recent_titles=[])
+    out = filter_candidates([c], threshold=2, top_n=10, recent_titles=[])
     assert len(out) == 1
 
 

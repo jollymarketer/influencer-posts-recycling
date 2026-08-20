@@ -220,7 +220,9 @@ def read_topics(statuses=("New", "Hub needed")) -> list[Topic]:
             page_id=r["id"], title=title,
             title_de=_txt(p, "Suggested Title DE"),
             keyword_de=_txt(p, "Keyword DE"),
-            score=int((p.get("Blog Score", {}) or {}).get("number") or 0),
+            # Rang seit 20.08.2026 ueber Fundstellen (Cluster Size), nicht mehr
+            # ueber den Blog Score. Der war Modellurteil auf Jollys ICP geeicht.
+            score=int((p.get("Cluster Size", {}) or {}).get("number") or 0),
             axis=axis if axis in AXES else None,
             evidence=_txt(p, "Evidence Quote"),
         ))
@@ -257,7 +259,7 @@ def write_proposals(slots: list[Slot]) -> int:
         else:
             titel = s.topic["title_de"] or s.topic["title"]
             kurz = (f"Maschineller Themenvorschlag, Achse: "
-                    f"{AXIS_LABEL[s.axis]}, Score {s.topic['score']}. "
+                    f"{AXIS_LABEL[s.axis]}, {s.topic['score']} Fundstellen. "
                     f"Suchbegriff: {s.topic['keyword_de']}.")
             if s.topic.get("evidence"):
                 kurz += f' Beleg: "{s.topic["evidence"][:200]}"'

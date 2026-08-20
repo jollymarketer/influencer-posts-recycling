@@ -17,9 +17,10 @@ from tools.topic_decisions_db import get_taste_corpus
 from tools.topic_ideas_db import get_recent_idea_titles, write_candidates
 
 WINDOW_DAYS = 7
-# 2026-07-12 (Richard): mehr Auswahl in der Pick-Queue — Threshold 70->60,
-# Top-5 -> Top-10. Clay-Cap (40) bleibt unter dem Threshold wirksam.
-SCORE_THRESHOLD = 60
+# 2026-07-12 (Richard): mehr Auswahl in der Pick-Queue, Top-5 -> Top-10.
+# 2026-08-20 (Richard): Blog Score entfernt. Die Schwelle zaehlt jetzt
+# Fundstellen, also wie viele Posts ein Thema wirklich stuetzen.
+MIN_SUPPORT = 2
 TOP_N = 10
 
 
@@ -43,9 +44,9 @@ def run_topic_mining(window_days: int = WINDOW_DAYS, top_n: int = TOP_N) -> None
     candidates = cluster_topics(posts, recent_titles=recent_titles, taste=taste)
     print(f"  Claude lieferte {len(candidates)} Long-Tail-Kandidaten.")
     top = filter_candidates(
-        candidates, threshold=SCORE_THRESHOLD, top_n=top_n, recent_titles=recent_titles
+        candidates, threshold=MIN_SUPPORT, top_n=top_n, recent_titles=recent_titles
     )
-    print(f"  {len(top)} nach Filter (>= {SCORE_THRESHOLD}, Top-{top_n}).")
+    print(f"  {len(top)} nach Filter (>= {MIN_SUPPORT} Fundstellen, Top-{top_n}).")
     n = write_candidates(top)
     print(f"  {n} Themen-Kandidaten in Notion geschrieben.")
 
