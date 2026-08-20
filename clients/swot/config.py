@@ -626,6 +626,11 @@ KEYWORDS_BY_AXIS = {
 APIFY_TOKEN_ENV = "APIFY_API_TOKEN_SWOT"
 APIFY_ACCOUNT = "kueswot"
 
+# kie.ai-Konto SWOT (Richard 20.08.2026), gleiche Logik wie beim Apify-Token:
+# eigener Env-Name, damit ein fehlender SWOT-Key nie still auf Jollys
+# KIEAI_API_KEY zurueckfaellt. Aufgeloest in tools/kieai_image._api_key.
+KIEAI_TOKEN_ENV = "KIEAI_API_KEY_SWOT"
+
 VIRALITY_WEIGHT = 0.3
 MIN_SCORE = 15
 

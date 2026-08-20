@@ -20,8 +20,25 @@ from clients import load_client
 
 load_dotenv()
 
-KIEAI_API_KEY = os.getenv("KIEAI_API_KEY")
 KIEAI_BASE_URL = "https://api.kie.ai/api/v1"
+
+
+def _api_key(cfg=None) -> str:
+    """kie.ai-Key des Mandanten (Muster APIFY_TOKEN_ENV, 20.08.2026): die
+    Client-Config darf per KIEAI_TOKEN_ENV einen eigenen Env-Namen setzen
+    (SWOT: KIEAI_API_KEY_SWOT, eigenes Konto, Kunde zahlt). Fehlt der
+    benannte Key, bricht der Lauf mit Klartext ab - nie stiller Rueckfall
+    auf Jollys KIEAI_API_KEY."""
+    cfg = cfg or load_client()
+    name = getattr(cfg, "KIEAI_TOKEN_ENV", "KIEAI_API_KEY")
+    key = (os.getenv(name) or "").strip()
+    if not key:
+        raise ValueError(
+            f"{name} fehlt in der .env. Der Mandant erwartet diesen Namen "
+            f"(KIEAI_TOKEN_ENV in seiner config.py). Kein Fallback auf einen "
+            f"anderen kie.ai-Key."
+        )
+    return key
 # Default-Modell des Daily-Pipelines. Ueber den model-Parameter von generate_image
 # pro Aufruf ueberschreibbar (z.B. "google/nano-banana" als Fallback, wenn kie.ai
 # gpt-image-2 serverseitig stoert) — ohne den Pipeline-Default zu aendern.
@@ -353,7 +370,7 @@ def _kie_request_with_retry(method: str, url: str, **kwargs) -> requests.Respons
 def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model: str = DEFAULT_MODEL) -> str:
     """Eine vollstaendige kie.ai-Generierung: createTask + Polling + Upload. Raises RuntimeError bei Fehler."""
     headers = {
-        "Authorization": f"Bearer {KIEAI_API_KEY}",
+        "Authorization": f"Bearer {_api_key()}",
         "Content-Type": "application/json",
     }
 
