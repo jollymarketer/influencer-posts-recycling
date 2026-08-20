@@ -64,12 +64,21 @@ class Topic:
 # --- Slot-Raster --------------------------------------------------------------
 
 def build_slots(year: int, month: int) -> list[Slot]:
-    """Alle Beitrags-Slots des Monats aus POSTING_SCHEDULE, chronologisch."""
+    """Alle Beitrags-Slots des Monats aus POSTING_SCHEDULE, chronologisch.
+
+    Beschraenkt auf ACTIVE_ACCOUNTS des Mandanten, sofern gesetzt: ein
+    stillgelegtes Konto bekommt keinen Slot und damit keinen Beitrag. Ohne den
+    Eintrag zaehlen alle Konten, das Verhalten bleibt fuer andere Mandanten
+    unveraendert.
+    """
+    aktiv = getattr(_cfg, "ACTIVE_ACCOUNTS", None)
     slots = []
     _, last = calendar.monthrange(year, month)
     for d in range(1, last + 1):
         day = date(year, month, d)
         for account, spec in _cfg.POSTING_SCHEDULE.items():
+            if aktiv and account not in aktiv:
+                continue
             if day.weekday() in spec["weekdays"]:
                 slots.append(Slot(day=day, account=account, kanal=spec["kanal"]))
     return slots

@@ -654,6 +654,12 @@ INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
 # filtert auf "Zur Freigabe" und zeigt Vorschlaege deshalb nicht.
 CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 
+# Aktive Absender-Konten (Richard, 20.08.2026). Nur diese bekommen Slots und
+# damit Beitraege. Ausdruecklich vorlaeufig: Baumert und die Unternehmensseite
+# kommen spaeter zurueck, dann reicht es, sie hier wieder aufzunehmen. Leere
+# Liste oder fehlender Eintrag heisst: alle Konten aus POSTING_SCHEDULE.
+ACTIVE_ACCOUNTS = ["werner", "kulle"]
+
 # Feste Beitragstage je Konto (Wochentag, Montag=0). Aus dem September-Plan.
 POSTING_SCHEDULE = {
     "kulle":             {"kanal": "LinkedIn Christian",        "weekdays": [1, 3]},
