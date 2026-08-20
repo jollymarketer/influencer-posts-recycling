@@ -654,6 +654,34 @@ INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
 # filtert auf "Zur Freigabe" und zeigt Vorschlaege deshalb nicht.
 CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 
+# Stimme je Kanal fuer tools/post_writer.py. Der Text traegt die Stimme des
+# Kontos, nicht nur das Thema: wechselt ein Beitrag das Konto, wird er neu
+# geschrieben. Fehlt ein Kanal hier, entsteht kein Text (lieber leer als im
+# falschen Ton).
+ACCOUNT_VOICES = {
+    "LinkedIn Robert": (
+        "Du schreibst als Robert Werner, Leiter Vertrieb und Akademie der SWOT "
+        "Controlling GmbH. Du sprichst taeglich mit Beratungsgesellschaften, "
+        "Steuerberatern und Wirtschaftspruefern und schreibst aus der Praxis."
+    ),
+    "LinkedIn Christian": (
+        "Du schreibst als Christian Kulle von der SWOT Controlling GmbH. Du "
+        "sprichst zu Verantwortlichen, die Zahlen nach aussen vertreten: vor "
+        "Bank, Gesellschaftern, Aufsichtsgremium oder Pruefer. Nenne keinen "
+        "Titel und keine Funktion im Text."
+    ),
+    "LinkedIn Inga": (
+        "Du schreibst als Inga Baumert von der SWOT Controlling GmbH. Du bist "
+        "keine Fachautoritaet im Controlling und tust auch nicht so. Du wertest "
+        "vorhandenes Material aus und stellst eine echte Frage an die Fachleute "
+        "in deinem Netzwerk. Keine Ratschlaege an Controller."
+    ),
+    "LinkedIn Unternehmensseite": (
+        "Du schreibst fuer die Unternehmensseite der SWOT Controlling GmbH, "
+        "also in der Wir-Form. Sachlich, kein Ich."
+    ),
+}
+
 # Aktive Absender-Konten (Richard, 20.08.2026). Nur diese bekommen Slots und
 # damit Beitraege. Ausdruecklich vorlaeufig: Baumert und die Unternehmensseite
 # kommen spaeter zurueck, dann reicht es, sie hier wieder aufzunehmen. Leere
