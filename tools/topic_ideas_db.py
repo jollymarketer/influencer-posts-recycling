@@ -60,8 +60,13 @@ def _rt(text: str) -> dict:
     return {"rich_text": [{"text": {"content": _utf16_truncate(text or "", 1990)}}]}
 
 
-def write_candidates(candidates: list[ThemeCandidate]) -> int:
-    """Create one Notion page per candidate. Returns count written."""
+def write_candidates(candidates: list[ThemeCandidate], achse: str | None = None) -> int:
+    """Create one Notion page per candidate. Returns count written.
+
+    achse setzt die Select-Spalte "Achse" (SWOT, seit 20.08.2026). Wird je Achse
+    getrennt geclustert, kennt der Aufrufer die Herkunft; ohne den Wert kaeme
+    die Zeile ohne Achse an und der Monatsplan koennte sie nicht mischen.
+    """
     if not candidates:
         return 0
     written = 0
@@ -88,6 +93,8 @@ def write_candidates(candidates: list[ThemeCandidate]) -> int:
             "Language EN": {"checkbox": True},
             "Deep Research": {"checkbox": True},
         }
+        if achse:
+            props["Achse"] = {"select": {"name": achse}}
         payload = {"parent": {"database_id": _db_id()}, "properties": props}
         resp = requests.post(f"{NOTION_API}/pages", headers=_headers(), json=payload, timeout=TIMEOUT)
         if not resp.ok:
