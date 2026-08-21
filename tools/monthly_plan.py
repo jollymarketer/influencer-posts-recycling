@@ -74,6 +74,7 @@ class Topic:
     score: int
     axis: str | None = None
     evidence: str = ""
+    scraped_at: str = ""
     raw: dict = field(default_factory=dict)
 
 
@@ -250,6 +251,9 @@ def read_topics(statuses=("New", "Hub needed")) -> list[Topic]:
             score=int((p.get("Cluster Size", {}) or {}).get("number") or 0),
             axis=axis if axis in AXES else None,
             evidence=_txt(p, "Evidence Quote"),
+            # Scrape-Tag des Themas = Anlage in der Themen-DB; landet als
+            # "Gescraped am" in der kundensichtbaren Plan-Zeile.
+            scraped_at=(r.get("created_time") or "")[:10],
         ))
     return topics
 
@@ -305,6 +309,9 @@ def write_proposals(slots: list[Slot]) -> int:
             "Geplant für": {"date": {"start": s.day.isoformat()}},
             "Kurzbeschreibung": {"rich_text": [{"text": {"content": kurz[:1900]}}]},
         }
+        # Fristen-Slots stammen aus dem Kalender, nicht aus einem Scrape.
+        if s.topic is not None and s.topic.get("scraped_at"):
+            props["Gescraped am"] = {"date": {"start": s.topic["scraped_at"]}}
         resp = requests.post(f"{NOTION_API}/pages", headers=notion_headers(),
                              json={"parent": {"database_id": _cfg.CONTENT_PLAN_DB_ID},
                                    "properties": props}, timeout=TIMEOUT)
