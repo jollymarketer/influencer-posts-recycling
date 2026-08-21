@@ -18,7 +18,15 @@ _cfg = load_client()
 if _cfg.NAME != "swot":
     pytest.skip("braucht CLIENT=swot", allow_module_level=True)
 
-from tools.monthly_plan import Topic, active_fristen, build_slots, select
+from tools.monthly_plan import (
+    AXIS_LABEL,
+    AXIS_SELECT_LABEL,
+    Topic,
+    active_fristen,
+    axis_id,
+    build_slots,
+    select,
+)
 
 
 def _topics(spec: dict[str, int], score0: int = 90) -> list[Topic]:
@@ -96,6 +104,24 @@ def test_leere_slots_bleiben_leer():
     out = select(slots, topics, [], _cfg.AXIS_MIX, _cfg.AXIS_TO_ACCOUNT)
     filled = [s for s in out if s.topic or s.frist]
     assert len(filled) == 1
+
+
+def test_axis_id_liest_label_und_id():
+    # Der kundensichtbare Redaktionsplan traegt das Label, die interne
+    # Themen-DB die ID. Faellt eine der beiden Formen aus, verschwinden
+    # Zeilen still aus dem Pool statt einen Fehler zu werfen.
+    for aid, label in AXIS_LABEL.items():
+        assert axis_id(label) == aid
+        assert axis_id(aid) == aid
+        assert axis_id(AXIS_SELECT_LABEL[aid]) == aid
+    assert axis_id("gibt es nicht") is None
+    assert axis_id(None) is None
+
+
+def test_select_label_ohne_komma():
+    # Notion antwortet auf ein Komma in einer Select-Option mit 400.
+    for label in AXIS_SELECT_LABEL.values():
+        assert "," not in label
 
 
 def test_active_fristen_horizont():

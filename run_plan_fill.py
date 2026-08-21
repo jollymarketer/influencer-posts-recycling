@@ -32,7 +32,14 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from clients import load_client
-from tools.monthly_plan import NOTION_API, TIMEOUT, Topic, build_slots, select
+from tools.monthly_plan import (
+    NOTION_API,
+    TIMEOUT,
+    Topic,
+    axis_id,
+    build_slots,
+    select,
+)
 from tools.post_scorer import (
     normalize_infographic_type,
     parse_infographic_type,
@@ -102,7 +109,7 @@ def plan_topics(rows: list[dict]) -> tuple[list[Topic], dict]:
     topics, meta = [], {}
     for r in rows:
         p = r["properties"]
-        achse = _sel(p, "Achse")
+        achse = axis_id(_sel(p, "Achse"))
         if not achse:
             continue
         titel = _title(p)

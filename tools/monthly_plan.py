@@ -37,6 +37,23 @@ CLASSIFY_MODEL = getattr(_cfg, "SCORING_MODEL", "claude-haiku-4-5-20251001")
 
 AXES = [p["id"] for p in _cfg.CONTENT_PERSONAS]
 AXIS_LABEL = {p["id"]: p["label"] for p in _cfg.CONTENT_PERSONAS}
+# Notion lehnt Select-Optionen mit Komma ab (validation_error). Der
+# Redaktionsplan zeigt deshalb eine kommafreie Schreibweise desselben Namens.
+AXIS_SELECT_LABEL = {aid: label.replace(", ", " und ")
+                     for aid, label in AXIS_LABEL.items()}
+AXIS_ID_BY_LABEL = {v: k for k, v in AXIS_LABEL.items()}
+AXIS_ID_BY_LABEL.update({v: k for k, v in AXIS_SELECT_LABEL.items()})
+
+
+def axis_id(value: str | None) -> str | None:
+    """Notion-Wert auf die interne Achsen-ID normalisieren.
+
+    Der kundensichtbare Redaktionsplan traegt das Label ("Excel am Limit"),
+    die interne Themen-DB die ID ("excel_am_limit"). Beide muessen gelesen
+    werden koennen, sonst faellt Altbestand still aus dem Pool."""
+    if value in AXIS_LABEL:
+        return value
+    return AXIS_ID_BY_LABEL.get(value)
 
 
 @dataclass
@@ -224,7 +241,7 @@ def read_topics(statuses=("New", "Hub needed")) -> list[Topic]:
             continue
         title = "".join(x.get("plain_text", "")
                         for x in (p.get("Title", {}) or {}).get("title", []))
-        axis = ((p.get("Achse", {}) or {}).get("select") or {}).get("name")
+        axis = axis_id(((p.get("Achse", {}) or {}).get("select") or {}).get("name"))
         topics.append(Topic(
             page_id=r["id"], title=title,
             title_de=_txt(p, "Suggested Title DE"),
@@ -261,23 +278,27 @@ def write_proposals(slots: list[Slot]) -> int:
     for s in slots:
         if s.topic is None and s.frist is None:
             continue
+        # Die Kurzbeschreibung liest der Kunde im Redaktionsplan und der
+        # Textgenerator als Themen-Material. Sie sagt deshalb, worum es geht
+        # und woher der Anlass kommt, nicht wie die Maschine heisst.
         if s.frist is not None:
             titel = s.frist["label"]
-            kurz = (f"Fristen-Slot aus dem Kalender, Termin "
-                    f"{s.frist['deadline']}. Achse: {AXIS_LABEL['fristen']}.")
+            kurz = (f"Fester Termin am {s.frist['deadline']}. Der Beitrag zeigt, "
+                    f"welche Vorarbeit vorher anfällt. "
+                    f"Achse: {AXIS_LABEL['fristen']}.")
         else:
             titel = s.topic["title_de"] or s.topic["title"]
-            kurz = (f"Maschineller Themenvorschlag, Achse: "
-                    f"{AXIS_LABEL[s.axis]}, {s.topic['score']} Fundstellen. "
-                    f"Suchbegriff: {s.topic['keyword_de']}.")
+            kurz = (f"Aufgegriffen aus öffentlichen LinkedIn-Beiträgen zum Thema "
+                    f"„{s.topic['keyword_de']}“, {s.topic['score']} Fundstellen. "
+                    f"Achse: {AXIS_LABEL[s.axis]}.")
             if s.topic.get("evidence"):
-                kurz += f' Beleg: "{s.topic["evidence"][:200]}"'
+                kurz += f' So klingt es dort: „{s.topic["evidence"][:200]}“'
         props = {
             "Titel": {"title": [{"text": {"content": titel[:200]}}]},
             "Status": {"select": {"name": "Themenvorschlag"}},
             "Typ": {"select": {"name": "LinkedIn-Post"}},
             "Kanal": {"select": {"name": s.kanal}},
-            "Achse": {"select": {"name": s.axis}},
+            "Achse": {"select": {"name": AXIS_SELECT_LABEL[s.axis]}},
             "Geplant für": {"date": {"start": s.day.isoformat()}},
             "Kurzbeschreibung": {"rich_text": [{"text": {"content": kurz[:1900]}}]},
         }
