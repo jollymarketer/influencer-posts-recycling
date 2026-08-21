@@ -58,7 +58,16 @@ def test_build_prompt_injects_voice_persona_and_material():
 def test_build_prompt_story_gets_long_target():
     p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen",
                         post_format="Story", cfg=swot)
-    assert "350-400" in p
+    assert "1.800-2.400 Zeichen" in p
+
+
+def test_build_prompt_short_format_gets_capped_target():
+    # Kurzformate deckeln im Engagement-Band (Richard, 21.08.2026); die ersten
+    # 200 Zeichen tragen die These, dort schneidet LinkedIn ab.
+    p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen",
+                        post_format="Opinion", cfg=swot)
+    assert "1.200-1.600 Zeichen" in p
+    assert "ersten 200 Zeichen" in p
 
 
 def test_build_prompt_unknown_channel_raises():

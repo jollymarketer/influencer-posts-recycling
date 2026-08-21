@@ -530,19 +530,29 @@ FORMAT_STRUCTURES = {
 }
 
 
-# Laengen-Ziel pro Format (ColdIQ-Analyse 6.750 LinkedIn-Posts, 2026-07-14:
-# Viral-Rate steigt von 12,4% bei <100 Woertern auf 58,3% bei 400-500 Woertern;
-# der globale 200-Woerter-Default lag am unteren Ende der Kurve). Nur Formate mit
-# echter Handlung/Zahlen (Story, CaseProof, Method) tragen die laengere Zielgroesse -
-# Woerter sind ein Substanz-Proxy, kein Selbstzweck; kurze Formate bleiben kurz.
+# Laengen-Ziel pro Format. Kalibriert 2026-08-21 auf Zeichen statt nur Woerter:
+# Engagement-Optimum liegt bei 1.300-1.900 Zeichen (Buffer/AuthoredUp/Hayes),
+# Reichweite verliert ~10% je 300 Zeichen ueber ~1.200 (van der Blom), und die
+# ColdIQ-Wortkurve (6.750 Posts: Viral-Rate 12,4% unter 100 W, 58,3% bei
+# 400-500 W) gilt nur fuer Formate mit echter Handlung/Zahlen. Deshalb: kurze
+# Formate im Engagement-Band deckeln, lange Formate (Story, CaseProof, Method)
+# duerfen darueber, aber nie an das 3.000er-Limit heranschreiben.
 LONG_FORMATS = {"Story", "CaseProof", "Method"}
 _LENGTH_TARGET_DE = {
-    True: "ca. 350-400 Woerter, max. 3.000 Zeichen",
-    False: "ca. 200 Woerter, max. 3.000 Zeichen",
+    True: ("ca. 300-380 Woerter (1.800-2.400 Zeichen). Nie ueber 2.500 Zeichen. "
+           "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
+           "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
+    False: ("ca. 200-260 Woerter (1.200-1.600 Zeichen). Nie ueber 1.800 Zeichen. "
+            "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
+            "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
 }
 _LENGTH_TARGET_EN = {
-    True: "~350-400 words, max 3,000 characters.",
-    False: "~200 words, max 3,000 characters.",
+    True: ("~300-380 words (1,800-2,400 characters). Never above 2,500 characters. "
+           "The first 200 characters must carry the core thesis completely: that is "
+           "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
+    False: ("~200-260 words (1,200-1,600 characters). Never above 1,800 characters. "
+            "The first 200 characters must carry the core thesis completely: that is "
+            "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
 }
 
 
