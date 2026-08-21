@@ -1,10 +1,12 @@
 """Monatsplan-CLI: baut den Monatsraster-Vorschlag aus der Themen-DB.
 
     CLIENT=swot python run_monthly_plan.py --month 2026-10            # Trockenlauf
-    CLIENT=swot python run_monthly_plan.py --month 2026-10 --write    # schreibt Themenvorschlaege
+    CLIENT=swot python run_monthly_plan.py --month 2026-10 --write    # schreibt + textet
 
-Default ist der Trockenlauf. --write schreibt ausschliesslich Status
-"Themenvorschlag" in den Redaktionsplan; die Freigabe bleibt ein Handschritt.
+Default ist der Trockenlauf. --write schreibt die Zeilen mit Status "Entwurf"
+und laesst direkt danach den plan_fill-Lauf folgen, damit keine Zeile ohne
+Beitragstext im kundensichtbaren Plan steht (Auflage 21.08.2026: es gibt
+keinen Status "Themenvorschlag" mehr). Freigabe bleibt Handarbeit des Kunden.
 """
 import argparse
 import sys
@@ -66,7 +68,14 @@ def main() -> int:
 
     if args.write:
         n = write_proposals(slots)
-        print(f"\nals Themenvorschlag in den Redaktionsplan geschrieben: {n}")
+        print(f"\nals Entwurf in den Redaktionsplan geschrieben: {n}")
+        # Direkt texten: eine Zeile ohne Beitragstext darf dem Kunden nie
+        # begegnen, deshalb ist der Text-Lauf Teil desselben Kommandos.
+        # text_fill laesst Termine und Kanaele unangetastet (fill() wuerde
+        # Bestandsmonate umverteilen).
+        from run_plan_fill import text_fill
+        result = text_fill([(year, month)], cfg=_cfg)
+        print(f"getextet: {result['geschrieben']} von {result['zeilen']}")
     else:
         print("\nTrockenlauf. Schreiben mit --write.")
     return 0

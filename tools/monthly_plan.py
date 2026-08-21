@@ -5,9 +5,8 @@ Ablauf: Slots aus POSTING_SCHEDULE bauen, Themen aus der Themen-DB lesen, je
 Thema die Content-Achse klassifizieren (ein Batch-Call, Ergebnis wird in die
 Themen-DB zurueckgeschrieben und beim naechsten Lauf wiederverwendet),
 Fristen-Slots aus FRISTEN_KALENDER setzen, Rest deterministisch nach AXIS_MIX
-fuellen. Geschrieben wird ausschliesslich Status "Themenvorschlag" — die
-kundensichtbare Freigabe-Galerie filtert auf "Zur Freigabe" und zeigt
-Vorschlaege nicht. Der Wechsel auf "Zur Freigabe" bleibt ein Handschritt nach
+fuellen. Geschrieben wird ausschliesslich Status "Entwurf" — die weiteren
+Stufen (Text freigegeben, Freigegeben) setzt der Kunde von Hand nach
 Richards Review.
 
 Die Auswahl selbst ist reiner Code ohne Modellaufruf, damit sie testbar und
@@ -271,9 +270,13 @@ def persist_axes(topics: list[Topic]) -> int:
 # --- Redaktionsplan schreiben ---------------------------------------------------
 
 def write_proposals(slots: list[Slot]) -> int:
-    """Schreibt gefuellte Slots als Themenvorschlag in den Redaktionsplan.
-    NIE einen anderen Status setzen: der Wechsel auf "Zur Freigabe" ist
-    Richards Handschritt nach Review."""
+    """Schreibt gefuellte Slots in den Redaktionsplan, Status "Entwurf".
+
+    Seit 21.08.2026 gibt es keinen Status "Themenvorschlag" mehr: eine Zeile
+    betritt den Plan immer mit Beitragstext (run_monthly_plan haengt den
+    plan_fill-Lauf direkt an). Die Freigabekette dahinter ist Handarbeit des
+    Kunden: Entwurf -> Text freigegeben -> Freigegeben. Kein Skript setzt
+    einen dieser beiden Folge-Status."""
     n = 0
     for s in slots:
         if s.topic is None and s.frist is None:
@@ -295,7 +298,7 @@ def write_proposals(slots: list[Slot]) -> int:
                 kurz += f' So klingt es dort: „{s.topic["evidence"][:200]}“'
         props = {
             "Titel": {"title": [{"text": {"content": titel[:200]}}]},
-            "Status": {"select": {"name": "Themenvorschlag"}},
+            "Status": {"select": {"name": "Entwurf"}},
             "Typ": {"select": {"name": "LinkedIn-Post"}},
             "Kanal": {"select": {"name": s.kanal}},
             "Achse": {"select": {"name": AXIS_SELECT_LABEL[s.axis]}},

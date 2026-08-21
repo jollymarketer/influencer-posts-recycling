@@ -9,9 +9,10 @@ die Slots der aktiven Konten und schreibt den Text dazu.
 
 Zwei Regeln, beide bewusst:
 
-1. Status geht auf "Entwurf", nie auf "Zur Freigabe". Der Text ist maschinell
-   erzeugt und von niemandem gelesen; die kundensichtbare Freigabe-Galerie
-   filtert auf "Zur Freigabe", der Flip bleibt ein Handschritt.
+1. Status geht auf "Entwurf", nie weiter. Die Folgestufen setzt der Kunde:
+   "Text freigegeben" nach dem Lesen (loest den Bilder-Lauf aus, kostet Geld),
+   "Freigegeben" nach dem Bild-Check (loest das Posten via Make aus). Kein
+   Skript setzt eine dieser Stufen.
 2. Ein Text wird nur neu geschrieben, wenn die Zeile das Konto wechselt oder
    noch keinen Text hat. Der Text traegt die Stimme des Kontos, ein Wir-Text
    der Unternehmensseite passt nicht unter Roberts Namen.
@@ -123,6 +124,74 @@ def plan_topics(rows: list[dict]) -> tuple[list[Topic], dict]:
             "hat_text": bool(_rt(p, "Post-Text")),
         }
     return topics, meta
+
+
+def _date(props, key="Geplant für") -> str:
+    return (((props.get(key) or {}).get("date")) or {}).get("start") or ""
+
+
+def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) -> dict:
+    """Textet Plan-Zeilen der genannten Monate, ohne Termine oder Kanaele
+    anzufassen. Ketten-Schritt hinter run_monthly_plan: die Zeilen sind dort
+    bereits geslottet, hier fehlt nur der Beitragstext. fill() dagegen
+    verteilt ALLE Zeilen neu auf Slots und darf nie hinter write_proposals
+    laufen, sonst datiert es Bestandsmonate um."""
+    cfg = cfg or load_client()
+    month_keys = {f"{y:04d}-{m:02d}" for y, m in months}
+    rows = read_plan(cfg.CONTENT_PLAN_DB_ID)
+    kandidaten = []
+    for r in rows:
+        p = r["properties"]
+        datum = _date(p)
+        achse = axis_id(_sel(p, "Achse"))
+        if datum[:7] not in month_keys or not achse:
+            continue
+        kandidaten.append({
+            "page_id": r["id"], "datum": datum, "achse": achse,
+            "kanal": _sel(p, "Kanal"), "titel": _title(p),
+            "kurz": _rt(p, "Kurzbeschreibung"),
+            "hat_text": bool(_rt(p, "Post-Text")),
+        })
+    kandidaten.sort(key=lambda k: k["datum"])
+    print(f"Zeilen in {sorted(month_keys)}: {len(kandidaten)}")
+
+    geschrieben = 0
+    recent_formats: dict[str, list] = {}
+    recent_types: dict[str, list] = {}
+    for k in kandidaten:
+        if k["hat_text"] and not rewrite:
+            print(f"  {k['datum']} {k['kanal']:20s} alt {k['titel'][:55]}", flush=True)
+            continue
+        material = f"{k['titel']}\n{k['kurz']}"
+        fmts = recent_formats.setdefault(k["kanal"], [])
+        typs = recent_types.setdefault(k["kanal"], [])
+        fmt = pick_format({"influencer": "Plan", "post_text": material}, list(fmts))
+        r = write_post(k["titel"], k["kurz"], k["kanal"], k["achse"],
+                       post_format=fmt, recent_infographic_types=list(typs), cfg=cfg)
+        if not r["text"]:
+            print(f"  {k['datum']} kein Text erhalten, Zeile uebersprungen")
+            continue
+        props = {
+            "Status": {"select": {"name": "Entwurf"}},
+            "Bezug": {"select": {"name": BEZUG}},
+            "Post-Text": _rich(r["text"]),
+            "Format": {"select": {"name": fmt}},
+            "Soundbyte": _rich(r["soundbyte"]),
+            "Infografik-Skelett": _rich(r["skeleton"]),
+        }
+        resp = requests.patch(f"{NOTION_API}/pages/{k['page_id']}",
+                              headers=notion_headers(), json={"properties": props},
+                              timeout=TIMEOUT)
+        if resp.ok:
+            geschrieben += 1
+            fmts.insert(0, fmt)
+            ityp = normalize_infographic_type(parse_infographic_type(r["skeleton"]))
+            if ityp:
+                typs.insert(0, ityp)
+            print(f"  {k['datum']} {k['kanal']:20s} NEU {k['titel'][:55]}", flush=True)
+        else:
+            print(f"  Notion-Fehler {resp.status_code}: {resp.text[:160]}")
+    return {"zeilen": len(kandidaten), "geschrieben": geschrieben}
 
 
 def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,

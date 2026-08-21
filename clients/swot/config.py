@@ -691,8 +691,9 @@ INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
 # Content-Redaktionsplan Blog und LinkedIn im SWOT-Dashboard (kundensichtbar).
 # Bewusst getrennt von NOTION_DB_ID_DEFAULT: das bleibt None, damit der
 # Winner-Pfad der Recycling-Pipeline nie hierher schreibt. Der Monatsplan
-# schreibt ausschliesslich Status "Themenvorschlag"; die Freigabe-Galerie
-# filtert auf "Zur Freigabe" und zeigt Vorschlaege deshalb nicht.
+# schreibt ausschliesslich Status "Entwurf" (seit 21.08.2026 gibt es keinen
+# "Themenvorschlag" mehr; Zeilen betreten den Plan immer mit Text). Die
+# Stufen "Text freigegeben" und "Freigegeben" setzt der Kunde von Hand.
 CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 
 # Stimme je Kanal fuer tools/post_writer.py. Der Text traegt die Stimme des
