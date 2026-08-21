@@ -9,10 +9,11 @@ die Slots der aktiven Konten und schreibt den Text dazu.
 
 Zwei Regeln, beide bewusst:
 
-1. Status geht auf "Entwurf", nie weiter. Die Folgestufen setzt der Kunde:
-   "Text freigegeben" nach dem Lesen (loest den Bilder-Lauf aus, kostet Geld),
-   "Freigegeben" nach dem Bild-Check (loest das Posten via Make aus). Kein
-   Skript setzt eine dieser Stufen.
+1. Status geht auf "Entwurf", nie weiter. Die Kette (Richard 21.08.2026):
+   Kunde setzt "Text freigegeben" nach dem Lesen; run_image_fill baut das
+   Bild und setzt "Text+Bild"; Kunde prueft Text und Bild zusammen und setzt
+   "Freigegeben"; das Posten (Make, noch nicht gebaut) setzt "Gepostet" und
+   fuellt "Geposted am". Dieses Skript setzt nur "Entwurf".
 2. Ein Text wird nur neu geschrieben, wenn die Zeile das Konto wechselt oder
    noch keinen Text hat. Der Text traegt die Stimme des Kontos, ein Wir-Text
    der Unternehmensseite passt nicht unter Roberts Namen.

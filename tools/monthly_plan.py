@@ -5,9 +5,10 @@ Ablauf: Slots aus POSTING_SCHEDULE bauen, Themen aus der Themen-DB lesen, je
 Thema die Content-Achse klassifizieren (ein Batch-Call, Ergebnis wird in die
 Themen-DB zurueckgeschrieben und beim naechsten Lauf wiederverwendet),
 Fristen-Slots aus FRISTEN_KALENDER setzen, Rest deterministisch nach AXIS_MIX
-fuellen. Geschrieben wird ausschliesslich Status "Entwurf" — die weiteren
-Stufen (Text freigegeben, Freigegeben) setzt der Kunde von Hand nach
-Richards Review.
+fuellen. Geschrieben wird ausschliesslich Status "Entwurf". Kette dahinter:
+Kunde setzt "Text freigegeben", run_image_fill baut das Bild und setzt
+"Text+Bild", Kunde setzt "Freigegeben", Make (noch nicht gebaut) postet und
+setzt "Gepostet".
 
 Die Auswahl selbst ist reiner Code ohne Modellaufruf, damit sie testbar und
 wiederholbar ist. Das Modell klassifiziert nur die Achse je Thema.
@@ -278,9 +279,9 @@ def write_proposals(slots: list[Slot]) -> int:
 
     Seit 21.08.2026 gibt es keinen Status "Themenvorschlag" mehr: eine Zeile
     betritt den Plan immer mit Beitragstext (run_monthly_plan haengt den
-    plan_fill-Lauf direkt an). Die Freigabekette dahinter ist Handarbeit des
-    Kunden: Entwurf -> Text freigegeben -> Freigegeben. Kein Skript setzt
-    einen dieser beiden Folge-Status."""
+    plan_fill-Lauf direkt an). Kette dahinter: Entwurf -> Text freigegeben
+    (Kunde) -> Text+Bild (run_image_fill) -> Freigegeben (Kunde) -> Gepostet
+    (Make). Dieses Modul setzt nur "Entwurf"."""
     n = 0
     for s in slots:
         if s.topic is None and s.frist is None:
