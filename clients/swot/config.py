@@ -121,13 +121,24 @@ TOKENS = {
         "integrierte Planung ueber GuV, Bilanz und Liquiditaet, "
         "Forecast-Genauigkeit, Uebergabefaehigkeit des Modells, datierte Fristen"
     ),
+    # Perspektive (Kulle, Notion-Kommentare 24.08.2026): SWOT ist
+    # Softwarehersteller, kein Interim-CFO. "Wir sitzen als Softwarehersteller
+    # nicht im Bankgespraech dabei. Wir unterstuetzen lediglich das Zahlenwerk
+    # aufzubereiten." Erzaehlposition ist der Blick auf Kundenprojekte,
+    # Einfuehrungen und Schulungen, nie der Stuhl am Verhandlungstisch.
     "FIRST_PERSON_ROLE_DE": (
-        "du arbeitest seit Jahren an Planungs- und Konsolidierungsprojekten im "
-        "Mittelstand und in der Sozialwirtschaft"
+        "du begleitest seit Jahren Einfuehrungen von Planungs- und "
+        "Konsolidierungssoftware im Mittelstand und in der Sozialwirtschaft "
+        "und siehst, wie Kunden ihr Zahlenwerk fuer Bank, Gesellschafter oder "
+        "Pruefer aufbereiten"
     ),
     "CONTEXT_TRANSFER_DE": (
         "Auf den Alltag von Controlling und Rechnungswesen im Mittelstand "
-        "uebertragen, ohne die Branche plakativ zu betonen"
+        "uebertragen, ohne die Branche plakativ zu betonen. Gesetze, Normen "
+        "und Tarifwerke (StaRUG, IFRS 18, AVR, InsO) beim ersten Auftreten in "
+        "einem Halbsatz einordnen: was es ist und seit wann es gilt. Fuer "
+        "Leser schreiben, die nicht taeglich auf LinkedIn sind: ein Gedanke je "
+        "Absatz, kein Fachwort ohne Erklaerung"
     ),
     "BELIEF_ACTORS_DE": "Controlling- und Rechnungswesen-Teams",
     "COMPARISON_SUBJECT_DE": (
@@ -151,7 +162,9 @@ TOKENS = {
 - SWOT nie als BI-Tool, Reporting-Tool oder DATEV-Ersatz bezeichnen
 - CSRD ist kein Thema: das Omnibus-I-Paket hat die Schwelle angehoben, die Zielgruppe faellt heraus
 - Kein Em-Dash. Echte Umlaute schreiben
-- Keine erfundenen Zahlen. Belegt sind ausschliesslich die Angaben aus dem KONTEXT""",
+- Keine erfundenen Zahlen. Belegt sind ausschliesslich die Angaben aus dem KONTEXT
+- Nie in der Ich- oder Wir-Form als Teilnehmer eines Bankgespraechs, Gerichtstermins, einer Gesellschafterrunde oder eines Gremiums schreiben. SWOT ist Softwarehersteller, kein Interim-CFO und kein Berater am Tisch. Erlaubt ist die Beobachterposition: "in Einfuehrungsprojekten sehe ich", "Kunden berichten", "in der Schulung zeigt sich"
+- "Glaube" ist kein Fachwort: es heisst Annahme, Hypothese oder Praemisse""",
 
     # --- Englisch: SWOT ist DACH-only (FEATURES["en_draft"] = False). Die
     # Tokens muessen trotzdem existieren, weil apply_tokens beim Import auch
@@ -473,7 +486,10 @@ CONTENT_PERSONAS = [
         "vocabulary_use": ("Vergleichsjahr, Bezugsjahr, Stichtag, Gliederung, "
                            "Eingruppierung, Vorlauf"),
         "vocabulary_avoid": ("Regulierung ohne Datum, CSRD (Zielgruppe faellt "
-                             "durch Omnibus I heraus), Panikmache"),
+                             "durch Omnibus I heraus), Panikmache, Detailtiefe "
+                             "einer einzelnen Traegerart oder Tarifgruppe, die "
+                             "der Rest der Zielgruppe nicht braucht (Kulle "
+                             "24.08.2026: 'zu spezifisch auf Caritas')"),
         "scene_de": ("eine Leitung, die den Kalender fuers naechste Jahr "
                      "aufschlaegt und drei Fristen im selben Quartal findet"),
         "scene_en": ("a finance lead opening next year's calendar and finding "
@@ -700,17 +716,31 @@ CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 # Kontos, nicht nur das Thema: wechselt ein Beitrag das Konto, wird er neu
 # geschrieben. Fehlt ein Kanal hier, entsteht kein Text (lieber leer als im
 # falschen Ton).
+#
+# Beide aktiven Stimmen tragen die Softwarehersteller-Position (Kulle,
+# 24.08.2026): der Autor sitzt nicht im Bankgespraech, er sieht in Projekten,
+# wie Kunden das Zahlenwerk dafuer vorbereiten. Sonst liest der Post wie ein
+# Interim-CFO und SWOT verliert Glaubwuerdigkeit.
+_HERSTELLER_POSITION = (
+    " Du bist Softwarehersteller, kein Interim-CFO und kein Berater: du sitzt "
+    "nicht im Bankgespraech, nicht vor Gericht, nicht in der "
+    "Gesellschafterrunde. Du siehst in Einfuehrungsprojekten, Schulungen und "
+    "Supportfaellen, wie Kunden ihr Zahlenwerk fuer solche Termine "
+    "aufbereiten, und schreibst aus dieser Beobachterposition."
+)
+
 ACCOUNT_VOICES = {
     "LinkedIn Robert": (
         "Du schreibst als Robert Werner, Leiter Vertrieb und Akademie der SWOT "
         "Controlling GmbH. Du sprichst taeglich mit Beratungsgesellschaften, "
-        "Steuerberatern und Wirtschaftspruefern und schreibst aus der Praxis."
+        "Steuerberatern und Wirtschaftspruefern und schreibst aus der Praxis "
+        "der Einfuehrungen und Schulungen." + _HERSTELLER_POSITION
     ),
     "LinkedIn Christian": (
         "Du schreibst als Christian Kulle von der SWOT Controlling GmbH. Du "
         "sprichst zu Verantwortlichen, die Zahlen nach aussen vertreten: vor "
         "Bank, Gesellschaftern, Aufsichtsgremium oder Pruefer. Nenne keinen "
-        "Titel und keine Funktion im Text."
+        "Titel und keine Funktion im Text." + _HERSTELLER_POSITION
     ),
     "LinkedIn Inga": (
         "Du schreibst als Inga Baumert von der SWOT Controlling GmbH. Du bist "
@@ -729,6 +759,12 @@ ACCOUNT_VOICES = {
 # kommen spaeter zurueck, dann reicht es, sie hier wieder aufzunehmen. Leere
 # Liste oder fehlender Eintrag heisst: alle Konten aus POSTING_SCHEDULE.
 ACTIVE_ACCOUNTS = ["werner", "kulle"]
+
+# Laengenband je Kanal im Wechsel (run_plan_fill.length_band_for): jeder
+# dritte Beitrag eines Kontos ist kurz (500-900 Zeichen, ein Gedanke, keine
+# Liste). Kulle 24.08.2026: "Posts immer sehr lang, Aufbau immer gleich."
+# Die Vielfalt steht im Code, nicht als Bitte im Prompt.
+LENGTH_ROTATION = ["standard", "standard", "kurz"]
 
 # Feste Beitragstage je Konto (Wochentag, Montag=0). Aus dem September-Plan.
 POSTING_SCHEDULE = {

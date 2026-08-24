@@ -61,6 +61,18 @@ def _derive_topic_template(template: str) -> str:
 TOPIC_DE_TEMPLATE = _derive_topic_template(DACH_POST_PROMPT)
 
 
+def length_band_for(cfg, n_written: int) -> str | None:
+    """Laengenband fuer den n-ten Beitrag eines Kanals in diesem Lauf, aus
+    LENGTH_ROTATION der Client-Config (z.B. ["standard", "standard", "kurz"]).
+    Kundenfeedback SWOT 24.08.2026: die Posts waren alle lang und gleich
+    gebaut. Die Vielfalt entsteht hier im Code, nicht als Bitte im Prompt.
+    Ohne Eintrag None: das Format entscheidet, andere Mandanten unveraendert."""
+    rotation = getattr(cfg, "LENGTH_ROTATION", None)
+    if not isinstance(rotation, (list, tuple)) or not rotation:
+        return None
+    return rotation[n_written % len(rotation)]
+
+
 def account_voices(cfg=None) -> dict:
     """Stimme je Kanal. Fehlt ein Kanal, gibt es keinen Text: lieber leer als
     im falschen Ton."""
@@ -92,27 +104,31 @@ def _prompt_parts(titel: str, kurz: str, kanal: str, achse: str, cfg):
 
 def build_prompt(titel: str, kurz: str, kanal: str, achse: str,
                  post_format: str = "Opinion",
-                 recent_infographic_types=None, cfg=None) -> str:
+                 recent_infographic_types=None, cfg=None,
+                 band: str | None = None) -> str:
     """DE-Prompt des Themen-Pfads, ohne Modellaufruf (fuer Tests und Debug).
     Baugleich zu dem, was write_post an das Modell schickt."""
     cfg = cfg or load_client()
     post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg)
     de, _ = _format_prompts(post, post_format, recent_infographic_types,
-                            de_template=TOPIC_DE_TEMPLATE, **blocks)
+                            de_template=TOPIC_DE_TEMPLATE, band=band, **blocks)
     return de
 
 
 def write_post(titel: str, kurz: str, kanal: str, achse: str,
                post_format: str = "Opinion",
-               recent_infographic_types=None, cfg=None) -> dict:
+               recent_infographic_types=None, cfg=None,
+               band: str | None = None) -> dict:
     """Ein Beitrag durch die volle Maschinerie: Format-Struktur, Persona,
-    Kontostimme, sanitize + grammar_check (in generate_post_and_image_prompt).
-    Gibt {text, soundbyte, kontext, skeleton} zurueck; text "" wenn nichts kam."""
+    Kontostimme, sanitize + Textwache + grammar_check (in
+    generate_post_and_image_prompt). band "kurz" schaltet auf die Kurzform.
+    Gibt {text, soundbyte, kontext, skeleton} zurueck; text "" wenn nichts kam
+    oder die Textwache den Text verworfen hat."""
     cfg = cfg or load_client()
     post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg)
     de_draft, _en, _img, skeleton, soundbyte, kontext = generate_post_and_image_prompt(
         post, post_format, recent_infographic_types,
-        de_template=TOPIC_DE_TEMPLATE, persona_id=achse, **blocks,
+        de_template=TOPIC_DE_TEMPLATE, persona_id=achse, band=band, **blocks,
     )
     return {"text": de_draft, "soundbyte": soundbyte, "kontext": kontext,
             "skeleton": skeleton}

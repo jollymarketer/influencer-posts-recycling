@@ -47,7 +47,7 @@ from tools.post_scorer import (
     parse_infographic_type,
     pick_format,
 )
-from tools.post_writer import write_post
+from tools.post_writer import length_band_for, write_post
 from tools.topic_ideas_db import _headers as notion_headers
 
 BEZUG = "Basis"
@@ -167,8 +167,10 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
         fmts = recent_formats.setdefault(k["kanal"], [])
         typs = recent_types.setdefault(k["kanal"], [])
         fmt = pick_format({"influencer": "Plan", "post_text": material}, list(fmts))
+        band = length_band_for(cfg, len(fmts))
         r = write_post(k["titel"], k["kurz"], k["kanal"], k["achse"],
-                       post_format=fmt, recent_infographic_types=list(typs), cfg=cfg)
+                       post_format=fmt, recent_infographic_types=list(typs), cfg=cfg,
+                       band=band)
         if not r["text"]:
             print(f"  {k['datum']} kein Text erhalten, Zeile uebersprungen")
             continue
@@ -189,7 +191,8 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
             ityp = normalize_infographic_type(parse_infographic_type(r["skeleton"]))
             if ityp:
                 typs.insert(0, ityp)
-            print(f"  {k['datum']} {k['kanal']:20s} NEU {k['titel'][:55]}", flush=True)
+            print(f"  {k['datum']} {k['kanal']:20s} NEU {fmt}/{band or 'format'} "
+                  f"{k['titel'][:55]}", flush=True)
         else:
             print(f"  Notion-Fehler {resp.status_code}: {resp.text[:160]}")
     return {"zeilen": len(kandidaten), "geschrieben": geschrieben}
@@ -237,9 +240,10 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             typs = recent_types.setdefault(s.kanal, [])
             material = f"{m['titel']}\n{m['kurz']}"
             fmt = pick_format({"influencer": "Plan", "post_text": material}, list(fmts))
+            band = length_band_for(cfg, len(fmts))
             r = write_post(m["titel"], m["kurz"], s.kanal, s.axis,
                            post_format=fmt, recent_infographic_types=list(typs),
-                           cfg=cfg)
+                           cfg=cfg, band=band)
             if not r["text"]:
                 print(f"    kein Text erhalten, Zeile uebersprungen")
                 continue

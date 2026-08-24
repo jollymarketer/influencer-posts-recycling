@@ -124,24 +124,45 @@ def select(slots: list[Slot], topics: list[Topic], fristen: list[dict],
     2. Jede Achse mit Themen bekommt min_per_axis Slots.
     3. Rest nach Themen-Score, dominante Achse gedeckelt (max_share).
     Ein Thema wird hoechstens einmal verwendet. Slots ohne passendes Thema
-    bleiben leer (ehrlicher als Fuellmaterial)."""
+    bleiben leer (ehrlicher als Fuellmaterial).
+    Auf einem Konto traegt kein Slot dieselbe Achse wie sein Nachbar-Slot,
+    solange ein anderer freier Slot existiert: zwei Beitraege derselben
+    Achse an Folgetagen liest der Kunde als Dublette (Kulle 24.08.2026 zu
+    Werner 08.09. und 09.09., beide "Viele Einheiten")."""
     total = len(slots)
     cap = {ax: int(total * share) for ax, share in mix.get("max_share", {}).items()}
     used_per_axis: dict[str, int] = {ax: 0 for ax in AXES}
     open_slots = list(slots)
     pool = sorted([t for t in topics if t.axis in AXES], key=lambda t: -t.score)
 
-    def take_slot(accounts: list[str]) -> Slot | None:
-        for acc in accounts:
-            for s in open_slots:
-                if s.account == acc and s.topic is None and s.frist is None:
+    # Nachbarn je Konto in Slot-Reihenfolge (die ist chronologisch).
+    prev_of: dict[int, Slot | None] = {}
+    next_of: dict[int, Slot | None] = {}
+    last: dict[str, Slot] = {}
+    for s in slots:
+        p = last.get(s.account)
+        prev_of[id(s)] = p
+        next_of[id(s)] = None
+        if p is not None:
+            next_of[id(p)] = s
+        last[s.account] = s
+
+    def take_slot(accounts: list[str], axis: str) -> Slot | None:
+        for strict in (True, False):
+            for acc in accounts:
+                for s in open_slots:
+                    if s.account != acc or s.topic is not None or s.frist is not None:
+                        continue
+                    if strict and any(n is not None and n.axis == axis
+                                      for n in (prev_of[id(s)], next_of[id(s)])):
+                        continue
                     return s
         return None
 
     def assign(topic: Topic) -> bool:
         if topic.axis in cap and used_per_axis[topic.axis] >= cap[topic.axis]:
             return False
-        s = take_slot(axis_to_account.get(topic.axis, []))
+        s = take_slot(axis_to_account.get(topic.axis, []), topic.axis)
         if s is None:
             return False
         s.axis, s.topic = topic.axis, topic.__dict__
@@ -151,7 +172,7 @@ def select(slots: list[Slot], topics: list[Topic], fristen: list[dict],
 
     # 1. Fristen zuerst: fester Anlass schlaegt Score.
     for f in fristen:
-        s = take_slot(axis_to_account.get("fristen", []))
+        s = take_slot(axis_to_account.get("fristen", []), "fristen")
         if s is not None:
             s.axis, s.frist = "fristen", f
             used_per_axis["fristen"] += 1

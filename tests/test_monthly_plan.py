@@ -98,6 +98,31 @@ def test_thema_nur_einmal():
     assert len(ids) == len(set(ids))
 
 
+def test_gleiche_achse_nie_direkt_hintereinander():
+    # Kulle 24.08.2026: Werner 08.09. und 09.09. beide "Viele Einheiten" las
+    # sich als Dublette. Zwei Excel-Themen und ein Einheiten-Thema auf drei
+    # Werner-Slots: Excel, Einheiten, Excel; nie Excel, Excel, Einheiten.
+    slots = [s for s in build_slots(2026, 10) if s.account == "werner"][:3]
+    topics = _topics({"excel_am_limit": 2, "viele_einheiten": 1})
+    out = select(slots, topics, [], {}, _cfg.AXIS_TO_ACCOUNT)
+    assert [s.axis for s in out] == ["excel_am_limit", "viele_einheiten", "excel_am_limit"]
+
+
+def test_gleiche_achse_hintereinander_nur_als_letzter_ausweg():
+    slots = [s for s in build_slots(2026, 10) if s.account == "werner"][:3]
+    topics = _topics({"excel_am_limit": 3})
+    out = select(slots, topics, [], {}, _cfg.AXIS_TO_ACCOUNT)
+    assert all(s.axis == "excel_am_limit" for s in out)
+
+
+def test_fristen_verteilen_sich_auf_dem_konto():
+    slots = [s for s in build_slots(2026, 10) if s.account == "kulle"][:4]
+    fristen = [{"id": "a", "label": "A", "deadline": "2027-01-01"},
+               {"id": "b", "label": "B", "deadline": "2027-01-01"}]
+    out = select(slots, [], fristen, {}, _cfg.AXIS_TO_ACCOUNT)
+    assert [bool(s.frist) for s in out] == [True, False, True, False]
+
+
 def test_leere_slots_bleiben_leer():
     slots = build_slots(2026, 10)
     topics = _topics({"rechenschaft": 1})

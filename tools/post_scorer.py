@@ -13,6 +13,7 @@ import anthropic
 from dotenv import load_dotenv
 
 from clients import apply_tokens, load_client
+from tools import text_gate
 
 load_dotenv()
 
@@ -136,9 +137,12 @@ Tonalitaet:
 - Ich-Form ([[FIRST_PERSON_ROLE_DE]]). Leichte, sparsame Direktansprache des Lesers ("du"/"ihr") ist erlaubt und erwuenscht, wo sie den Sog erhoeht
 - [[CONTEXT_TRANSFER_DE]]
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
+- Kein Satz ueber 25 Woerter. Ein Gedanke je Satz, hoechstens ein Nebensatz
 
 Sprach-Verbote (hart):
 [[LANGUAGE_BANS_DE]]
+- Keine Woerter, Zeilen oder Labels in Grossbuchstaben als Hervorhebung. Abkuerzungen (IFRS, GuV, DATEV) bleiben. Ein Block in Grossbuchstaben liest sich als Vorlage, nicht als Mensch
+- Echte Umlaute ä ö ü ß im ganzen Text. Nie ae, oe, ue oder ss als Ersatz, auch nicht in Komposita (Übergabe, Prüfer, Liquidität)
 - Nie die eigene Konstruktion offenlegen: verweise nie auf "das Original", "der Quell-Post", "der eigene Gedanke", "was im Original fehlt", "ich ergaenze". Den zusaetzlichen Gedanken einbauen, nie ankuendigen
 - Keine erfundenen Belege: keine erfundenen Kundennamen, Umsatzzahlen, Fallstudien oder konkrete Einzelfall-Statistiken. Muster-Beobachtungen ("ich sehe oft, dass...") sind ok, erfundene Spezifika nicht
 - Keine langen Striche: weder Em Dash (—) noch Halbgeviertstrich (–) als Gedankenstrich. Stattdessen Punkt, Doppelpunkt oder Komma. Normaler Bindestrich in Komposita bleibt erlaubt
@@ -147,7 +151,7 @@ Inhaltliche Regeln:
 - Den Quell-Content erkennbar nutzen, aber als eigenstaendige Praxis-Einordnung - keine freie Neuinterpretation
 - Einen eigenen, originellen Gedanken einbauen, den der Quell-Post nicht hat - ohne ihn als solchen zu benennen
 - Haltung eines erfahrenen Praktikers: operative Details, Schrittfolgen, typische Stolpersteine, KPIs
-- Genau EIN konkretes, scanbares Artefakt liefern, das man speichern will: nummerierte Schritte, eine kurze Checkliste, ein benanntes Framework oder eine harte Zahl. Als abgesetztes Element formatieren, nicht als Fliesstext-Beschreibung. Der Leser muss es in 2 Sekunden als Referenz erkennen. Im Story-Format stattdessen eine einzelne, klar benannte Regel oder Zahl, die haengen bleibt
+- Genau EIN konkretes Artefakt liefern, das man speichern will: nummerierte Schritte, eine kurze Checkliste, ein benanntes Framework oder eine harte Zahl. Ob es als abgesetztes Element oder im Fliesstext steht, sagt die Post-Struktur unten. In Story und Opinion ist es eine einzelne, klar benannte Regel oder Zahl im Fliesstext, die haengen bleibt
 - Eine falsche Praxis oder ein Feindbild explizit und hart benennen. Brave Ausgewogenheit ("X ist nicht Y, sondern Z") allein reicht nicht - es braucht eine klare Gegenposition, gegen die jemand argumentieren kann
 
 {assets_block}
@@ -156,11 +160,8 @@ Inhaltliche Regeln:
 Formatierung:
 - Kein Markdown: keine **Sternchen** fuer Fettung, kein *kursiv*, keine #-Ueberschriften. LinkedIn rendert Markdown nicht, die Zeichen erscheinen woertlich im Post
 - Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, nicht nach jedem Satz
-- Hoechstens EIN Formatierungselement auswaehlen (Story-Format: keines):
-  * Emoji-Liste (mind. 3 gleichwertige Punkte): z.B. 📍 fuer Befunde, 👉 fuer Empfehlungen
-  * Nummerierte Liste mit Unicode: ➊ ➋ ➌
-  * GROSSBUCHSTABEN-Label fuer einen zentralen Abschnitt
-- Eine zugespitzte, eigenstaendige Zitat-Zeile auf eine eigene Zeile setzen (Screenshot- und Repost-faehig)
+- Listen-Element nur, wenn die Post-Struktur unten eines vorsieht. Sonst Fliesstext in Absaetzen. Nie ein Label oder eine Zeile in Grossbuchstaben
+- Eine zugespitzte Zitat-Zeile auf eigener Zeile ist erlaubt, aber kein Pflicht-Element: nur, wenn der Text sie hergibt. Die meisten Posts brauchen keine
 - Laenge: {length_target_de}
 
 Qualitaetspruefung (E3):
@@ -285,6 +286,7 @@ Tone:
 - Focus on [[FOCUS_TOPICS_EN]].
 - No buzzwords, no marketing-speak.
 - No long dashes: never use an em dash (—) or en dash (–) as a sentence break. Use a period, colon or comma instead. Normal hyphens in compounds are fine.
+- No words, lines or labels in ALL CAPS for emphasis. Acronyms stay. A block in capitals reads like a template, not like a person.
 - First person ([[FIRST_PERSON_ROLE_EN]]). Light, natural use of "you" toward the reader is fine.
 - The post should feel helpful and human, not AI-generated.
 
@@ -294,7 +296,7 @@ Content rules:
 - Never expose your own construction: never reference "the original", "the source post", "my own added thought", "what's missing". Build the thought in, never announce it.
 - No fabricated proof: no invented client names, revenue numbers, case studies or specific single-case statistics. Pattern observations ("I often see...") are fine, invented specifics are not.
 - Stance of an experienced operator: operational detail, sequencing, common pitfalls, KPIs.
-- Deliver exactly ONE concrete, scannable artifact worth saving: numbered steps, a short checklist, a named framework or a hard number. Format it as a set-apart element, not buried in prose. The reader must recognize it as a reference in 2 seconds. In the Story format, instead give one clearly named rule or number that sticks.
+- Deliver exactly ONE concrete artifact worth saving: numbered steps, a short checklist, a named framework or a hard number. Whether it is a set-apart element or lives in the prose is decided by the post structure below. In Story and Opinion it is one clearly named rule or number inside the prose that sticks.
 - Name one wrong practice or enemy explicitly and hard. A balanced "X is not Y, it's Z" alone is not enough — there must be a clear counter-position someone can argue against.
 
 {assets_block}
@@ -303,11 +305,8 @@ Content rules:
 Formatting:
 - No Markdown: no **asterisks** for bold, no *italics*, no # headings. LinkedIn does not render Markdown, the characters appear literally in the post.
 - Paragraphs may be 2-4 sentences. Not every sentence is its own paragraph. Blank lines only between thematic blocks.
-- Pick at most ONE formatting element (Story format: none):
-  * Emoji list (at least 3 equal items): e.g. 📍 for findings, 👉 for recommendations
-  * Numbered list with Unicode: ➊ ➋ ➌
-  * ALL-CAPS label for one central section
-- Put one sharp, standalone quote line on its own line (screenshot- and repost-friendly).
+- A list element only where the post structure below calls for one. Otherwise prose in paragraphs. Never a label or line in capitals.
+- One sharp quote line on its own line is allowed but not required: only when the text yields one. Most posts need none.
 - Length: {length_target_en}
 
 Quality check (E3):
@@ -397,33 +396,35 @@ FORMAT_STRUCTURES = {
 2. Spannung: Was die meisten Teams glauben oder tun - und warum das in der Praxis nicht traegt. Konkret, nicht abstrakt.
 3. Position: Deine Gegenposition als erfahrener Praktiker, begruendet aus Beobachtung. Max 3-5 Belege oder Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
 4. Abschluss: Offene Schleife statt sauberem Punkt. Entweder eine spezifische, streitbare Frage zur Kern-These, oder eine Flag-Plant-Zeile, gegen die jemand Position beziehen kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
-Kausalitaet: Verbinde die Beats mit "aber" oder "deshalb", nie mit "und dann". Jeder Beat folgt aus dem vorherigen. Eine Aufzaehlung nebeneinanderstehender Punkte traegt den Post nicht.""",
+Kausalitaet: Verbinde die Beats mit "aber" oder "deshalb", nie mit "und dann". Jeder Beat folgt aus dem vorherigen. Eine Aufzaehlung nebeneinanderstehender Punkte traegt den Post nicht.
+Dieses Format nutzt KEINE Liste und KEIN Emoji: die Belege stehen im Fliesstext und haengen kausal zusammen.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): a contrarian thesis or counter-finding against a common practice. Decides whether anyone reads on.
 2. Tension: what most teams believe or do - and why it does not hold up in practice. Concrete, not abstract.
 3. Position: your contrarian take as an experienced operator, reasoned from observation. Max 3-5 proofs or steps. One original thought not in the source.
 4. Close: an open loop, not a clean full stop. Either a specific, arguable question on the core thesis, or a flag-plant line someone can take a stand against. Only the generic "What do you think?" is banned. No DM CTA.
-Causality: connect the beats with "but" or "therefore", never with "and then". Each beat follows from the previous one. A list of side-by-side points does not carry the post.""",
+Causality: connect the beats with "but" or "therefore", never with "and then". Each beat follows from the previous one. A list of side-by-side points does not carry the post.
+This format uses NO list and NO emoji: the proofs live in the prose and connect causally.""",
     },
     "POV": {
         "de": """Post-Struktur (ohne explizite Benennung):
 1. Hook (1-2 Saetze): Benenne eine Denk-Linse oder ein Reframe das die Zielgruppe so noch nicht hatte. Entscheidet ob jemand weiterliest.
-2. Framework: 2-4 benannte Bestandteile eines Modells, mit dem man das Problem klarer sieht. Konkret, nicht abstrakt.
+2. Framework: 2-4 benannte Bestandteile eines Modells, mit dem man das Problem klarer sieht. Konkret, nicht abstrakt. Als nummerierte Liste (➊ ➋ ➌), das einzige Listen-Element des Posts.
 3. Anwendung: Wie man die Linse in der Praxis nutzt. Max 3-5 Schritte. Ein eigener Gedanke der im Original nicht vorkommt.
 4. Abschluss: Offene Schleife statt sauberem Punkt. Entweder eine spezifische, streitbare Frage zur Kern-These, oder eine Flag-Plant-Zeile, gegen die jemand Position beziehen kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): name a lens or reframe the audience did not have yet. Decides whether anyone reads on.
-2. Framework: 2-4 named parts of a model that makes the problem clearer. Concrete, not abstract.
+2. Framework: 2-4 named parts of a model that makes the problem clearer. Concrete, not abstract. As a numbered list (➊ ➋ ➌), the only list element of the post.
 3. Application: how to use the lens in practice. Max 3-5 steps. One original thought not in the source.
 4. Close: an open loop, not a clean full stop. Either a specific, arguable question on the core thesis, or a flag-plant line someone can take a stand against. Only the generic "What do you think?" is banned. No DM CTA.""",
     },
     "Signature": {
         "de": """Post-Struktur (ohne explizite Benennung):
-1. Hook (1-2 Saetze): "Was [[BELIEF_ACTORS_DE]] glauben:" - die verbreitete Annahme, zugespitzt. Entscheidet ob jemand weiterliest.
-2. Realitaet: Was tatsaechlich das Ergebnis treibt - im Kontrast zur Annahme. Konkret, nicht abstrakt.
-3. Kontraste: 2-4 Glaube-gegen-Realitaet-Paare, je knapp. Ein eigener Gedanke der im Original nicht vorkommt.
+1. Hook (1-2 Saetze): "Was [[BELIEF_ACTORS_DE]] annehmen:" - die verbreitete Annahme, zugespitzt. Entscheidet ob jemand weiterliest.
+2. Praxis: Was tatsaechlich das Ergebnis treibt - im Kontrast zur Annahme. Konkret, nicht abstrakt.
+3. Kontraste: 2-4 Annahme-gegen-Praxis-Paare, je eine knappe Zeile "Annahme: ... Praxis: ...", ohne Emoji. Das Wort "Glaube" kommt nicht vor, es heisst Annahme, Hypothese oder Praemisse. Ein eigener Gedanke der im Original nicht vorkommt.
 4. Abschluss: Offene Schleife. Eine spezifische, streitbare Frage oder eine Flag-Plant-Zeile, die das Operating-Principle zuspitzt und gegen die jemand argumentieren kann. Verboten ist nur das generische "Was denkst du?". Kein DM-CTA.
-Hinweis fuer die Infografik weiter unten: Bevorzuge die Vergleichstabelle (Glaube vs. Realitaet).""",
+Hinweis fuer die Infografik weiter unten: Bevorzuge die Vergleichstabelle (Annahme vs. Praxis).""",
         "en": """Post structure (without labeling it):
 1. Hook (1-2 sentences): "What [[BELIEF_ACTORS_EN]] believe:" - the common assumption, sharpened. Decides whether anyone reads on.
 2. Reality: what actually drives the outcome, in contrast to the assumption. Concrete, not abstract.
@@ -538,22 +539,58 @@ FORMAT_STRUCTURES = {
 # Formate im Engagement-Band deckeln, lange Formate (Story, CaseProof, Method)
 # duerfen darueber, aber nie an das 3.000er-Limit heranschreiben.
 LONG_FORMATS = {"Story", "CaseProof", "Method"}
+# Laengenband "kurz" (Kundenfeedback SWOT 24.08.2026: "Posts immer sehr lang,
+# immer gleich gebaut"): ein Gedanke, keine Liste, kein Artefakt-Block. Wird
+# nicht vom Format, sondern von der Callsite gesetzt (run_plan_fill rotiert
+# nach LENGTH_ROTATION der Client-Config), damit die Vielfalt im Code entsteht
+# und nicht im Prompt erbeten wird.
 _LENGTH_TARGET_DE = {
-    True: ("ca. 300-380 Woerter (1.800-2.400 Zeichen). Nie ueber 2.500 Zeichen. "
-           "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
-           "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
-    False: ("ca. 200-260 Woerter (1.200-1.600 Zeichen). Nie ueber 1.800 Zeichen. "
-            "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
-            "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
+    "lang": ("ca. 300-380 Woerter (1.800-2.400 Zeichen). Nie ueber 2.500 Zeichen. "
+             "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
+             "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
+    "standard": ("ca. 200-260 Woerter (1.200-1.600 Zeichen). Nie ueber 1.800 Zeichen. "
+                 "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
+                 "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
+    "kurz": ("ca. 80-140 Woerter (500-900 Zeichen). Nie ueber 1.000 Zeichen. "
+             "Die ersten 200 Zeichen tragen die Kernthese vollstaendig. Ein Gedanke, "
+             "fertig; die Artefakt-Regel oben gilt hier nur als ein Satz im Fliesstext"),
 }
 _LENGTH_TARGET_EN = {
-    True: ("~300-380 words (1,800-2,400 characters). Never above 2,500 characters. "
-           "The first 200 characters must carry the core thesis completely: that is "
-           "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
-    False: ("~200-260 words (1,200-1,600 characters). Never above 1,800 characters. "
-            "The first 200 characters must carry the core thesis completely: that is "
-            "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
+    "lang": ("~300-380 words (1,800-2,400 characters). Never above 2,500 characters. "
+             "The first 200 characters must carry the core thesis completely: that is "
+             "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
+    "standard": ("~200-260 words (1,200-1,600 characters). Never above 1,800 characters. "
+                 "The first 200 characters must carry the core thesis completely: that is "
+                 "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
+    "kurz": ("~80-140 words (500-900 characters). Never above 1,000 characters. "
+             "The first 200 characters must carry the core thesis completely. One "
+             "thought, done; the artifact rule above shrinks to one sentence in the prose."),
 }
+# Harte Obergrenze je Band, gemessen von der Textwache (tools/text_gate).
+LENGTH_CAP = {"lang": 2500, "standard": 1800, "kurz": 1000}
+
+# Kurzform ersetzt die Format-Struktur, wenn das Band "kurz" ist: die
+# vierteiligen Strukturen tragen 500-900 Zeichen nicht.
+KURZ_STRUCTURE = {
+    "de": """Post-Struktur (ohne explizite Benennung), Kurzform:
+1. These in einem Satz. Die ersten 200 Zeichen tragen sie komplett.
+2. Ein Beleg aus der Praxis oder eine Beobachtung, 2-4 Saetze, Fliesstext.
+3. Schluss in einem Satz: eine Regel, eine Zahl oder eine streitbare Frage.
+Keine Liste, kein Emoji, kein abgesetztes Artefakt, keine Zitat-Zeile.""",
+    "en": """Post structure (without labeling it), short form:
+1. Thesis in one sentence. The first 200 characters carry it completely.
+2. One proof from practice or one observation, 2-4 sentences, prose.
+3. Close in one sentence: a rule, a number or an arguable question.
+No list, no emoji, no set-apart artifact, no quote line.""",
+}
+
+
+def length_band(post_format: str, band: str | None = None) -> str:
+    """Band aus Format und optionaler Vorgabe: "kurz" schlaegt das Format,
+    sonst entscheidet LONG_FORMATS zwischen "lang" und "standard"."""
+    if band == "kurz":
+        return "kurz"
+    return "lang" if post_format in LONG_FORMATS else "standard"
 
 
 def _recent_types_lines(recent_infographic_types) -> tuple[str, str]:
@@ -575,7 +612,8 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
                     persona_de: str = "", persona_en: str = "",
                     persona_voice_de: str = "",
                     persona_tokens_de: dict | None = None,
-                    de_template: str | None = None) -> tuple[str, str]:
+                    de_template: str | None = None,
+                    band: str | None = None) -> tuple[str, str]:
     """Pure builder: returns (de_prompt, en_prompt) with the format structure,
     the infographic anti-repeat line, and optional persona/asset blocks
     injected. persona_voice_de overrides the DE author voice (Persona-Split);
@@ -584,10 +622,14 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
     falls back to the tenant's static TOKENS. Unknown format keys fall back
     to Opinion. No API calls.
     de_template ersetzt das DE-Template (Themen-Pfad, tools/post_writer.py:
-    gleicher Slot-Satz, anderes Framing); None bleibt DACH_POST_PROMPT."""
-    structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
+    gleicher Slot-Satz, anderes Framing); None bleibt DACH_POST_PROMPT.
+    band "kurz" ersetzt Struktur und Laengenziel durch die Kurzform."""
+    b = length_band(post_format, band)
+    if b == "kurz":
+        structures = KURZ_STRUCTURE
+    else:
+        structures = FORMAT_STRUCTURES.get(post_format, FORMAT_STRUCTURES["Opinion"])
     de_recent, en_recent = _recent_types_lines(recent_infographic_types)
-    is_long = post_format in LONG_FORMATS
     de = (de_template or DACH_POST_PROMPT).format(
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
@@ -597,7 +639,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         persona_block=persona_de,
         assets_block=assets_de,
         persona_voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
-        length_target_de=_LENGTH_TARGET_DE[is_long],
+        length_target_de=_LENGTH_TARGET_DE[b],
         **(persona_tokens_de or persona_prompt_tokens(None)),
     )
     en = EN_POST_PROMPT.format(
@@ -608,7 +650,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         recent_types_line=en_recent,
         persona_block=persona_en,
         assets_block=assets_en,
-        length_target_en=_LENGTH_TARGET_EN[is_long],
+        length_target_en=_LENGTH_TARGET_EN[b],
     )
     return de, en
 
@@ -657,7 +699,7 @@ VALID_FORMATS = ("Opinion", "POV", "Signature", "Story")
 FORMAT_PICK_DESCRIPTIONS = {
     "Opinion": "kontroverse These gegen eine gaengige Praxis.",
     "POV": "eine strukturierte Denk-Linse / ein Framework.",
-    "Signature": '"Glaube vs. Realitaet" - verbreitete Annahme gegen das was wirklich zaehlt.',
+    "Signature": '"Annahme vs. Praxis" - verbreitete Annahme gegen das was wirklich zaehlt.',
     "Story": "eine konkrete Szene oder Anekdote aus der Praxis, erzaehlend statt Liste.",
     "Comparison": "Entscheidungshilfe: harte Kriterien und Red Flags fuer eine Auswahl.",
     "Method": "Schritt-fuer-Schritt-Methode mit dem typischen Stolperstein.",
@@ -1331,23 +1373,33 @@ HARTE REGELN:
 - Englische Fachbegriffe im deutschen Text sind kein Fehler; korrigiere nur inkonsistente Artikel oder Deklination drumherum.
 - Wenn nichts zu korrigieren ist, gib den Text ZEICHENGENAU unveraendert zurueck.
 - Antworte NUR mit dem Text selbst: kein Kommentar, keine Erklaerung, kein Markdown.
-
+{umlaut_line}
 TEXT:
 {text}"""
 
+# Kundenfeedback SWOT 24.08.2026 ("Uebergabetest"): Umschreibungen ae/oe/ue
+# gelten als Rechtschreibfehler. Die Textwache liefert die Kandidaten, der
+# Korrektor entscheidet mit Kontext (Eigennamen wie Goethe bleiben).
+_UMLAUT_LINE = ("- Diese Woerter sehen nach Umschreibungen ae/oe/ue/ss aus: {words}. "
+                "Ersetze echte Umschreibungen durch ä ö ü ß. Eigennamen und Fremdwoerter, "
+                "die wirklich so geschrieben werden, bleiben unveraendert.\n")
 
-def grammar_check(text: str) -> str:
+
+def grammar_check(text: str, umlaut_words: list[str] | None = None) -> str:
     """Letzte Stufe der Texterstellung (FEATURES["grammar_check"], Kundenfeedback
     lisocon 2026-07-09: Artikel-/Kasusfehler wie "Fehlender Tool Support").
     Minimal-invasive LLM-Korrektur; non-fatal und mit Laengen-Guard, damit ein
-    ausufernder Umbau des Posts nie den Draft ersetzt."""
+    ausufernder Umbau des Posts nie den Draft ersetzt. umlaut_words sind die
+    Kandidaten der Textwache (tools/text_gate.umlaut_candidates)."""
     if not text or not _cfg.FEATURES.get("grammar_check"):
         return text
+    umlaut_line = _UMLAUT_LINE.format(words=", ".join(umlaut_words)) if umlaut_words else ""
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=2048,
-            messages=[{"role": "user", "content": GRAMMAR_CHECK_PROMPT.format(text=text)}],
+            messages=[{"role": "user", "content": GRAMMAR_CHECK_PROMPT.format(
+                text=text, umlaut_line=umlaut_line)}],
         )
         fixed = resp.content[0].text.strip()
     except Exception as e:
@@ -1359,6 +1411,13 @@ def grammar_check(text: str) -> str:
     if fixed != text:
         print("  Grammar-Check: Korrekturen uebernommen.", flush=True)
     return fixed
+
+
+_RETRY_NOTE = """
+
+KORREKTUR: Dein vorheriger Entwurf zu genau dieser Aufgabe verstiess gegen diese Regeln:
+{probs}
+Schreibe den Post neu und halte diese Regeln diesmal ein. Gleiche Ausgabe-Struktur wie oben."""
 
 
 def _parse_generation_response(raw: str) -> dict:
@@ -1410,7 +1469,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    persona_tokens_de: dict | None = None,
                                    asset: dict | None = None,
                                    persona_id: str = "",
-                                   de_template: str | None = None) -> tuple[str, str, str, str, str, str]:
+                                   de_template: str | None = None,
+                                   band: str | None = None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
@@ -1424,8 +1484,12 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     persona_tokens_de Zielgruppe/Adressat/Fokus im DE-Prompt.
     asset ist das gewaehlte Asset-Dict; bei Magnet-Posts setzt es den CTA-Satz
     woertlich (siehe enforce_magnet_cta).
+    band "kurz" schaltet auf die Kurzform (Struktur, Laengenziel, Cap).
     Gibt (de_draft, en_draft, image_prompt, infographic_skeleton, soundbyte, kontext)
     zurueck. soundbyte/kontext speisen den Bild-Archetyp-Router (image_archetypes).
+    de_draft ist "", wenn der Text auch nach einem Neulauf gegen die Textwache
+    verstoesst (Grossbuchstaben-Block, Ueberlaenge): lieber keine Zeile als
+    eine, die der Kunde zurueckweist.
     """
     de_prompt, en_prompt = _format_prompts(
         post, post_format, recent_infographic_types,
@@ -1433,8 +1497,9 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         persona_de=persona_de, persona_en=persona_en,
         persona_voice_de=persona_voice_de,
         persona_tokens_de=persona_tokens_de,
-        de_template=de_template,
+        de_template=de_template, band=band,
     )
+    cap = LENGTH_CAP[length_band(post_format, band)]
 
     de_resp = client.messages.create(
         model="claude-sonnet-4-6",
@@ -1442,7 +1507,30 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         messages=[{"role": "user", "content": de_prompt}],
     )
     de_parts = _parse_generation_response(de_resp.content[0].text.strip())
-    de_draft = grammar_check(sanitize_generated_text(de_parts["post"]))
+    de_draft = sanitize_generated_text(de_parts["post"])
+
+    # Textwache (Kundenfeedback SWOT 24.08.2026): ein Neulauf mit dem Befund
+    # im Prompt, danach entscheidet der harte Befund ueber Verwerfen.
+    probs = text_gate.violations(de_draft, cap)
+    if probs:
+        print("  Textwache: Neulauf wegen " + "; ".join(probs), flush=True)
+        de_resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": de_prompt + _RETRY_NOTE.format(
+                probs="\n".join(f"- {p}" for p in probs))}],
+        )
+        de_parts = _parse_generation_response(de_resp.content[0].text.strip())
+        de_draft = sanitize_generated_text(de_parts["post"])
+
+    de_draft = grammar_check(de_draft, umlaut_words=text_gate.umlaut_candidates(de_draft))
+    hard = text_gate.hard_violations(de_draft, cap)
+    if hard:
+        print("  Textwache: Text verworfen, " + "; ".join(hard), flush=True)
+        de_draft = ""
+    elif text_gate.umlaut_candidates(de_draft):
+        print("  Textwache: Umlaut-Kandidaten bleiben (pruefen): "
+              + ", ".join(text_gate.umlaut_candidates(de_draft)[:6]), flush=True)
     de_draft = enforce_magnet_cta(de_draft, post_format, asset)
     de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
 

@@ -70,6 +70,35 @@ def test_build_prompt_short_format_gets_capped_target():
     assert "ersten 200 Zeichen" in p
 
 
+def test_build_prompt_kurz_band_uses_short_form():
+    p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen",
+                        post_format="Story", cfg=swot, band="kurz")
+    assert "Kurzform" in p and "500-900 Zeichen" in p
+
+
+def test_build_prompt_carries_hersteller_position_and_bans():
+    # Kulle 24.08.2026: Softwarehersteller-Perspektive, keine Bankgespraech-
+    # Ich-Form, Gesetze erklaeren, "Glaube" raus.
+    # Die Kontostimme kommt ueber cfg in den Prompt; die TOKENS backt das
+    # Template beim Import mit dem Prozess-Mandanten, deshalb direkt geprueft.
+    p = pw.build_prompt("T", "K", "LinkedIn Christian", "rechenschaft", cfg=swot)
+    assert "kein Interim-CFO" in p
+    assert "Beobachterposition" in p
+    assert "Grossbuchstaben" in p                 # globales Template
+    assert "StaRUG, IFRS 18, AVR, InsO" in swot.TOKENS["CONTEXT_TRANSFER_DE"]
+    assert "Annahme, Hypothese oder Praemisse" in swot.TOKENS["LANGUAGE_BANS_DE"]
+    assert "Bankgespraechs" in swot.TOKENS["LANGUAGE_BANS_DE"]
+
+
+def test_length_band_rotation_per_channel():
+    assert [pw.length_band_for(swot, i) for i in range(6)] == \
+        ["standard", "standard", "kurz", "standard", "standard", "kurz"]
+
+    class NoRotation:
+        pass
+    assert pw.length_band_for(NoRotation(), 2) is None
+
+
 def test_build_prompt_unknown_channel_raises():
     with pytest.raises(KeyError, match="LinkedIn Falsch"):
         pw.build_prompt("T", "K", "LinkedIn Falsch", "fristen", cfg=swot)
@@ -84,6 +113,7 @@ def test_write_post_delegates_with_topic_template():
                             "excel_am_limit", post_format="POV", cfg=swot)
     kwargs = gen.call_args.kwargs
     assert kwargs["de_template"] is pw.TOPIC_DE_TEMPLATE
+    assert kwargs["band"] is None
     assert "Titel A" in gen.call_args.args[0]["post_text"]
     assert gen.call_args.args[1] == "POV"
     assert kwargs["persona_voice_de"] == swot.ACCOUNT_VOICES["LinkedIn Robert"]
