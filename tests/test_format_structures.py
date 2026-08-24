@@ -104,7 +104,8 @@ def test_generate_threads_format_into_de_prompt():
     assert "Vergleichstabelle" in captured[0]
 
 
-def _gen_with_responses(bodies, post_format="Opinion", band=None, grammar=False):
+def _gen_with_responses(bodies, post_format="Opinion", band=None, grammar=False,
+                        naturalness=False, avoid=None):
     """Laesst generate_post_and_image_prompt gegen eine Folge von
     Modellantworten laufen. Gibt (de_draft, gesendete Prompts) zurueck."""
     captured, bodies = [], list(bodies)
@@ -117,9 +118,11 @@ def _gen_with_responses(bodies, post_format="Opinion", band=None, grammar=False)
 
     from tools import post_scorer as ps
     with patch("tools.post_scorer.client") as c, \
-         patch.dict(ps._cfg.FEATURES, {"grammar_check": grammar, "en_draft": False}):
+         patch.dict(ps._cfg.FEATURES, {"grammar_check": grammar, "en_draft": False,
+                                       "naturalness_check": naturalness}):
         c.messages.create.side_effect = fake_create
-        de, *_ = ps.generate_post_and_image_prompt(POST, post_format, band=band)
+        de, *_ = ps.generate_post_and_image_prompt(POST, post_format, band=band,
+                                                   avoid_phrases=avoid)
     return de, captured
 
 
@@ -148,6 +151,45 @@ def test_textwache_umlaut_only_goes_to_grammar_check_not_drop():
     assert de.startswith(fixed)                   # dahinter ggf. Mandanten-CTA
     assert len(sent) == 3
     assert "Uebergabetest" in sent[2] and "Umschreibungen" in sent[2]
+
+
+_CLEAN = "===POST===\nDie zweite Gesellschaft kostet so viel wie die erste, weil der Kontenrahmen neu verhandelt wird.\n===SOUNDBYTE===\nx"
+_FORMEL = "===POST===\nDas ist kein Planungsproblem. Das ist ein Strukturproblem.\n===SOUNDBYTE===\nx"
+
+
+def test_lektor_accepts_good_text_with_one_call():
+    de, sent = _gen_with_responses([_CLEAN, '{"note": 9, "fundstellen": []}'], naturalness=True)
+    assert de.startswith("Die zweite Gesellschaft")
+    assert len(sent) == 2 and "Lektor" in sent[1]
+
+
+def test_lektor_low_note_triggers_rewrite_and_keeps_better():
+    low = '{"note": 4, "fundstellen": ["Das ist kein Planungsproblem: Formel, sagt niemand"]}'
+    de, sent = _gen_with_responses([_FORMEL, low, _CLEAN, '{"note": 8, "fundstellen": []}'],
+                                   naturalness=True)
+    assert de.startswith("Die zweite Gesellschaft")
+    assert len(sent) == 4
+    assert "KORREKTUR" in sent[2] and "Note 4 von 10" in sent[2]
+    assert "kein X-Problem" in sent[2]                 # deterministischer Tic im Hinweis
+
+
+def test_lektor_keeps_original_when_rewrite_is_worse():
+    de, sent = _gen_with_responses(
+        [_CLEAN, '{"note": 6, "fundstellen": ["x: y"]}', _FORMEL, '{"note": 5, "fundstellen": []}'],
+        naturalness=True)
+    assert de.startswith("Die zweite Gesellschaft")
+
+
+def test_lektor_unreadable_verdict_keeps_text():
+    de, sent = _gen_with_responses([_CLEAN, "kein json"], naturalness=True)
+    assert de.startswith("Die zweite Gesellschaft") and len(sent) == 2
+
+
+def test_avoid_phrases_land_in_prompt():
+    from tools.naturalness import CLOSING_QUESTION
+    de, sent = _gen_with_responses([_CLEAN], avoid=["In Projekten sehe ich", CLOSING_QUESTION, CLOSING_QUESTION])
+    assert "SCHON VERBRAUCHT" in sent[0] and "In Projekten sehe ich" in sent[0]
+    assert "endet NICHT mit einer Frage" in sent[0]
 
 
 def test_kurz_band_caps_at_1000_chars():

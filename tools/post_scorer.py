@@ -13,7 +13,7 @@ import anthropic
 from dotenv import load_dotenv
 
 from clients import apply_tokens, load_client
-from tools import text_gate
+from tools import naturalness, text_gate
 
 load_dotenv()
 
@@ -138,6 +138,7 @@ Tonalitaet:
 - [[CONTEXT_TRANSFER_DE]]
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
 - Kein Satz ueber 25 Woerter. Ein Gedanke je Satz, hoechstens ein Nebensatz
+- Deutsch, wie ein Fachmensch es selbst schreibt: Verben statt Substantivierungen, keine Kunstwoerter (Uebergabefaehigkeit, Vertrauensereignis, Fortschreibungslogik), keine Lehnuebersetzungen aus dem Englischen. Keine Formeln wie "Das ist kein X-Problem, das ist ein Y-Problem", "Nicht X. Nicht Y. Sondern Z.", "X ist kein Y. Es ist ein Z.", "Wer X, bezahlt Y". Keine Pointen-Einzeiler als eigener Absatz. Der Beitrag muss nicht mit einer Frage enden
 
 Sprach-Verbote (hart):
 [[LANGUAGE_BANS_DE]]
@@ -613,7 +614,8 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
                     persona_voice_de: str = "",
                     persona_tokens_de: dict | None = None,
                     de_template: str | None = None,
-                    band: str | None = None) -> tuple[str, str]:
+                    band: str | None = None,
+                    avoid_phrases: list[str] | None = None) -> tuple[str, str]:
     """Pure builder: returns (de_prompt, en_prompt) with the format structure,
     the infographic anti-repeat line, and optional persona/asset blocks
     injected. persona_voice_de overrides the DE author voice (Persona-Split);
@@ -623,7 +625,9 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
     to Opinion. No API calls.
     de_template ersetzt das DE-Template (Themen-Pfad, tools/post_writer.py:
     gleicher Slot-Satz, anderes Framing); None bleibt DACH_POST_PROMPT.
-    band "kurz" ersetzt Struktur und Laengenziel durch die Kurzform."""
+    band "kurz" ersetzt Struktur und Laengenziel durch die Kurzform.
+    avoid_phrases sind die im Lauf schon verbrauchten Formulierungen
+    (tools/naturalness.phrases), sie werden dem DE-Prompt angehaengt."""
     b = length_band(post_format, band)
     if b == "kurz":
         structures = KURZ_STRUCTURE
@@ -641,7 +645,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         persona_voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
         length_target_de=_LENGTH_TARGET_DE[b],
         **(persona_tokens_de or persona_prompt_tokens(None)),
-    )
+    ) + naturalness.avoid_note(avoid_phrases)
     en = EN_POST_PROMPT.format(
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
@@ -1420,6 +1424,72 @@ KORREKTUR: Dein vorheriger Entwurf zu genau dieser Aufgabe verstiess gegen diese
 Schreibe den Post neu und halte diese Regeln diesmal ein. Gleiche Ausgabe-Struktur wie oben."""
 
 
+def _generate_de(prompt: str) -> dict:
+    """Ein DE-Generierungslauf, zerlegt an den ===MARKER===."""
+    resp = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return _parse_generation_response(resp.content[0].text.strip())
+
+
+def _finish_draft(de_draft: str, cap: int) -> str:
+    """Grammatik plus Umlaut-Korrektur, dann der harte Befund der Textwache.
+    Gibt "" zurueck, wenn der Text verworfen wird."""
+    de_draft = grammar_check(de_draft, umlaut_words=text_gate.umlaut_candidates(de_draft))
+    hard = text_gate.hard_violations(de_draft, cap)
+    if hard:
+        print("  Textwache: Text verworfen, " + "; ".join(hard), flush=True)
+        return ""
+    rest = text_gate.umlaut_candidates(de_draft)
+    if rest:
+        print("  Textwache: Umlaut-Kandidaten bleiben (pruefen): " + ", ".join(rest[:6]), flush=True)
+    return de_draft
+
+
+def _naturalness_verdict(text: str) -> dict | None:
+    """Urteil des deutschen Lektors (Sonnet). None bei Fehler oder
+    unlesbarer Antwort: dann bleibt der Text, wie er ist."""
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": naturalness.CRITIC_PROMPT.format(text=text)}],
+        )
+        return naturalness.parse_verdict(resp.content[0].text)
+    except Exception as e:
+        print(f"  Lektor fehlgeschlagen (nicht kritisch): {e}", flush=True)
+        return None
+
+
+def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int) -> tuple[str, dict]:
+    """Natuerlichkeits-Stufe (Richard 24.08.2026): Lektor-Note plus
+    deterministische Formeln; ein Neulauf mit den Fundstellen, danach bleibt
+    die Fassung mit der besseren Note. Nie ein Verwerfen: Stil ist weicher
+    als Grossbuchstaben oder Laenge."""
+    verdict = _naturalness_verdict(de_draft)
+    tics = naturalness.tic_hits(de_draft)
+    longs = naturalness.long_sentences(de_draft)
+    note = verdict["note"] if verdict else None
+    if not tics and (note is None or note >= naturalness.NATURALNESS_MIN):
+        print(f"  Lektor: Note {note}, keine Formeln", flush=True)
+        return de_draft, de_parts
+    print(f"  Lektor: Note {note}, Formeln {len(tics)}, Neulauf", flush=True)
+    parts2 = _generate_de(de_prompt + naturalness.rewrite_note(verdict, tics, longs))
+    draft2 = _finish_draft(sanitize_generated_text(parts2["post"]), cap)
+    if not draft2:
+        return de_draft, de_parts
+    verdict2 = _naturalness_verdict(draft2)
+    note2 = verdict2["note"] if verdict2 else None
+    tics2 = naturalness.tic_hits(draft2)
+    better = (len(tics2) < len(tics)) or (
+        len(tics2) == len(tics) and note2 is not None and (note is None or note2 >= note))
+    print(f"  Lektor: Neulauf Note {note2}, Formeln {len(tics2)}, "
+          f"{'uebernommen' if better else 'verworfen'}", flush=True)
+    return (draft2, parts2) if better else (de_draft, de_parts)
+
+
 def _parse_generation_response(raw: str) -> dict:
     """Zerlegt eine LLM-Antwort an den ===MARKER=== in ihre Teile.
     Gibt dict mit keys post, soundbyte, kontext, infografik zurueck.
@@ -1470,7 +1540,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    asset: dict | None = None,
                                    persona_id: str = "",
                                    de_template: str | None = None,
-                                   band: str | None = None) -> tuple[str, str, str, str, str, str]:
+                                   band: str | None = None,
+                                   avoid_phrases: list[str] | None = None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
@@ -1490,6 +1561,11 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     de_draft ist "", wenn der Text auch nach einem Neulauf gegen die Textwache
     verstoesst (Grossbuchstaben-Block, Ueberlaenge): lieber keine Zeile als
     eine, die der Kunde zurueckweist.
+    Mit FEATURES["naturalness_check"] beurteilt danach ein deutscher Lektor
+    (tools/naturalness) den Text; unter NATURALNESS_MIN oder bei Formel-
+    Treffern schreibt das Modell einmal neu, die bessere Fassung bleibt.
+    avoid_phrases: im Lauf schon verbrauchte Formulierungen (siehe
+    naturalness.phrases), damit sich Konten nicht selbst zitieren.
     """
     de_prompt, en_prompt = _format_prompts(
         post, post_format, recent_infographic_types,
@@ -1497,16 +1573,11 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         persona_de=persona_de, persona_en=persona_en,
         persona_voice_de=persona_voice_de,
         persona_tokens_de=persona_tokens_de,
-        de_template=de_template, band=band,
+        de_template=de_template, band=band, avoid_phrases=avoid_phrases,
     )
     cap = LENGTH_CAP[length_band(post_format, band)]
 
-    de_resp = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2048,
-        messages=[{"role": "user", "content": de_prompt}],
-    )
-    de_parts = _parse_generation_response(de_resp.content[0].text.strip())
+    de_parts = _generate_de(de_prompt)
     de_draft = sanitize_generated_text(de_parts["post"])
 
     # Textwache (Kundenfeedback SWOT 24.08.2026): ein Neulauf mit dem Befund
@@ -1514,23 +1585,13 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     probs = text_gate.violations(de_draft, cap)
     if probs:
         print("  Textwache: Neulauf wegen " + "; ".join(probs), flush=True)
-        de_resp = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=2048,
-            messages=[{"role": "user", "content": de_prompt + _RETRY_NOTE.format(
-                probs="\n".join(f"- {p}" for p in probs))}],
-        )
-        de_parts = _parse_generation_response(de_resp.content[0].text.strip())
+        de_parts = _generate_de(de_prompt + _RETRY_NOTE.format(
+            probs="\n".join(f"- {p}" for p in probs)))
         de_draft = sanitize_generated_text(de_parts["post"])
 
-    de_draft = grammar_check(de_draft, umlaut_words=text_gate.umlaut_candidates(de_draft))
-    hard = text_gate.hard_violations(de_draft, cap)
-    if hard:
-        print("  Textwache: Text verworfen, " + "; ".join(hard), flush=True)
-        de_draft = ""
-    elif text_gate.umlaut_candidates(de_draft):
-        print("  Textwache: Umlaut-Kandidaten bleiben (pruefen): "
-              + ", ".join(text_gate.umlaut_candidates(de_draft)[:6]), flush=True)
+    de_draft = _finish_draft(de_draft, cap)
+    if de_draft and _cfg.FEATURES.get("naturalness_check"):
+        de_draft, de_parts = _naturalness_loop(de_draft, de_parts, de_prompt, cap)
     de_draft = enforce_magnet_cta(de_draft, post_format, asset)
     de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
 

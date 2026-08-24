@@ -70,6 +70,13 @@ def test_build_prompt_short_format_gets_capped_target():
     assert "ersten 200 Zeichen" in p
 
 
+def test_build_prompt_appends_avoid_phrases():
+    p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen", cfg=swot,
+                        avoid_phrases=["In Einführungsprojekten sehe ich"])
+    assert "SCHON VERBRAUCHT" in p and "In Einführungsprojekten sehe ich" in p
+    assert "SCHON VERBRAUCHT" not in pw.build_prompt("T", "K", "LinkedIn Robert", "fristen", cfg=swot)
+
+
 def test_build_prompt_kurz_band_uses_short_form():
     p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen",
                         post_format="Story", cfg=swot, band="kurz")

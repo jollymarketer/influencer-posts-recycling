@@ -533,6 +533,10 @@ FEATURES = {
     "keyword_source_daily": False,
     "en_draft": False,
     "grammar_check": True,
+    # Deutscher Lektor hinter der Textwache (Richard 24.08.2026: "gutes und
+    # natuerlich klingendes Deutsch"). Ein Sonnet-Call je Post, bei Neulauf
+    # zwei mehr. Siehe tools/naturalness.py.
+    "naturalness_check": True,
     # Kein Slate- und kein Winner-Pfad, siehe Modul-Docstring.
     "slate_mode": False,
 }

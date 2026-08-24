@@ -47,6 +47,7 @@ from tools.post_scorer import (
     parse_infographic_type,
     pick_format,
 )
+from tools.naturalness import phrases as used_phrases
 from tools.post_writer import length_band_for, write_post
 from tools.topic_ideas_db import _headers as notion_headers
 
@@ -159,6 +160,9 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
     geschrieben = 0
     recent_formats: dict[str, list] = {}
     recent_types: dict[str, list] = {}
+    # Verbrauchte Formulierungen je Kanal (tools/naturalness.phrases): ein
+    # Konto zitiert sich sonst von Post zu Post selbst.
+    used: dict[str, list] = {}
     for k in kandidaten:
         if k["hat_text"] and not rewrite:
             print(f"  {k['datum']} {k['kanal']:20s} alt {k['titel'][:55]}", flush=True)
@@ -170,10 +174,11 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
         band = length_band_for(cfg, len(fmts))
         r = write_post(k["titel"], k["kurz"], k["kanal"], k["achse"],
                        post_format=fmt, recent_infographic_types=list(typs), cfg=cfg,
-                       band=band)
+                       band=band, avoid_phrases=list(used.get(k["kanal"], [])))
         if not r["text"]:
             print(f"  {k['datum']} kein Text erhalten, Zeile uebersprungen")
             continue
+        used.setdefault(k["kanal"], []).extend(used_phrases(r["text"]))
         props = {
             "Status": {"select": {"name": "Entwurf"}},
             "Bezug": {"select": {"name": BEZUG}},
@@ -220,6 +225,7 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
     # Monats-Batch entsteht ohnehin in einem Stueck.
     recent_formats: dict[str, list] = {}
     recent_types: dict[str, list] = {}
+    used: dict[str, list] = {}
     for s in sorted(belegt, key=lambda s: s.day):
         m = meta[s.topic["page_id"]]
         # rewrite erzwingt Neuerstellung (Richard 20.08.2026: Bestandstexte aus
@@ -243,10 +249,12 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             band = length_band_for(cfg, len(fmts))
             r = write_post(m["titel"], m["kurz"], s.kanal, s.axis,
                            post_format=fmt, recent_infographic_types=list(typs),
-                           cfg=cfg, band=band)
+                           cfg=cfg, band=band,
+                           avoid_phrases=list(used.get(s.kanal, [])))
             if not r["text"]:
                 print(f"    kein Text erhalten, Zeile uebersprungen")
                 continue
+            used.setdefault(s.kanal, []).extend(used_phrases(r["text"]))
             props["Post-Text"] = _rich(r["text"])
             props["Format"] = {"select": {"name": fmt}}
             props["Soundbyte"] = _rich(r["soundbyte"])
