@@ -174,7 +174,8 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
         band = length_band_for(cfg, len(fmts))
         r = write_post(k["titel"], k["kurz"], k["kanal"], k["achse"],
                        post_format=fmt, recent_infographic_types=list(typs), cfg=cfg,
-                       band=band, avoid_phrases=list(used.get(k["kanal"], [])))
+                       band=band, avoid_phrases=list(used.get(k["kanal"], [])),
+                       datum=k["datum"])
         if not r["text"]:
             print(f"  {k['datum']} kein Text erhalten, Zeile uebersprungen")
             continue
@@ -250,7 +251,8 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             r = write_post(m["titel"], m["kurz"], s.kanal, s.axis,
                            post_format=fmt, recent_infographic_types=list(typs),
                            cfg=cfg, band=band,
-                           avoid_phrases=list(used.get(s.kanal, [])))
+                           avoid_phrases=list(used.get(s.kanal, [])),
+                           datum=s.day.isoformat())
             if not r["text"]:
                 print(f"    kein Text erhalten, Zeile uebersprungen")
                 continue

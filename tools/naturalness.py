@@ -46,6 +46,10 @@ TICS = [
      re.compile(r"^Wer [^.?!\n]{5,90}, (?:hat|bezahlt|verliert|merkt|bekommt) [^.?!\n]{2,90}\.$", re.M)),
     ("Glaube als Fachwort",
      re.compile(r"\bGlaube:|\bGlaube-gegen|\bGlaubens?satz\b")),
+    # Lauf 3 (25.08.2026): mit Stimmprofil kopierte das Modell die gesprochene
+    # Sprache samt Fuellwoertern ("halt", "irgendwie", Einstieg mit "Also,").
+    ("Fuellwort der gesprochenen Sprache",
+     re.compile(r"\b(?:halt|irgendwie|sozusagen|quasi)\b|(?:^|\n)Also,|\bne\?", re.I)),
 ]
 
 # Formulierungen, die je Konto und Monat nur einmal vorkommen duerfen. Die

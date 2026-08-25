@@ -80,11 +80,18 @@ def account_voices(cfg=None) -> dict:
     return getattr(cfg, "ACCOUNT_VOICES", {})
 
 
-def _material(titel: str, kurz: str) -> str:
-    return f"Thema: {titel}\nKurzbeschreibung: {kurz}"
+def _material(titel: str, kurz: str, datum: str = "") -> str:
+    # Erscheinungsdatum mitgeben (25.08.2026): ohne Datum schrieb das Modell
+    # Fristen-Vorlauf in die Vergangenheit ("gehoert ins erste Quartal 2026"
+    # fuer einen Beitrag vom 10.09.2026).
+    m = f"Thema: {titel}\nKurzbeschreibung: {kurz}"
+    if datum:
+        m += (f"\nErscheinungsdatum des Beitrags: {datum}. Alles davor ist "
+              f"Vergangenheit; Empfehlungen und Fristen daran ausrichten.")
+    return m
 
 
-def _prompt_parts(titel: str, kurz: str, kanal: str, achse: str, cfg):
+def _prompt_parts(titel: str, kurz: str, kanal: str, achse: str, cfg, datum: str = ""):
     """Pseudo-Post plus Persona/Stimmen-Bloecke fuer den Themen-Pfad."""
     voices = account_voices(cfg)
     if kanal not in voices:
@@ -94,7 +101,7 @@ def _prompt_parts(titel: str, kurz: str, kanal: str, achse: str, cfg):
         )
     personas = {p["id"]: p for p in cfg.CONTENT_PERSONAS}
     persona = personas[achse]
-    post = {"influencer": "der Themen-Recherche", "post_text": _material(titel, kurz)}
+    post = {"influencer": "der Themen-Recherche", "post_text": _material(titel, kurz, datum)}
     return post, {
         "persona_de": persona_block(persona, "de"),
         "persona_voice_de": voices[kanal],
@@ -106,11 +113,12 @@ def build_prompt(titel: str, kurz: str, kanal: str, achse: str,
                  post_format: str = "Opinion",
                  recent_infographic_types=None, cfg=None,
                  band: str | None = None,
-                 avoid_phrases: list[str] | None = None) -> str:
+                 avoid_phrases: list[str] | None = None,
+                 datum: str = "") -> str:
     """DE-Prompt des Themen-Pfads, ohne Modellaufruf (fuer Tests und Debug).
     Baugleich zu dem, was write_post an das Modell schickt."""
     cfg = cfg or load_client()
-    post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg)
+    post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg, datum)
     de, _ = _format_prompts(post, post_format, recent_infographic_types,
                             de_template=TOPIC_DE_TEMPLATE, band=band,
                             avoid_phrases=avoid_phrases, **blocks)
@@ -121,7 +129,8 @@ def write_post(titel: str, kurz: str, kanal: str, achse: str,
                post_format: str = "Opinion",
                recent_infographic_types=None, cfg=None,
                band: str | None = None,
-               avoid_phrases: list[str] | None = None) -> dict:
+               avoid_phrases: list[str] | None = None,
+               datum: str = "") -> dict:
     """Ein Beitrag durch die volle Maschinerie: Format-Struktur, Persona,
     Kontostimme, sanitize + Textwache + grammar_check + Lektor (in
     generate_post_and_image_prompt). band "kurz" schaltet auf die Kurzform,
@@ -129,7 +138,7 @@ def write_post(titel: str, kurz: str, kanal: str, achse: str,
     Gibt {text, soundbyte, kontext, skeleton} zurueck; text "" wenn nichts kam
     oder die Textwache den Text verworfen hat."""
     cfg = cfg or load_client()
-    post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg)
+    post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg, datum)
     de_draft, _en, _img, skeleton, soundbyte, kontext = generate_post_and_image_prompt(
         post, post_format, recent_infographic_types,
         de_template=TOPIC_DE_TEMPLATE, persona_id=achse, band=band,

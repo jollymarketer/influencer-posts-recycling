@@ -748,7 +748,10 @@ def load_voice_profile(name: str) -> str:
     if not os.path.exists(path):
         return ""
     with open(path, encoding="utf-8") as f:
-        return "\n\nSTIMMPROFIL, daran misst sich jeder Satz:\n" + f.read().strip()
+        return ("\n\nSTIMMPROFIL, daran misst sich jeder Satz. Es beschreibt gesprochene "
+                "Sprache: Rhythmus, Bilder, Haltung und Wortwahl uebernehmen; Fuellwoerter "
+                "(halt, irgendwie, also, ne) NIE; die typischen Wendungen sind Muster, "
+                "hoechstens eine davon woertlich je Beitrag.\n" + f.read().strip())
 
 
 ACCOUNT_VOICES = {

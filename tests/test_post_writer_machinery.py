@@ -81,6 +81,12 @@ def test_voice_profiles_are_loaded_into_account_voices():
             assert "## Typische Wendungen" in profile
 
 
+def test_build_prompt_carries_publication_date():
+    p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen", cfg=swot, datum="2026-09-10")
+    assert "Erscheinungsdatum des Beitrags: 2026-09-10" in p
+    assert "Erscheinungsdatum" not in pw.build_prompt("T", "K", "LinkedIn Robert", "fristen", cfg=swot)
+
+
 def test_build_prompt_appends_avoid_phrases():
     p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen", cfg=swot,
                         avoid_phrases=["In Einführungsprojekten sehe ich"])

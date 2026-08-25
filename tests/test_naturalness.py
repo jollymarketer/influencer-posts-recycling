@@ -31,6 +31,12 @@ def test_tic_hits_finds_the_formulas_of_the_negative_example():
     assert "Wer X, hat/bezahlt Y (Sentenz)" in names
 
 
+def test_tic_hits_flags_spoken_fillers():
+    names = [h.split(":")[0] for h in nat.tic_hits("Also, das weiß halt keiner mehr.")]
+    assert names == ["Fuellwort der gesprochenen Sprache"]
+    assert nat.tic_hits("Alsosolche Halterung ist keine Sprache.") == []
+
+
 def test_tic_hits_clean_text():
     text = ("Die zweite Gesellschaft kostet so viel Einrichtung wie die erste, "
             "weil der Kontenrahmen jedes Mal neu verhandelt wird. Das lässt sich "
