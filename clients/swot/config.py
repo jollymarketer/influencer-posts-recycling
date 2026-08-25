@@ -60,7 +60,8 @@ uebernommenen Anbieter sind haeufig wechselwillig.
 
 Fachliche Anker mit Fristwirkung: AVR.DD Entgelterhoehung zum 01.09.2026, AVR
 Caritas Neufassung zum 01.01.2027, IFRS 18 ab Geschaeftsjahr 2027 mit bereits
-laufendem Vergleichsjahr 2026, E-Rechnungspflicht ab 01.01.2027. CSRD ist
+laufendem Vergleichsjahr 2026, E-Rechnung: Empfangspflicht seit 01.01.2025,
+Versandpflicht ab 01.01.2027 (nie als Empfangspflicht 2027 schreiben). CSRD ist
 ausdruecklich KEIN Thema: das Omnibus-I-Paket hat die Schwelle auf ueber 1.000
 Beschaeftigte angehoben, SWOTs Mittelstands-Zielgruppe faellt heraus.
 
