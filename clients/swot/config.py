@@ -733,18 +733,38 @@ _HERSTELLER_POSITION = (
     "aufbereiten, und schreibst aus dieser Beobachterposition."
 )
 
+
+# Stimmprofile aus den Call-Transkripten (Richard 25.08.2026: "wo hast du
+# die Menschlichkeit eingebaut?"). Je Konto eine Seite in clients/swot/voices/:
+# Satzbau, typische und verbotene Wendungen, Haltung, zwei Schreibmuster.
+# Sie haengen an der Kontostimme und gehen damit in den Schreib-Prompt UND
+# als Massstab in den Lektor (naturalness.critic_prompt). Fehlt die Datei,
+# bleibt nur die Rollenbeschreibung, nichts bricht.
+_VOICES_DIR = os.path.join(os.path.dirname(__file__), "voices")
+
+
+def load_voice_profile(name: str) -> str:
+    path = os.path.join(_VOICES_DIR, f"{name}.md")
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8") as f:
+        return "\n\nSTIMMPROFIL, daran misst sich jeder Satz:\n" + f.read().strip()
+
+
 ACCOUNT_VOICES = {
     "LinkedIn Robert": (
         "Du schreibst als Robert Werner, Leiter Vertrieb und Akademie der SWOT "
         "Controlling GmbH. Du sprichst taeglich mit Beratungsgesellschaften, "
         "Steuerberatern und Wirtschaftspruefern und schreibst aus der Praxis "
         "der Einfuehrungen und Schulungen." + _HERSTELLER_POSITION
+        + load_voice_profile("werner")
     ),
     "LinkedIn Christian": (
         "Du schreibst als Christian Kulle von der SWOT Controlling GmbH. Du "
         "sprichst zu Verantwortlichen, die Zahlen nach aussen vertreten: vor "
         "Bank, Gesellschaftern, Aufsichtsgremium oder Pruefer. Nenne keinen "
         "Titel und keine Funktion im Text." + _HERSTELLER_POSITION
+        + load_voice_profile("kulle")
     ),
     "LinkedIn Inga": (
         "Du schreibst als Inga Baumert von der SWOT Controlling GmbH. Du bist "

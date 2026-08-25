@@ -66,6 +66,14 @@ def test_avoid_note_lists_phrases_and_blocks_third_question():
     assert "endet NICHT" not in nat.avoid_note([nat.CLOSING_QUESTION])
 
 
+def test_critic_prompt_with_and_without_voice():
+    plain = nat.critic_prompt("Text A")
+    assert "MASSSTAB" not in plain and "11." not in plain and "Text A" in plain
+    voiced = nat.critic_prompt("Text A", "So redet Robert: kurz, mit Beispielen.")
+    assert "MASSSTAB" in voiced and "So redet Robert" in voiced
+    assert "11. Klingt der Text nach dieser Person" in voiced
+
+
 def test_parse_verdict_tolerates_prose_and_garbage():
     v = nat.parse_verdict('Hier: {"note": 5, "fundstellen": ["a: b", "c: d"]} danke')
     assert v == {"note": 5, "fundstellen": ["a: b", "c: d"]}

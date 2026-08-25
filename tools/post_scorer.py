@@ -1448,14 +1448,15 @@ def _finish_draft(de_draft: str, cap: int) -> str:
     return de_draft
 
 
-def _naturalness_verdict(text: str) -> dict | None:
-    """Urteil des deutschen Lektors (Sonnet). None bei Fehler oder
-    unlesbarer Antwort: dann bleibt der Text, wie er ist."""
+def _naturalness_verdict(text: str, voice: str = "") -> dict | None:
+    """Urteil des deutschen Lektors (Sonnet), mit der Kontostimme als
+    Massstab. None bei Fehler oder unlesbarer Antwort: dann bleibt der
+    Text, wie er ist."""
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
-            messages=[{"role": "user", "content": naturalness.CRITIC_PROMPT.format(text=text)}],
+            messages=[{"role": "user", "content": naturalness.critic_prompt(text, voice)}],
         )
         return naturalness.parse_verdict(resp.content[0].text)
     except Exception as e:
@@ -1463,12 +1464,14 @@ def _naturalness_verdict(text: str) -> dict | None:
         return None
 
 
-def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int) -> tuple[str, dict]:
+def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int,
+                      voice: str = "") -> tuple[str, dict]:
     """Natuerlichkeits-Stufe (Richard 24.08.2026): Lektor-Note plus
     deterministische Formeln; ein Neulauf mit den Fundstellen, danach bleibt
     die Fassung mit der besseren Note. Nie ein Verwerfen: Stil ist weicher
-    als Grossbuchstaben oder Laenge."""
-    verdict = _naturalness_verdict(de_draft)
+    als Grossbuchstaben oder Laenge. voice ist die Kontostimme samt
+    Stimmprofil, der Lektor misst daran."""
+    verdict = _naturalness_verdict(de_draft, voice)
     tics = naturalness.tic_hits(de_draft)
     longs = naturalness.long_sentences(de_draft)
     note = verdict["note"] if verdict else None
@@ -1480,7 +1483,7 @@ def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int) -
     draft2 = _finish_draft(sanitize_generated_text(parts2["post"]), cap)
     if not draft2:
         return de_draft, de_parts
-    verdict2 = _naturalness_verdict(draft2)
+    verdict2 = _naturalness_verdict(draft2, voice)
     note2 = verdict2["note"] if verdict2 else None
     tics2 = naturalness.tic_hits(draft2)
     better = (len(tics2) < len(tics)) or (
@@ -1591,7 +1594,9 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
 
     de_draft = _finish_draft(de_draft, cap)
     if de_draft and _cfg.FEATURES.get("naturalness_check"):
-        de_draft, de_parts = _naturalness_loop(de_draft, de_parts, de_prompt, cap)
+        de_draft, de_parts = _naturalness_loop(
+            de_draft, de_parts, de_prompt, cap,
+            voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"])
     de_draft = enforce_magnet_cta(de_draft, post_format, asset)
     de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
 

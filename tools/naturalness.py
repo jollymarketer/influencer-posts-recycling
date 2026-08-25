@@ -117,7 +117,7 @@ def avoid_note(used: list[str] | None) -> str:
 
 
 CRITIC_PROMPT = """Du bist Lektor für deutsche B2B-Fachtexte. Prüfe, ob der folgende LinkedIn-Beitrag klingt, als hätte ihn ein deutschsprachiger Fachmensch selbst geschrieben, oder wie eine Maschine, die Deutsch aus dem Englischen ableitet.
-
+{voice_block}
 Prüfliste, jeder Treffer kostet Punkte:
 1. Kunstwörter und Substantivierungen, die niemand sagt (Übergabefähigkeit, Vertrauensereignis, Fortschreibungslogik). Ein Mensch sagt: "ob jemand anderes das Modell übernehmen kann".
 2. Falsche Kollokationen und Lehnübersetzungen aus dem Englischen ("Glaube" statt Annahme, "macht Sinn", "am Ende des Tages", "Level", "Ownership").
@@ -129,13 +129,34 @@ Prüfliste, jeder Treffer kostet Punkte:
 8. Schachtelsätze über 25 Wörter, Nominalstil statt Verben.
 9. Wiederholte Satzanfänge oder dieselbe Konstruktion mehrfach.
 10. Pathos, Superlative, künstliche Dramatik.
-
+{voice_item}
 Note von 1 bis 10: 10 = so schreibt ein erfahrener Praktiker in einer ruhigen Minute, 7 = brauchbar mit Ecken, unter 6 = liest sich als Maschine.
 
 Antworte NUR mit JSON, ohne Kommentar: {{"note": <1-10>, "fundstellen": ["<wörtliches Zitat>: <was daran unnatürlich ist, und wie ein Mensch es sagen würde>", ...]}} mit höchstens 5 Fundstellen, die schlimmsten zuerst.
 
 TEXT:
 {text}"""
+
+
+_VOICE_BLOCK = """
+MASSSTAB ist die Person, in deren Namen der Beitrag erscheint. So spricht und schreibt sie:
+{voice}
+"""
+_VOICE_ITEM = ("11. Klingt der Text nach dieser Person? Wendungen, die sie laut Profil nie benutzen "
+               "würde, Register, das nicht ihres ist, eine Haltung, die nicht ihre ist: kostet am "
+               "meisten Punkte. Ein sauberer Text in fremder Stimme ist höchstens eine 6.")
+
+
+def critic_prompt(text: str, voice: str = "") -> str:
+    """Lektor-Prompt, mit Stimmprofil als Massstab, wenn eines vorliegt
+    (Richard 25.08.2026: der Lektor soll "wuerde Robert das so sagen"
+    pruefen, nicht nur "ist das Maschine")."""
+    voice = (voice or "").strip()
+    return CRITIC_PROMPT.format(
+        text=text,
+        voice_block=_VOICE_BLOCK.format(voice=voice) if voice else "",
+        voice_item=("\n" + _VOICE_ITEM) if voice else "",
+    )
 
 
 def parse_verdict(raw: str) -> dict | None:

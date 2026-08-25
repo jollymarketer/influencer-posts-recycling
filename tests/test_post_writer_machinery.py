@@ -70,6 +70,17 @@ def test_build_prompt_short_format_gets_capped_target():
     assert "ersten 200 Zeichen" in p
 
 
+def test_voice_profiles_are_loaded_into_account_voices():
+    # Stimmprofile aus clients/swot/voices/*.md (25.08.2026). Fehlt eine
+    # Datei, bleibt die Rollenbeschreibung, nichts bricht.
+    assert swot.load_voice_profile("gibt_es_nicht") == ""
+    for name, kanal in (("werner", "LinkedIn Robert"), ("kulle", "LinkedIn Christian")):
+        profile = swot.load_voice_profile(name)
+        if profile:
+            assert "STIMMPROFIL" in swot.ACCOUNT_VOICES[kanal]
+            assert "## Typische Wendungen" in profile
+
+
 def test_build_prompt_appends_avoid_phrases():
     p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen", cfg=swot,
                         avoid_phrases=["In Einführungsprojekten sehe ich"])
