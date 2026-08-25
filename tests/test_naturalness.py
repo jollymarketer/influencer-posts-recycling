@@ -26,7 +26,7 @@ def test_tic_hits_finds_the_formulas_of_the_negative_example():
     names = [h.split(":")[0] for h in nat.tic_hits(NEGATIV)]
     assert "kein X-Problem, sondern Y-Problem" in names
     assert "Glaube als Fachwort" in names
-    assert "Nicht weil ..., sondern weil" in names
+    assert "Nicht weil ..., sondern weil" not in names   # Kulles echte Konstruktion, kein Tic
     assert "X ist kein Y. Es ist ein Z." in names
     assert "Wer X, hat/bezahlt Y (Sentenz)" in names
 

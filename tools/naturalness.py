@@ -30,14 +30,14 @@ MAX_SENTENCE_WORDS = 25
 
 # Formeln, die das Modell in fast jedem Post baut. Messung 24.08.2026 ueber die
 # acht Neufassungen: "Das ist kein X-Problem, das ist ein Y-Problem" in 5 von
-# 8, "Nicht weil ..., sondern weil" in 4, Sentenz-Einzeiler in 6.
+# 8, Sentenz-Einzeiler in 6. "Nicht weil ..., sondern weil" steht bewusst NICHT
+# hier: Kulle korrigiert Ursachen genau so (Stimmprofil 25.08.2026); der
+# Lektor wiegt es mit dem Profil ab, die harte Liste wuerde es verbieten.
 TICS = [
     ("kein X-Problem, sondern Y-Problem",
      re.compile(r"kein \S*problem[.,]? (?:das|es|sondern) (?:ist )?(?:ein )?\S*problem", re.I)),
     ("Nicht X. Nicht Y. Sondern Z.",
      re.compile(r"\bNicht [^.!?\n]{2,60}\. Nicht [^.!?\n]{2,60}\. Sondern\b")),
-    ("Nicht weil ..., sondern weil",
-     re.compile(r"\bNicht,? weil [^.]{2,80}, sondern weil\b")),
     ("X ist kein Y. Es ist ein Z.",
      re.compile(r"\bist kein \w+\. (?:Er|Sie|Es) ist (?:ein|eine) \w+\.")),
     ("Das Fatale/Tueckische",
