@@ -171,6 +171,16 @@ Pin-Tests: `tests/test_notion_db_title.py`.
 
 ## Self-Improvement Log
 
+### 2026-08-27 — Derselbe DE-Post sechsmal gepostet, EN seit 09.07. still
+
+- Symptom: "Viele Teams wissen..." am 13.08. und erneut 20., 21., 24., 25., 26.08. um 10:00; kein EN-Post seit 09.07.
+- Ursache 1 (Make 8912831): Notion-Writeback (Approved -> Posting) stand HINTER Facebook und Instagram, beide mit Error-Handler `Ignore`. Ignore verwirft das Bundle, der Writeback lief nicht, die Zeile blieb Approved. Instagram scheitert bei Captions ueber 2.200 Zeichen (die drei haengenden Zeilen: 2.429-2.584). Die Query holt `page_size 1` ohne Sortierung; an Tagen ohne neuen Winner wurde die juengste haengende Zeile erneut gepostet. Im Make-Log nur an der Operationszahl erkennbar (6 statt 7), Status war "Erfolg".
+- Ursache 2 (Railway): `tools/apify_auth.py` las den Token nur aus der Repo-.env (seit 19.08., Commit a3e9efc); auf Railway gibt es keine .env, der LinkedIn-Scrape brach ab, nur Substack wurde gescored, kein Winner vom 20. bis 26.08. Fix 056c9fb: ohne .env-Datei gilt die Prozessumgebung.
+- Ursache 3: EN-Szenario 9517015 war seit 14.07. deaktiviert. Am 27.08. mit leerem Backlog (26 Posting-Zeilen auf Posted gesetzt) wieder aktiviert; nur neue Posts bekommen EN.
+- Fixes in Make (beide Szenarien): Query `sorts` created_time desc; Writeback direkt hinter LinkedIn, FB/IG danach; Bild-URL `ifempty(external.url; file.url)` (Zeile vom 12.08. hatte ein Notion-hochgeladenes Bild, `BundleValidationError`).
+- Code 9c09fd0: Laengenband "lang" auf 2.100 Zeichen vor CTA gedeckelt (Instagram 2.200 inkl. CTA).
+- Diagnose-Reihenfolge, die funktioniert hat: Profil-Scrape (Apify `harvestapi/linkedin-profile-posts`) als Ground Truth, dann Notion-Zeilen im Trigger-Status zaehlen, dann Make-Log Operationen je Lauf, dann Railway-Logs je Deployment.
+
 ### 2026-06-24 — kie.ai gpt-image-2 Server-Ausfall + Nano-Banana-Fallback
 
 - Symptom: Status `Image Failed`, Image Prompt trägt `[IMAGE FAILED] kie.ai ... {'code': 500, 'msg': 'Server exception ...'}`.
