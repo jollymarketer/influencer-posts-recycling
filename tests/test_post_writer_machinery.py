@@ -58,7 +58,7 @@ def test_build_prompt_injects_voice_persona_and_material():
 def test_build_prompt_story_gets_long_target():
     p = pw.build_prompt("T", "K", "LinkedIn Robert", "fristen",
                         post_format="Story", cfg=swot)
-    assert "1.800-2.400 Zeichen" in p
+    assert "1.600-2.000 Zeichen" in p
 
 
 def test_build_prompt_short_format_gets_capped_target():

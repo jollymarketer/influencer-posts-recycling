@@ -68,7 +68,19 @@ def test_kurz_band_replaces_structure_and_target():
     assert "Szene" not in de                      # Story-Struktur ersetzt
     assert "short form" in en and "500-900 characters" in en
     de_default, _ = _format_prompts(POST, "Story")
-    assert "1.800-2.400 Zeichen" in de_default
+    assert "1.600-2.000 Zeichen" in de_default
+
+
+def test_lang_band_stays_under_instagram_caption_limit():
+    """Make 8912831 postet den DE-Draft plus CTA_DE auch auf Instagram
+    (Caption max 2.200 Zeichen). 30.07., 11.08. und 13.08.2026 scheiterten
+    dort drei Posts mit 2.429-2.584 Zeichen; der Ignore-Handler verschluckte
+    danach den Notion-Writeback und die Zeile blieb Approved."""
+    from tools.post_scorer import LENGTH_CAP
+    from clients.jolly import config as jolly
+    assert LENGTH_CAP["lang"] + len("\n\n" + jolly.CTA_DE) <= 2200
+    de, en = _format_prompts(POST, "Story")
+    assert "Nie ueber 2.100 Zeichen" in de and "Never above 2,100 characters" in en
 
 
 def test_unknown_format_falls_back_to_opinion():

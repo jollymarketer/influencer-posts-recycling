@@ -539,6 +539,10 @@ FORMAT_STRUCTURES = {
 # 400-500 W) gilt nur fuer Formate mit echter Handlung/Zahlen. Deshalb: kurze
 # Formate im Engagement-Band deckeln, lange Formate (Story, CaseProof, Method)
 # duerfen darueber, aber nie an das 3.000er-Limit heranschreiben.
+# Obergrenze "lang" 2.100 (27.08.2026): Make 8912831 postet den DE-Draft plus
+# CTA auch auf Instagram, Caption max 2.200 Zeichen. Drei Posts mit
+# 2.429-2.584 Zeichen scheiterten dort (30.07., 11.08., 13.08.), der
+# Ignore-Handler verschluckte danach den Notion-Writeback.
 LONG_FORMATS = {"Story", "CaseProof", "Method"}
 # Laengenband "kurz" (Kundenfeedback SWOT 24.08.2026: "Posts immer sehr lang,
 # immer gleich gebaut"): ein Gedanke, keine Liste, kein Artefakt-Block. Wird
@@ -546,7 +550,7 @@ LONG_FORMATS = {"Story", "CaseProof", "Method"}
 # nach LENGTH_ROTATION der Client-Config), damit die Vielfalt im Code entsteht
 # und nicht im Prompt erbeten wird.
 _LENGTH_TARGET_DE = {
-    "lang": ("ca. 300-380 Woerter (1.800-2.400 Zeichen). Nie ueber 2.500 Zeichen. "
+    "lang": ("ca. 270-330 Woerter (1.600-2.000 Zeichen). Nie ueber 2.100 Zeichen. "
              "Die ersten 200 Zeichen tragen die Kernthese vollstaendig: dort schneidet "
              "LinkedIn mit \"mehr anzeigen\" ab. Kein Anlauf vor der These"),
     "standard": ("ca. 200-260 Woerter (1.200-1.600 Zeichen). Nie ueber 1.800 Zeichen. "
@@ -557,7 +561,7 @@ _LENGTH_TARGET_DE = {
              "fertig; die Artefakt-Regel oben gilt hier nur als ein Satz im Fliesstext"),
 }
 _LENGTH_TARGET_EN = {
-    "lang": ("~300-380 words (1,800-2,400 characters). Never above 2,500 characters. "
+    "lang": ("~270-330 words (1,600-2,000 characters). Never above 2,100 characters. "
              "The first 200 characters must carry the core thesis completely: that is "
              "where LinkedIn truncates with \"see more\". No warm-up before the thesis."),
     "standard": ("~200-260 words (1,200-1,600 characters). Never above 1,800 characters. "
@@ -568,7 +572,7 @@ _LENGTH_TARGET_EN = {
              "thought, done; the artifact rule above shrinks to one sentence in the prose."),
 }
 # Harte Obergrenze je Band, gemessen von der Textwache (tools/text_gate).
-LENGTH_CAP = {"lang": 2500, "standard": 1800, "kurz": 1000}
+LENGTH_CAP = {"lang": 2100, "standard": 1800, "kurz": 1000}
 
 # Kurzform ersetzt die Format-Struktur, wenn das Band "kurz" ist: die
 # vierteiligen Strukturen tragen 500-900 Zeichen nicht.
