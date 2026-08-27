@@ -42,6 +42,7 @@ from tools.monthly_plan import (
     build_slots,
     select,
 )
+from tools import content_matrix as cm
 from tools.post_scorer import (
     normalize_infographic_type,
     parse_infographic_type,
@@ -132,6 +133,51 @@ def _date(props, key="Geplant für") -> str:
     return (((props.get(key) or {}).get("date")) or {}).get("start") or ""
 
 
+def _format_history(rows: list[dict]) -> dict:
+    """Bereits vergebene Formate je Kanal aus dem Plan, neuestes zuerst.
+
+    Ohne diese Vorgeschichte startet jeder Lauf mit leerem Fenster; die
+    Matrix-Quota braucht aber mindestens fuenf klassifizierte Beitraege und
+    griffe dann nie. Zeilen ohne Format bleiben draussen, sie wuerden das
+    Fenster nur verkuerzen."""
+    hist: dict[str, list] = {}
+    for r in sorted(rows, key=lambda r: _date(r["properties"]), reverse=True):
+        p = r["properties"]
+        fmt, kanal = _sel(p, "Format"), _sel(p, "Kanal")
+        if fmt and kanal:
+            hist.setdefault(kanal, []).append(fmt)
+    return hist
+
+
+def _asset_history(rows: list[dict], cfg) -> list:
+    """Zuletzt verbrauchte Belege als LRU-Liste, neuestes zuerst.
+
+    Der Plan speichert das Asset nicht, wohl aber das Format. Aus der Zahl
+    der vorhandenen CaseProof-Zeilen laesst sich die Position im Zyklus
+    rekonstruieren, damit ueber Monate alle Faelle drankommen statt immer
+    des ersten."""
+    ids = [a["id"] for a in getattr(cfg, "PROOF_ASSETS", None) or []]
+    if not ids:
+        return []
+    n = sum(1 for r in rows if _sel(r["properties"], "Format") == "CaseProof")
+    return list(reversed(ids[:n % len(ids)]))
+
+
+def _choose_format(cfg, material: str, fmts: list, used_assets: list):
+    """Format und Beleg fuer eine Zeile: erst die Ziel-Box, dann das Format.
+
+    Liefert die Matrix (Proof, Selection), ist CaseProof Pflicht und der
+    Beitrag traegt einen echten Fall aus PROOF_ASSETS. Sonst laeuft der freie
+    Pool, aus dem die Asset-Formate bewusst ausgeschlossen sind. Ohne MATRIX
+    in der Mandanten-Config bleibt es bei den vier Legacy-Formaten."""
+    boxes = [cm.FORMAT_TO_BOX[f] for f in fmts if f in cm.FORMAT_TO_BOX]
+    target = cm.pick_target_box(boxes, cfg)
+    kandidaten = cm.formats_for_box(target, cfg) if target else cm.free_formats(cfg)
+    fmt = pick_format({"influencer": "Plan", "post_text": material},
+                      list(fmts), kandidaten)
+    return fmt, cm.asset_for_format(fmt, cfg, used_assets)
+
+
 def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) -> dict:
     """Textet Plan-Zeilen der genannten Monate, ohne Termine oder Kanaele
     anzufassen. Ketten-Schritt hinter run_monthly_plan: die Zeilen sind dort
@@ -158,8 +204,13 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
     print(f"Zeilen in {sorted(month_keys)}: {len(kandidaten)}")
 
     geschrieben = 0
-    recent_formats: dict[str, list] = {}
+    # Formate aus dem Bestand vorladen: Anti-Repeat und Matrix-Fenster
+    # brauchen die Vorgeschichte, das Laengenband zaehlt dagegen nur die in
+    # diesem Lauf geschriebenen Beitraege.
+    recent_formats: dict[str, list] = _format_history(rows)
     recent_types: dict[str, list] = {}
+    neu_je_kanal: dict[str, int] = {}
+    used_assets = _asset_history(rows, cfg)
     # Verbrauchte Formulierungen je Kanal (tools/naturalness.phrases): ein
     # Konto zitiert sich sonst von Post zu Post selbst.
     used: dict[str, list] = {}
@@ -170,14 +221,18 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
         material = f"{k['titel']}\n{k['kurz']}"
         fmts = recent_formats.setdefault(k["kanal"], [])
         typs = recent_types.setdefault(k["kanal"], [])
-        fmt = pick_format({"influencer": "Plan", "post_text": material}, list(fmts))
-        band = length_band_for(cfg, len(fmts))
+        fmt, asset = _choose_format(cfg, material, fmts, used_assets)
+        band = length_band_for(cfg, neu_je_kanal.get(k["kanal"], 0))
         r = write_post(k["titel"], k["kurz"], k["kanal"], k["achse"],
                        post_format=fmt, recent_infographic_types=list(typs), cfg=cfg,
                        band=band, avoid_phrases=list(used.get(k["kanal"], [])),
-                       datum=k["datum"])
+                       datum=k["datum"], asset=asset)
         if not r["text"]:
             print(f"  {k['datum']} kein Text erhalten, Zeile uebersprungen")
+            continue
+        if asset and not cm.figures_ok(r["text"], asset):
+            print(f"  {k['datum']} Zahlen-Guard: Zahl ohne Beleg im Asset "
+                  f"'{asset['id']}', Zeile uebersprungen")
             continue
         used.setdefault(k["kanal"], []).extend(used_phrases(r["text"]))
         props = {
@@ -194,6 +249,9 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
         if resp.ok:
             geschrieben += 1
             fmts.insert(0, fmt)
+            neu_je_kanal[k["kanal"]] = neu_je_kanal.get(k["kanal"], 0) + 1
+            if asset:
+                used_assets.insert(0, asset["id"])
             ityp = normalize_infographic_type(parse_infographic_type(r["skeleton"]))
             if ityp:
                 typs.insert(0, ityp)
@@ -222,10 +280,14 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
 
     gefuellt, neu_geschrieben = 0, 0
     # Anti-Repeat je Kanal (neuestes zuerst): Formate fuer pick_format,
-    # Infografik-Typen fuer das Skelett. Nur innerhalb dieses Laufs; ein
-    # Monats-Batch entsteht ohnehin in einem Stueck.
-    recent_formats: dict[str, list] = {}
+    # Infografik-Typen fuer das Skelett. Die Formate kommen aus dem Bestand,
+    # sonst sieht die Matrix in jedem Lauf ein leeres Fenster; die
+    # Infografik-Typen bleiben laufintern, ein Monats-Batch entsteht ohnehin
+    # in einem Stueck.
+    recent_formats: dict[str, list] = _format_history(rows)
     recent_types: dict[str, list] = {}
+    neu_je_kanal: dict[str, int] = {}
+    used_assets = _asset_history(rows, cfg)
     used: dict[str, list] = {}
     for s in sorted(belegt, key=lambda s: s.day):
         m = meta[s.topic["page_id"]]
@@ -246,15 +308,19 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             fmts = recent_formats.setdefault(s.kanal, [])
             typs = recent_types.setdefault(s.kanal, [])
             material = f"{m['titel']}\n{m['kurz']}"
-            fmt = pick_format({"influencer": "Plan", "post_text": material}, list(fmts))
-            band = length_band_for(cfg, len(fmts))
+            fmt, asset = _choose_format(cfg, material, fmts, used_assets)
+            band = length_band_for(cfg, neu_je_kanal.get(s.kanal, 0))
             r = write_post(m["titel"], m["kurz"], s.kanal, s.axis,
                            post_format=fmt, recent_infographic_types=list(typs),
                            cfg=cfg, band=band,
                            avoid_phrases=list(used.get(s.kanal, [])),
-                           datum=s.day.isoformat())
+                           datum=s.day.isoformat(), asset=asset)
             if not r["text"]:
                 print(f"    kein Text erhalten, Zeile uebersprungen")
+                continue
+            if asset and not cm.figures_ok(r["text"], asset):
+                print(f"    Zahlen-Guard: Zahl ohne Beleg im Asset "
+                      f"'{asset['id']}', Zeile uebersprungen")
                 continue
             used.setdefault(s.kanal, []).extend(used_phrases(r["text"]))
             props["Post-Text"] = _rich(r["text"])
@@ -262,6 +328,9 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             props["Soundbyte"] = _rich(r["soundbyte"])
             props["Infografik-Skelett"] = _rich(r["skeleton"])
             fmts.insert(0, fmt)
+            neu_je_kanal[s.kanal] = neu_je_kanal.get(s.kanal, 0) + 1
+            if asset:
+                used_assets.insert(0, asset["id"])
             ityp = normalize_infographic_type(parse_infographic_type(r["skeleton"]))
             if ityp:
                 typs.insert(0, ityp)

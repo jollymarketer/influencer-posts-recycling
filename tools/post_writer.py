@@ -20,6 +20,7 @@ CLIENT=<mandant> starten; das cfg-Argument steuert nur Stimmen und Personas.
 from tools.post_scorer import (
     DACH_POST_PROMPT,
     _format_prompts,
+    assets_block,
     generate_post_and_image_prompt,
     persona_block,
     persona_prompt_tokens,
@@ -114,14 +115,16 @@ def build_prompt(titel: str, kurz: str, kanal: str, achse: str,
                  recent_infographic_types=None, cfg=None,
                  band: str | None = None,
                  avoid_phrases: list[str] | None = None,
-                 datum: str = "") -> str:
+                 datum: str = "", asset: dict | None = None) -> str:
     """DE-Prompt des Themen-Pfads, ohne Modellaufruf (fuer Tests und Debug).
     Baugleich zu dem, was write_post an das Modell schickt."""
     cfg = cfg or load_client()
     post, blocks = _prompt_parts(titel, kurz, kanal, achse, cfg, datum)
     de, _ = _format_prompts(post, post_format, recent_infographic_types,
                             de_template=TOPIC_DE_TEMPLATE, band=band,
-                            avoid_phrases=avoid_phrases, **blocks)
+                            avoid_phrases=avoid_phrases,
+                            assets_de=assets_block(post_format, asset, "de"),
+                            **blocks)
     return de
 
 
@@ -130,11 +133,14 @@ def write_post(titel: str, kurz: str, kanal: str, achse: str,
                recent_infographic_types=None, cfg=None,
                band: str | None = None,
                avoid_phrases: list[str] | None = None,
-               datum: str = "") -> dict:
+               datum: str = "", asset: dict | None = None) -> dict:
     """Ein Beitrag durch die volle Maschinerie: Format-Struktur, Persona,
     Kontostimme, sanitize + Textwache + grammar_check + Lektor (in
     generate_post_and_image_prompt). band "kurz" schaltet auf die Kurzform,
     avoid_phrases sperrt im Lauf verbrauchte Formulierungen.
+    asset ist der Beleg fuer die Asset-Formate (CaseProof/Magnet/Offer): er
+    geht als Whitelist-Block in den Prompt, der Aufrufer prueft danach mit
+    content_matrix.figures_ok gegen dasselbe Asset.
     Gibt {text, soundbyte, kontext, skeleton} zurueck; text "" wenn nichts kam
     oder die Textwache den Text verworfen hat."""
     cfg = cfg or load_client()
@@ -142,7 +148,9 @@ def write_post(titel: str, kurz: str, kanal: str, achse: str,
     de_draft, _en, _img, skeleton, soundbyte, kontext = generate_post_and_image_prompt(
         post, post_format, recent_infographic_types,
         de_template=TOPIC_DE_TEMPLATE, persona_id=achse, band=band,
-        avoid_phrases=avoid_phrases, **blocks,
+        avoid_phrases=avoid_phrases,
+        assets_de=assets_block(post_format, asset, "de"), asset=asset,
+        **blocks,
     )
     return {"text": de_draft, "soundbyte": soundbyte, "kontext": kontext,
             "skeleton": skeleton}

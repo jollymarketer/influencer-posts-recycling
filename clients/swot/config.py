@@ -707,6 +707,72 @@ TOPIC_IDEAS_DB_ID_DEFAULT = "3c11617b-1baf-81f2-b521-d4bab7bc8656"
 
 INFLUENCERS_CSV = os.path.join(os.path.dirname(__file__), "influencers.csv")
 
+# --- Content-Matrix und Belege (Richard 27.08.2026) --------------------------
+
+# Boxen bewusst nur vier statt neun. Die drei Promotion-Boxen bleiben zu:
+# SWOT hat weder Lead-Magnet noch Offer-Asset, und der Kunde hat den
+# Werbe-Pfad nie beauftragt. Die vier Boxen liefern ueber `free_formats`
+# exakt dieselben vier Formate wie vorher der Legacy-Pfad (Opinion, POV,
+# Signature, Story); CaseProof ist asset-gated und laeuft nie ueber den
+# Free-Pool. Damit aendert dieser Block das Verhalten des Monatsplans nicht,
+# er macht die Box (Proof, Selection) nur ueberhaupt erst erreichbar.
+# selection_floor 2: von zehn Beitraegen tragen zwei einen echten Fall.
+MATRIX = {
+    "mix": {"Perspective": 6, "Proof": 4, "Promotion": 0},
+    "selection_floor": 2,
+    "promotion_cap": 0,
+    "boxes": [
+        ("Perspective", "Awareness"),   # Opinion
+        ("Perspective", "Education"),   # POV, Signature
+        ("Proof", "Awareness"),         # Story
+        ("Proof", "Selection"),         # CaseProof, braucht PROOF_ASSETS
+    ],
+}
+
+# Einzige erlaubte Referenzen, Zahlen und Zitate woertlich aus den
+# Anwenderberichten unter Clients/SWOT/Case-Studies/_markdown/. Nie neue
+# erfinden: der Zahlen-Guard (content_matrix.figures_ok) prueft jede
+# Einheiten-Zahl im Entwurf gegen die Felder des gewaehlten Assets.
+#
+# Namensfrage, offen bei SWOT: `company` steht nur dort, wo der Bericht
+# gedruckt und verteilt ist (Frontmatter `status: fertige_gedruckt`, 13 der
+# 52 Berichte). Salomon FoodWorld laeuft ohne Namen, weil der Bericht unter
+# "fertige noch nicht gedruckt" liegt; gibt SWOT den Namen frei, kommt er
+# hier dazu. Ohne `company` nennt der Post die Branche statt der Firma.
+PROOF_ASSETS = [
+    {"id": "plickert",
+     "company": "Plickert Glaserei-Betriebe GmbH",
+     "branche": "Glaserei- und Bauhandwerk, Mittelstand",
+     "claim": "Monatsabschluss ohne manuelle Zuarbeit aus Vorsystemen",
+     "metric": "Monatsabschluss von zwei bis zweieinhalb Tagen auf einen Tag",
+     "quote": ("Früher kostete mich der Monatsabschluss zwei bis zweieinhalb "
+               "Tage, mit SWOT erledige ich das heute in einem."),
+     "speaker": "Hans-Joachim Möbes, Plickert Glaserei-Betriebe GmbH",
+     "context": "Anwenderbericht gedruckt, Firmenname freigegeben"},
+    {"id": "gbf",
+     "company": "gbf german biofuels gmbh",
+     "branche": "Energie und Chemie, Mittelstand",
+     "claim": "monatliches Reporting an Banken und Gesellschafter",
+     "metric": ("Zeitaufwand für das monatliche Reporting von vier bis fünf "
+                "Tagen auf wenige Stunden im Monat"),
+     "quote": ("Seit SWOT hat sich der Zeitaufwand für unser monatliches "
+               "Reporting von vier bis fünf Tagen auf wenige Stunden im "
+               "Monat reduziert."),
+     "speaker": "Geschäftsführer, gbf german biofuels gmbh",
+     "context": "Anwenderbericht gedruckt, Firmenname freigegeben"},
+    {"id": "lebensmittelhersteller-vertriebsplanung",
+     "branche": "Lebensmittelhersteller, international tätig",
+     "claim": ("Vertriebsplanung ohne Einzeltabellen je Kundenverantwortlichem, "
+               "kein manuelles Zusammenführen im Zentral-Controlling"),
+     "metric": "35% weniger Zeitaufwand für den gesamten Planungsprozess",
+     "quote": ("Inkonsistente Datensätze, ein hoher manueller Aufwand zum "
+               "Zusammenführen der Plandaten und damit verbunden eine immense "
+               "Planungsdauer haben unser Controlling damals gebremst."),
+     "speaker": "Head of Controlling",
+     "context": ("Bericht fertig, aber nicht gedruckt: Firmenname bis zur "
+                 "Freigabe durch SWOT NICHT nennen, Branche genügt")},
+]
+
 # --- Monatsplan (run_monthly_plan.py, Entscheidung Richard 19.08.2026) -------
 
 # Content-Redaktionsplan Blog und LinkedIn im SWOT-Dashboard (kundensichtbar).
