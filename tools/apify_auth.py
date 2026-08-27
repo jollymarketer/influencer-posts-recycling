@@ -20,6 +20,7 @@ Mandanten-Config:
     APIFY_TOKEN_ENV = "APIFY_API_TOKEN_SWOT"   # Default: APIFY_API_KEY
     APIFY_ACCOUNT   = "kueswot"                # ohne Angabe keine Wache
 """
+import os
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -56,14 +57,22 @@ def expected_account(cfg=None) -> str:
 
 
 def get_token(cfg=None) -> str:
-    """Token aus der Repo-.env. Fehlt er, bricht der Lauf mit Klartext ab."""
+    """Token aus der Repo-.env. Fehlt er, bricht der Lauf mit Klartext ab.
+
+    Ohne .env-Datei (Railway: die Datei ist gitignored, die Variablen liegen
+    nur in der Service-Umgebung) gilt die Prozessumgebung. Vom 20. bis
+    26.08.2026 brach sonst jeder Jolly-Lauf im Scrape ab, kein Winner, und
+    der Make-Publisher postete die letzte Approved-Zeile taeglich neu."""
     cfg = cfg or _client_config()
     name = token_env_name(cfg)
-    values = dotenv_values(_ENV_PATH)
+    if _ENV_PATH.exists():
+        values, quelle = dotenv_values(_ENV_PATH), str(_ENV_PATH)
+    else:
+        values, quelle = os.environ, "der Prozessumgebung (keine .env-Datei)"
     token = (values.get(name) or "").strip()
     if not token:
         raise ValueError(
-            f"{name} fehlt in {_ENV_PATH}. Der Mandant erwartet diesen Namen "
+            f"{name} fehlt in {quelle}. Der Mandant erwartet diesen Namen "
             f"(APIFY_TOKEN_ENV in seiner config.py). Kein Fallback auf ein "
             f"anderes Konto - das waere stilles Cross-Billing."
         )

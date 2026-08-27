@@ -71,6 +71,23 @@ def test_fehlender_token_bricht_mit_klartext_ab(monkeypatch):
     assert "APIFY_API_TOKEN_SWOT" in str(e.value)
 
 
+def test_ohne_env_datei_kommt_der_token_aus_der_prozessumgebung(monkeypatch, tmp_path):
+    """Railway hat keine Repo-.env (gitignored), die Variablen liegen nur in der
+    Service-Umgebung. Vom 20. bis 26.08.2026 fiel deshalb jeder Jolly-Lauf mit
+    'APIFY_API_KEY fehlt in /app/.env' aus: kein LinkedIn-Scrape, kein Winner."""
+    monkeypatch.setattr(auth, "_ENV_PATH", tmp_path / "gibt-es-nicht.env")
+    monkeypatch.setenv("APIFY_API_KEY", "aus-der-service-umgebung")
+    assert auth.get_token(_Cfg()) == "aus-der-service-umgebung"
+
+
+def test_env_datei_schlaegt_prozessumgebung_wenn_sie_existiert(monkeypatch, tmp_path):
+    env = tmp_path / ".env"
+    env.write_text("APIFY_API_KEY=aus-der-env-datei\n", encoding="utf-8")
+    monkeypatch.setattr(auth, "_ENV_PATH", env)
+    monkeypatch.setenv("APIFY_API_KEY", "aus-der-prozessumgebung")
+    assert auth.get_token(_Cfg()) == "aus-der-env-datei"
+
+
 def test_ohne_erwartetes_konto_keine_wache():
     client = _FakeClient("irgendwer")
     assert auth.verify_account(client, _Cfg()) == ""
