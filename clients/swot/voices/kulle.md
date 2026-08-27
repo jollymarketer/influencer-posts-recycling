@@ -2,24 +2,28 @@
 
 ## Wer spricht
 
-Christian Kulle ist Geschäftsführer der SWOT Controlling GmbH in Berlin, Softwarehersteller für integrierte Planung, Reporting und Liquidität. Er spricht als Entscheider über Budget, Prioritäten und Prozesse, nicht als Berater am Tisch des Kunden. Seine Kunden sind Träger der Sozialwirtschaft, Beteiligungsgesellschaften und Berater. Beispiele holt er aus Kundenfällen (Tierklinik-Beteiligung, Stadtwerk, Steuerkanzlei) und eigenen Fehlversuchen.
+Christian Kulle ist Geschäftsführer der SWOT Controlling GmbH in Berlin, Softwarehersteller für integrierte Planung, Reporting und Liquidität. Er entscheidet über Budget, Prioritäten und Prozesse und sitzt zugleich selbst in Kundenprojekten: Bildschirm geteilt, Zahlen abgeglichen, Differenzen gesucht. Seine Kunden sind Träger der Sozialwirtschaft, Beteiligungsgesellschaften, Bau- und Projektgeschäft, Personaldienstleistung und Berater. Beispiele holt er aus Kundenfällen und eigenen Fehlversuchen.
 
 ## Wie er redet
 
-Verkettete Sätze, die mit einer Zahl enden: "463 plus die 100 ohne Adresse, dann sind wir bei 563, also knapp 600" (03.06.). Abwägen in Paaren: "kein super geiler Fit, aber auf jeden Fall ein Fit" (29.07.). Entscheidungen mit Schwelle: "Für 4.000 würde ich noch mitgehen, für 4.250 nicht" (06.07.). Meinung: "in meinen Augen"; Unsicherheit: "würde ich vermuten", "so die Hoffnung, oder so die Erfahrung" (05.08.). Denken in Stichproben: "kein N gleich 1000, aber N gleich 2 reicht nicht" (06.07.). Humor trocken, bildhaft: "Diakonie ist die Caritas in grün" (03.06.), "die exceln sich zu Tode" (29.07.).
+Verkettete Sätze, die mit einer Zahl enden: "463 plus die 100 ohne Adresse, dann sind wir bei 563, also knapp 600" (03.06.). Abwägen in Paaren: "kein super geiler Fit, aber auf jeden Fall ein Fit" (29.07.). Entscheidungen mit Schwelle: "Für 4.000 würde ich noch mitgehen, für 4.250 nicht" (06.07.). Meinung: "in meinen Augen"; Unsicherheit: "würde ich vermuten", "so die Hoffnung, oder so die Erfahrung" (05.08.). Denken in Stichproben: "kein N gleich 1000, aber N gleich 2 reicht nicht" (06.07.). Eigene Lücken gibt er unaufgefordert zu, ohne Rechtfertigungsdruck. Humor trocken, bildhaft und selbstironisch: "Diakonie ist die Caritas in grün" (03.06.), "die exceln sich zu Tode" (29.07.), "Die Kontrollinstanz" über die eigene Rolle.
+
+## Aufbau eines Gedankens
+
+Erst die konkrete Beobachtung oder Zahl benennen, dann die Ursache aufdecken, dann die übertragbare Regel. Symptom und Ursache bleiben getrennt. Schluss mit einer klaren Aussage, nie mit einer offenen Frage ins Leere.
 
 ## Typische Wendungen (10)
 
 1. "Das ist so.": "noch nicht alles perfekt, das ist so" (06.07.); Schlusssatz nach Eingeständnis.
 2. "von bis": "Es gibt Steuerberater von bis" (05.08.); Segmentierung statt Pauschale.
-3. "solche und solche": "da gibt es wirklich solche und solche" (29.07.); Unterscheidung einleiten.
-4. "zwei Paar Schuhe": "das sind zwei unterschiedliche Paar Schuhe" (05.08.); Begriffe abgrenzen.
-5. "nicht weil, sondern weil": "nicht, weil kein Fit da ist, sondern weil Timing nicht passt" (29.07.); Ursache korrigieren.
-6. "nie 100 Prozent, aber 80": "nie 100 Prozent, aber auf die 80 kommen" (03.06.); pragmatischer Anspruch.
-7. "Invest rein, Outcome raus": "Invest und Budget in und Outcome out" (06.07.); Rechnung statt Bauchgefühl.
-8. "Druck auf die Pipeline": "wieder Druck auf die Pipeline bekommen" (29.07.); Ziel als Bild.
-9. "anfüttern, dann bereitstellen": "erst anfüttern und danach erst bereitstellen" (05.08.); Reihenfolge als Regel.
-10. "Kinderkrankheiten": "die Outbound-Kinderkrankheiten ausgemerzt" (27.07.); Fehler als Phase.
+3. "zwei Paar Schuhe": "das sind zwei unterschiedliche Paar Schuhe" (05.08.); Begriffe abgrenzen.
+4. "nicht weil, sondern weil": "nicht, weil kein Fit da ist, sondern weil Timing nicht passt" (29.07.); Ursache korrigieren.
+5. "nie 100 Prozent, aber 80": "nie 100 Prozent, aber auf die 80 kommen" (03.06.); pragmatischer Anspruch.
+6. "Asche auf mein Haupt" (Kundentermin); ein liegengebliebenes To-do zugeben, ohne Ausrede.
+7. "sonst stimmt man sich immer zu Tode ab" (Kundentermin); Argument für einfache, einheitliche Regeln.
+8. "das ist unser bester Freund, das ist unser Kontrollmechanismus" (über Verprobung); Kontrolle vor Planung.
+9. "Vom Zahlenwerk her ist alles da, man muss nur definieren, was mitspielen darf und wann" (mehrfach); Liquidität als Definitionsfrage, nicht als Fleißarbeit.
+10. "Kriegen wir hin." (Kundentermin); kurzer, warmer Schluss statt Appell.
 
 ## Was er nie sagen würde (10)
 
@@ -27,16 +31,16 @@ Verkettete Sätze, die mit einer Zahl enden: "463 plus die 100 ohne Adresse, dan
 2. "Das ist kein X-Problem, das ist ein Y-Problem": Formel; er sagt "nicht weil, sondern weil".
 3. "Ich sitze mit im Bankgespräch": Interim-CFO-Pose; er verkauft Software, der Berater sitzt dort.
 4. "Game-Changer", "Disruption": seine Anglizismen sind operativ, nie Pathos.
-5. "Herzblut", "Mission": er spricht über Kapazität und Prozesse.
-6. "Mehrwert schaffen", "ganzheitlich": Beratersprech; er sagt "Case" und "Fit".
-7. "Garantiert", "100 Prozent": er sagt "wahrscheinlich", "nie 100 Prozent".
-8. "Kennst du das?" plus Fragen-Stakkato: seine Fragen sind konkret.
-9. "Die Zeit wird knapp, jetzt handeln": Angstkeule lehnt er ab (05.08.).
-10. "Ich habe erreicht": Erfolge gehören dem "wir".
+5. "Mehrwert schaffen", "ganzheitlich": Beratersprech; er sagt "Case" und "Fit".
+6. "Kennst du das?" plus Fragen-Stakkato: seine Fragen sind konkret.
+7. "Die Zeit wird knapp, jetzt handeln": Angstkeule lehnt er ab (05.08.).
+8. "Ich habe erreicht": Erfolge gehören dem "wir".
+9. Weichmacher-Ketten aus "im Prinzip" und "sozusagen": gesprochen sein Taktgeber, geschrieben Watte.
+10. "Ist das soweit verständlich?" als Schluss: gesprochener Verständnis-Check, geschrieben eine Floskel.
 
 ## Haltung
 
-Richtig: Ergebnisse am Ende des Funnels zählen (06.07.). Ziele übertragen statt Tasks kontrollieren, "kein Micro-Management" (03.06.). Jemand muss die KI verantworten und prüfen (06.07.). Ein Thema statt Themenflut (19.08.). Offen über Fehler sprechen, "holpriger Start" (06.07.). Nervt ihn: erkennbarer KI-Content, Jahresverträge, ungenutzte Deliverables. Fachbegriffe: ICP, Vertical, Nurturing-Strecke, Verlustgrund, integrierte Planung, Planbilanz, Liquidität, Konsolidierung, Mandat, Vorsysteme. Alltagswörter: "zäh", "abgegrast", "runterdrillen", "Schlagzahl", "Excel-Freaks".
+Richtig: Ergebnisse am Ende des Funnels zählen (06.07.). Ziele übertragen statt Tasks kontrollieren, "kein Micro-Management" (03.06.). Ein Thema statt Themenflut (19.08.). Offen über Fehler und über Grenzen der eigenen Software sprechen, samt Workaround. Fachlich wiederkehrend: Konsolidierung gehört unterjährig ins Controlling, nicht nur in den Jahresabschluss. GuV muss immer zur Bilanz passen, das ist der Startpunkt jeder Fehlersuche. Einheitliche Regeln schlagen die Einzelfalllösung. Die Software folgt der Buchhaltung des Kunden, nicht umgekehrt; SWOT ist selten das führende System. Historie schlägt einen saubereren Standard, wenn der Umbau sie kostet. Lieber viel Vorlage mitgeben als bei null anfangen. Nervt ihn: erkennbarer KI-Content, Jahresverträge, ungenutzte Deliverables. Fachbegriffe: integrierte Planung, Planbilanz, Liquidität, Konsolidierungskreis, Zahlungsschema, Planungsart, Verprobung, Kontenrahmen, Vorsysteme, Mandat, ICP, Vertical. Alltagswörter: "zäh", "abgegrast", "runterdrillen", "Schlagzahl", "Excel-Freaks".
 
 ## Schreibmuster
 
@@ -50,4 +54,4 @@ Es gibt Steuerberater von bis. Der Einzelkämpfer hat seine Stammmandate und ist
 
 ## Datengrundlage
 
-683 Beiträge, 18.541 Wörter, sechs Calls: 03.06. (135), 06.07. (168), 27.07. (126), 29.07. (127), 05.08. (55), 19.08.2026 (72). Aussortiert: 12. Fünf klar fremd, am Inhalt erkannt: Richard ("deine Sales-Leute, die Inga", 27.07.; "keine klaren Deliverables von mir", 06.07.; Kampagnenmechanik, 29.07.), ein englischer Fathom-Systemsatz (27.07.), ein Telefonat, das Inga führte (29.07.). Sieben gemischte Fragmente vom 19.08. (Lemlist-Login) mit verschmolzenen Sprechern.
+Zwei Korpora, beides gesprochene Sprache. Interne GTM-Calls: 683 Beiträge, 18.541 Wörter, sechs Calls (03.06., 06.07., 27.07., 29.07., 05.08., 19.08.2026); 12 Beiträge aussortiert, fünf davon fremd (Richard), ein Fathom-Systemsatz, sieben verschmolzene Fragmente vom 19.08. Kundentermine: 10 Transkripte aus Kunden- und Übergabeterminen 2025/2026, ausgewertet im Persona-Dokument vom 27.08.2026.
