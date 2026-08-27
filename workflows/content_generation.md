@@ -179,6 +179,7 @@ Pin-Tests: `tests/test_notion_db_title.py`.
 - Ursache 3: EN-Szenario 9517015 war seit 14.07. deaktiviert. Am 27.08. mit leerem Backlog (26 Posting-Zeilen auf Posted gesetzt) wieder aktiviert; nur neue Posts bekommen EN.
 - Fixes in Make (beide Szenarien): Query `sorts` created_time desc; Writeback direkt hinter LinkedIn, FB/IG danach; Bild-URL `ifempty(external.url; file.url)` (Zeile vom 12.08. hatte ein Notion-hochgeladenes Bild, `BundleValidationError`).
 - Code 9c09fd0: Laengenband "lang" auf 2.100 Zeichen vor CTA gedeckelt (Instagram 2.200 inkl. CTA).
+- EN-Feed-URL: Modul 6 des EN-Szenarios schrieb sie in "LinkedIn Post URL" und ueberschrieb damit die Quell-Post-URL, die `get_existing_post_urls()` als Duplikat-Filter liest. Jetzt eigene Property "Richard LinkedIn Posted URL EN" (`scripts/add_en_posted_url_property.py`). Zeilen bis 09.07. tragen in "LinkedIn Post URL" weiterhin die EN-URL.
 - Diagnose-Reihenfolge, die funktioniert hat: Profil-Scrape (Apify `harvestapi/linkedin-profile-posts`) als Ground Truth, dann Notion-Zeilen im Trigger-Status zaehlen, dann Make-Log Operationen je Lauf, dann Railway-Logs je Deployment.
 
 ### 2026-06-24 — kie.ai gpt-image-2 Server-Ausfall + Nano-Banana-Fallback
