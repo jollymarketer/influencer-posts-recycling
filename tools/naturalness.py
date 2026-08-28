@@ -299,3 +299,23 @@ def findings_note(findings: list[dict]) -> str:
             line += f" Vorschlag: {f['vorschlag']}"
         lines.append(line)
     return "\n".join(lines)
+
+
+def merge_findings(llm: list[dict] | None, det: list[dict]) -> list[dict]:
+    """Leser-Befunde plus deterministische, ohne Dubletten: trifft eine Regex
+    dieselbe Passage wie der Leser (ein Zitat enthaelt das andere), zaehlt
+    sie nicht doppelt. Diaet-Messung 28.08.2026: 3 von 8 Befunden eines
+    Posts waren solche Dubletten, die Reparatur sah die Stelle zweimal."""
+    def kern(zitat: str) -> str:
+        # Satzzeichen an den Raendern weg: der Leser zitiert "X." und die
+        # Regex "kein Y. X" ohne Punkt, gemeint ist dieselbe Stelle.
+        return _norm(zitat).strip(".,;:!?\"'„“ ")
+
+    out = list(llm or [])
+    seen = [kern(f["zitat"]) for f in out]
+    for f in det:
+        z = kern(f["zitat"])
+        if z and any(s and (z in s or s in z) for s in seen):
+            continue
+        out.append(f)
+    return out

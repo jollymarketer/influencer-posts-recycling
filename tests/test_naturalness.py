@@ -169,3 +169,14 @@ def test_reader_schema_matches_parser_contract():
     assert set(props["art"]["enum"]) == set(nat.FINDING_ARTEN) - {"satzlaenge"}
     assert nat.READER_SCHEMA["required"] == ["befunde"]
     assert nat.READER_SCHEMA["additionalProperties"] is False
+
+
+def test_merge_findings_drops_regex_duplicates_of_reader_quotes():
+    llm = [{"art": "schablone", "zitat": "Das ist ein Strukturproblem.", "grund": "g", "vorschlag": ""}]
+    det = [{"art": "schablone", "zitat": "kein Planungsproblem. Das ist ein Strukturproblem",
+            "grund": "regex", "vorschlag": ""},
+           {"art": "satzlaenge", "zitat": "Ein ganz anderer Satz", "grund": "lang", "vorschlag": ""}]
+    out = nat.merge_findings(llm, det)
+    assert [f["grund"] for f in out] == ["g", "lang"]
+    assert nat.merge_findings(None, det) == det
+    assert nat.merge_findings([], []) == []

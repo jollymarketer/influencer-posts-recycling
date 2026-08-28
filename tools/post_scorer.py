@@ -153,7 +153,7 @@ Inhaltliche Regeln:
 - Einen eigenen, originellen Gedanken einbauen, den der Quell-Post nicht hat - ohne ihn als solchen zu benennen
 - Haltung eines erfahrenen Praktikers: operative Details, Schrittfolgen, typische Stolpersteine, KPIs
 - Genau EIN konkretes Artefakt liefern, das man speichern will: nummerierte Schritte, eine kurze Checkliste, ein benanntes Framework oder eine harte Zahl. Ob es als abgesetztes Element oder im Fliesstext steht, sagt die Post-Struktur unten. In Story und Opinion ist es eine einzelne, klar benannte Regel oder Zahl im Fliesstext, die haengen bleibt
-- Eine falsche Praxis oder ein Feindbild explizit und hart benennen. Brave Ausgewogenheit ("X ist nicht Y, sondern Z") allein reicht nicht - es braucht eine klare Gegenposition, gegen die jemand argumentieren kann
+- Eine falsche Praxis oder ein Feindbild explizit und hart benennen und sagen, was stattdessen zu tun ist. Es braucht eine klare Gegenposition, gegen die jemand argumentieren kann; ein Absatz endet mit einem Sachverhalt, einer Zahl oder einem naechsten Schritt, nicht mit einer Umdeutung
 
 {assets_block}
 {structure_block}
@@ -1533,7 +1533,7 @@ def _all_findings(text: str, voice: str = "", material: str = "") -> list[dict] 
     det = naturalness.deterministic_findings(text, voice)
     if llm is None and not det:
         return None
-    return (llm or []) + det
+    return naturalness.merge_findings(llm, det)
 
 
 def _fix_passages(text: str, findings: list[dict], cap: int) -> str:

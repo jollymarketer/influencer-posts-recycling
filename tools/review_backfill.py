@@ -90,3 +90,51 @@ def report_markdown(results: list[dict]) -> str:
         lines.append(naturalness.findings_note(r["befunde"]))
         lines.append("")
     return "\n".join(lines)
+
+
+def decide_row(row: dict, cfg, loop_fn) -> dict:
+    """Bereinigung einer Zeile. loop_fn(text, cap, voice, material) ist
+    post_scorer._reader_loop oder ein Test-Double: gleicher Text = nichts zu
+    tun, anderer Text = repariert, "" = Restbefund, Zeile wird geleert.
+    Ueberlaenge oder CAPS im Bestand leeren die Zeile ohne Modellaufruf; der
+    Normal-Lauf schreibt sie mit dem Cap neu."""
+    from tools import text_gate
+    from tools.post_scorer import LENGTH_CAP, _append_cta
+    cta = getattr(cfg, "CTA_DE", "")
+    cap = LENGTH_CAP["lang"]
+    text = strip_cta(row["text"], cta)
+    base = {"page_id": row["page_id"], "titel": row["titel"], "kanal": row["kanal"],
+            "datum": row["datum"]}
+    hard = text_gate.hard_violations(text, cap)
+    if hard:
+        return {**base, "aktion": "geleert", "text_neu": "", "grund": "; ".join(hard)}
+    voice = getattr(cfg, "ACCOUNT_VOICES", {}).get(row["kanal"], "")
+    neu = loop_fn(text, cap, voice, material_for(row))
+    if not neu:
+        return {**base, "aktion": "geleert", "text_neu": "", "grund": "Restbefund nach Reparatur"}
+    if neu.strip() == text.strip():
+        return {**base, "aktion": "unveraendert", "text_neu": row["text"], "grund": ""}
+    return {**base, "aktion": "repariert", "text_neu": _append_cta(neu, cta), "grund": ""}
+
+
+def notion_props_for(text_neu: str) -> dict:
+    """Property-Patch: Text gechunkt (run_plan_fill._rich) oder leer."""
+    if not text_neu:
+        return {"Post-Text": {"rich_text": []}}
+    from run_plan_fill import _rich
+    return {"Post-Text": _rich(text_neu)}
+
+
+def plan_rows_all_entwurf(rows: list[dict]) -> list[dict]:
+    """Wie plan_rows, aber auch Zeilen ohne Text: der Abschluss-Check zaehlt
+    Entwuerfe, die nach dem Nachfuellen leer geblieben sind."""
+    from run_plan_fill import _date, _rt, _sel, _title
+    out = []
+    for r in rows:
+        p = r["properties"]
+        if _sel(p, "Typ") != "LinkedIn-Post" or _sel(p, "Status") != "Entwurf":
+            continue
+        out.append({"page_id": r["id"], "titel": _title(p), "kanal": _sel(p, "Kanal"),
+                    "datum": _date(p), "kurz": _rt(p, "Kurzbeschreibung"),
+                    "text": _rt(p, "Post-Text"), "status": _sel(p, "Status")})
+    return out

@@ -93,3 +93,46 @@ def test_report_markdown_has_one_row_per_post_and_totals():
     assert "| 2026-09-11 | LinkedIn Christian | B | 900 | 0 |" in md
     assert "[schriftdeutsch] \"Stimmen sie nicht.\": Verb vorn Vorschlag: Tun sie nicht." in md
     assert "Beitraege: 2, mit Befund: 1, sauber: 1, kein Urteil: 0, Befunde gesamt: 1" in md
+
+
+def _cfg():
+    return type("Cfg", (), {"CTA_DE": CTA, "ACCOUNT_VOICES": {"LinkedIn Robert": "Stimme"}})()
+
+
+def _row2(text):
+    return {"page_id": "p1", "titel": "T", "kanal": "LinkedIn Robert", "datum": "2026-09-10",
+            "kurz": "K", "text": text, "status": "Entwurf"}
+
+
+def test_decide_row_unchanged_when_loop_returns_same_text():
+    body = "Sauberer Text."
+    out = rb.decide_row(_row2(body + "\n\n" + CTA), _cfg(), lambda t, cap, voice, material: t)
+    assert out["aktion"] == "unveraendert" and out["text_neu"] == body + "\n\n" + CTA
+
+
+def test_decide_row_repaired_text_gets_cta_back():
+    seen = {}
+
+    def loop(t, cap, voice, material):
+        seen.update(text=t, cap=cap, voice=voice, material=material)
+        return "Repariert."
+
+    out = rb.decide_row(_row2("Kaputt.\n\n" + CTA), _cfg(), loop)
+    assert seen["text"] == "Kaputt." and seen["voice"] == "Stimme" and seen["cap"] == 2100
+    assert seen["material"].startswith("Thema: T")
+    assert out["aktion"] == "repariert" and out["text_neu"] == "Repariert.\n\n" + CTA
+
+
+def test_decide_row_cleared_on_residue_or_hard_violation():
+    out = rb.decide_row(_row2("Kaputt.\n\n" + CTA), _cfg(), lambda *a: "")
+    assert out["aktion"] == "geleert" and out["text_neu"] == "" and "Restbefund" in out["grund"]
+    long = "x" * 2200
+    calls = []
+    out = rb.decide_row(_row2(long), _cfg(), lambda *a: calls.append(1) or long)
+    assert out["aktion"] == "geleert" and "Zeichen" in out["grund"]
+    assert calls == []
+
+
+def test_notion_props_for_text_and_for_clearing():
+    assert rb.notion_props_for("Neu.") == {"Post-Text": {"rich_text": [{"text": {"content": "Neu."}}]}}
+    assert rb.notion_props_for("") == {"Post-Text": {"rich_text": []}}
