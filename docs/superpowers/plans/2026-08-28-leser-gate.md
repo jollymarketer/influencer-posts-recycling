@@ -1382,11 +1382,15 @@ TEXT:
 
 
 def _read_findings(text: str, voice: str = "", material: str = "") -> list[dict] | None:
-    """Befunde des Lesers (Sonnet). None bei Fehler oder unlesbarer Antwort."""
+    """Befunde des Lesers (Sonnet). None bei Fehler oder unlesbarer Antwort.
+    Structured Output (Sonde 28.08.2026): ohne Schema schrieb das Modell erst
+    eine Prosa-Analyse und lief bei 1024 Tokens ins Limit."""
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=1024,
+            max_tokens=4096,
+            output_config={"format": {"type": "json_schema",
+                                      "schema": naturalness.READER_SCHEMA}},
             messages=[{"role": "user", "content": naturalness.reader_prompt(
                 text, material=material, voice=voice)}],
         )

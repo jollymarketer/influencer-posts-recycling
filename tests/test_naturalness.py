@@ -183,3 +183,12 @@ def test_findings_note_lists_each_finding_with_quote():
     assert '[schriftdeutsch] "Stimmen sie nicht.": Verb vorn Vorschlag: Tun sie nicht.' in note
     assert '[satzlaenge] "Langer Satz": ueber 25 Woerter' in note
     assert note.count("\n") == 1
+
+
+def test_reader_schema_matches_parser_contract():
+    props = nat.READER_SCHEMA["properties"]["befunde"]["items"]["properties"]
+    assert set(props) == {"art", "zitat", "grund", "vorschlag"}
+    assert "satzlaenge" not in props["art"]["enum"]
+    assert set(props["art"]["enum"]) == set(nat.FINDING_ARTEN) - {"satzlaenge"}
+    assert nat.READER_SCHEMA["required"] == ["befunde"]
+    assert nat.READER_SCHEMA["additionalProperties"] is False

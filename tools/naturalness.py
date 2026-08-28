@@ -186,6 +186,35 @@ MASSSTAB für Frage 7 ist die Person, in deren Namen der Beitrag erscheint. So s
 {voice}
 """
 
+# Antwortformat als Schema fuer Structured Output (Sonde 28.08.2026: mit
+# "Antworte NUR mit JSON" schrieb Sonnet 4.6 erst eine Prosa-Analyse samt
+# Volltext-Zitat und lief bei 1024 Tokens ins Limit, 7 von 12 Antworten ohne
+# JSON). Prefill gibt es auf Sonnet 4.6 nicht mehr; output_config erzwingt
+# das JSON als ersten Textblock. "satzlaenge" ist deterministisch und kein
+# Leser-Befund. Laengen und Anzahl kappt parse_findings, nicht das Schema.
+READER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "befunde": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "art": {"type": "string",
+                            "enum": [a for a in FINDING_ARTEN if a != "satzlaenge"]},
+                    "zitat": {"type": "string"},
+                    "grund": {"type": "string"},
+                    "vorschlag": {"type": "string"},
+                },
+                "required": ["art", "zitat", "grund", "vorschlag"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["befunde"],
+    "additionalProperties": False,
+}
+
 
 def reader_prompt(text: str, material: str = "", voice: str = "") -> str:
     """Leser-Prompt: Text, Material (Thema und Kurzbeschreibung oder Quell-

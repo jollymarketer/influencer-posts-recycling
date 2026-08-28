@@ -26,8 +26,11 @@ from tools.post_scorer import client
 
 def read_with_model(text: str, material: str, voice: str):
     try:
+        # Structured Output (Sonde 28.08.2026): ohne Schema schrieb das Modell
+        # erst eine Prosa-Analyse und lief bei 1024 Tokens ins Limit.
         resp = client.messages.create(
-            model="claude-sonnet-4-6", max_tokens=1024,
+            model="claude-sonnet-4-6", max_tokens=4096,
+            output_config={"format": {"type": "json_schema", "schema": naturalness.READER_SCHEMA}},
             messages=[{"role": "user", "content": naturalness.reader_prompt(text, material, voice)}],
         )
         return naturalness.parse_findings(resp.content[0].text, text)
