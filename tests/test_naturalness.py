@@ -37,6 +37,26 @@ def test_tic_hits_flags_spoken_fillers():
     assert nat.tic_hits("Alsosolche Halterung ist keine Sprache.") == []
 
 
+def test_tic_hits_flags_named_observer_position():
+    # Lauf 27.08.2026: die Beobachterposition wurde benannt statt gezeigt, in
+    # 6 von 8 Beitraegen, weil sie woertlich im Prompt stand.
+    text = "In Einführungsprojekten sehe ich Prognosen ohne dokumentierte Annahmen."
+    assert [h.split(":")[0] for h in nat.tic_hits(text)] == \
+        ["Beobachterposition benannt statt gezeigt"]
+
+
+def test_voice_tics_only_bind_to_the_named_speaker():
+    # "Nicht weil ..., sondern weil ..." ist Kulles echte Konstruktion und
+    # leakte am 27.08.2026 in Werner-Posts (2 von 4). Echter Fundtext.
+    text = ("Das passiert öfter, als man denkt. Nicht weil die Rechenlogik falsch "
+            "ist, sondern weil niemand die Annahmen dahinter benennen kann.")
+    assert nat.tic_hits(text) == []
+    assert nat.tic_hits(text, "Du schreibst als Christian Kulle von der SWOT.") == []
+    treffer = nat.tic_hits(text, "Du schreibst als Robert Werner, Leiter Vertrieb.")
+    assert [h.split(":")[0] for h in treffer] == \
+        ["Fremdstimme nicht weil, sondern weil (Kulle)"]
+
+
 def test_tic_hits_clean_text():
     text = ("Die zweite Gesellschaft kostet so viel Einrichtung wie die erste, "
             "weil der Kontenrahmen jedes Mal neu verhandelt wird. Das lässt sich "

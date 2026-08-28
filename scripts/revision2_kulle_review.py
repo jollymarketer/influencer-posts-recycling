@@ -80,10 +80,14 @@ def kandidaten(cfg) -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--kanal", default="",
+                    help="nur dieses Konto neu texten, z.B. 'LinkedIn Robert'")
     args = ap.parse_args()
 
     cfg = load_client()
     ks = kandidaten(cfg)
+    if args.kanal:
+        ks = [k for k in ks if k["kanal"] == args.kanal]
     print(f"Kommentierte Neufassungen gefunden: {len(ks)}")
     for k in ks:
         modus = "ueberschreibt" if k["rev2_page_id"] else "legt an"

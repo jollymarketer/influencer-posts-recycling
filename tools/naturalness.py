@@ -68,8 +68,8 @@ TICS = [
 # fehlt der Name, greift die Regel nicht.
 VOICE_TICS = {
     "Robert Werner": [
-        ("Fremdstimme: nicht weil, sondern weil (Kulle)",
-         re.compile(r"\bicht,? weil\b[^.!?\n]{2,80}\bsondern weil\b", re.I)),
+        ("Fremdstimme nicht weil, sondern weil (Kulle)",
+         re.compile(r"\bnicht,? weil\b[^.!?\n]{2,160}\bsondern,? weil\b", re.I)),
     ],
 }
 
