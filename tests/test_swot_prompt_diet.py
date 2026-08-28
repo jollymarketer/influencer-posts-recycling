@@ -43,3 +43,8 @@ def test_voice_profiles_carry_no_spelled_out_formulas():
 def test_cta_de_is_the_binding_wording():
     assert cfg.CTA_DE == ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
                           "kostenfrei: https://www.swot.de/demo-buchen/")
+
+
+def test_no_persona_offers_the_banned_kunstwort():
+    import json
+    assert "Uebergabefaehigkeit" not in json.dumps(cfg.CONTENT_PERSONAS, ensure_ascii=False)

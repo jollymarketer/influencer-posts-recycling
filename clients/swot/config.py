@@ -349,8 +349,8 @@ CONTENT_PERSONAS = [
                         "externe Zahlenverantwortliche mit Planungsmandat."),
         "decision_makers_de": ("Geschaeftsfuehrung und kaufmaennische Leitung, "
                                "bei Beratungen die Mandatsverantwortlichen"),
-        "focus_topics_de": ("Uebergabefaehigkeit und Pruefbarkeit eines "
-                            "Planungsmodells, Trennung von Annahme und "
+        "focus_topics_de": ("ob ein Dritter ein Planungsmodell uebernehmen "
+                            "und pruefen kann, Trennung von Annahme und "
                             "Rechenlogik, Versionen"),
         "pains": ("ein Modell, das an einer Person haengt; Zellen, deren Grund "
                   "niemand mehr kennt; ein Nachfolger, der neu baut statt zu "
