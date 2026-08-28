@@ -1215,6 +1215,11 @@ cd "/c/Users/richa/Jolly_Claude_Code/Jolly Automations/Jolly Influencer Post Rec
 ALT=$(git log --format=%H -1 --grep="Bestandsleser als --report")
 git worktree add ../recycling-alt "$ALT"
 cp scripts/measure_diet.py ../recycling-alt/scripts/measure_diet.py
+# Leser-Dateien vom HEAD mitnehmen: am ALT-Stand liest run_review_backfill
+# noch mit max_tokens 1024 ohne Schema (Sonde 28.08.: JSON kam nie an).
+# Beide Dateien beeinflussen die Generierung nicht, nur das Lesen.
+cp tools/naturalness.py ../recycling-alt/tools/naturalness.py
+cp run_review_backfill.py ../recycling-alt/run_review_backfill.py
 cp .env ../recycling-alt/.env
 cd ../recycling-alt && CLIENT=swot python scripts/measure_diet.py --n 8 --label alt --out "/c/Users/richa/Jolly_Claude_Code/Clients/SWOT/Content/Pruefberichte"
 cd "/c/Users/richa/Jolly_Claude_Code/Jolly Automations/Jolly Influencer Post Recycling" && git worktree remove ../recycling-alt --force
