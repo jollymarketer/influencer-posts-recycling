@@ -114,7 +114,8 @@ def test_build_prompt_carries_hersteller_position_and_bans():
     assert "nie benannt" in p
     assert "Grossbuchstaben" in p                 # globales Template
     assert "StaRUG, IFRS 18, AVR, InsO" in swot.TOKENS["CONTEXT_TRANSFER_DE"]
-    assert "Annahme, Hypothese oder Praemisse" in swot.TOKENS["LANGUAGE_BANS_DE"]
+    assert "Glaube" not in swot.TOKENS["LANGUAGE_BANS_DE"]      # 28.08.2026: Zeile raus, der Leser faengt es
+    assert "Praemisse" not in swot.TOKENS["LANGUAGE_BANS_DE"]
     assert "Bankgespraechs" in swot.TOKENS["LANGUAGE_BANS_DE"]
 
 

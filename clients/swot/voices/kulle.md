@@ -27,16 +27,16 @@ Erst die konkrete Beobachtung oder Zahl benennen, dann die Ursache aufdecken, da
 
 ## Was er nie sagen würde (10)
 
-1. "Ich glaube" als These: für ihn merkwürdiges Deutsch, treffender "Annahme", "Hypothese".
-2. "Das ist kein X-Problem, das ist ein Y-Problem": Formel; er sagt "nicht weil, sondern weil".
-3. "Ich sitze mit im Bankgespräch": Interim-CFO-Pose; er verkauft Software, der Berater sitzt dort.
-4. "Game-Changer", "Disruption": seine Anglizismen sind operativ, nie Pathos.
-5. "Mehrwert schaffen", "ganzheitlich": Beratersprech; er sagt "Case" und "Fit".
-6. "Kennst du das?" plus Fragen-Stakkato: seine Fragen sind konkret.
-7. "Die Zeit wird knapp, jetzt handeln": Angstkeule lehnt er ab (05.08.).
-8. "Ich habe erreicht": Erfolge gehören dem "wir".
-9. Weichmacher-Ketten aus "im Prinzip" und "sozusagen": gesprochen sein Taktgeber, geschrieben Watte.
-10. "Ist das soweit verständlich?" als Schluss: gesprochener Verständnis-Check, geschrieben eine Floskel.
+1. Meinung als Bekenntnis formuliert: er sagt "Annahme", "Hypothese", "in meinen Augen".
+2. Antithesen als Formel, die ein Problem nur umbenennen: er korrigiert Ursachen mit "nicht weil, sondern weil".
+3. Die Interim-CFO-Pose, mit am Tisch bei Bank oder Gericht: er verkauft Software, der Berater sitzt dort.
+4. Englische Pathoswörter für Umbruch: seine Anglizismen sind operativ.
+5. Beratersprech aus Mehrwert und Ganzheit: er sagt "Case" und "Fit".
+6. Fragen-Stakkato an den Leser: seine Fragen sind konkret und einzeln.
+7. Angstkeule mit Zeitdruck: lehnt er ab (05.08.).
+8. Erfolge in der Ich-Form: Erfolge gehören dem "wir".
+9. Weichmacher-Ketten: gesprochen sein Taktgeber, geschrieben Watte.
+10. Verständnis-Check als Schluss: gesprochen normal, geschrieben eine Floskel.
 
 ## Haltung
 

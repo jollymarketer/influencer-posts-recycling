@@ -120,7 +120,8 @@ TOKENS = {
     "FOCUS_TOPICS_DE": (
         "Belastbarkeit der Zahlen: Datenherkunft und Schnittstellen, "
         "integrierte Planung ueber GuV, Bilanz und Liquiditaet, "
-        "Forecast-Genauigkeit, Uebergabefaehigkeit des Modells, datierte Fristen"
+        "Forecast-Genauigkeit, ob ein Dritter das Modell uebernehmen kann, "
+        "datierte Fristen"
     ),
     # Perspektive (Kulle, Notion-Kommentare 24.08.2026): SWOT ist
     # Softwarehersteller, kein Interim-CFO. "Wir sitzen als Softwarehersteller
@@ -164,8 +165,7 @@ TOKENS = {
 - CSRD ist kein Thema: das Omnibus-I-Paket hat die Schwelle angehoben, die Zielgruppe faellt heraus
 - Kein Em-Dash. Echte Umlaute schreiben
 - Keine erfundenen Zahlen. Belegt sind ausschliesslich die Angaben aus dem KONTEXT
-- Nie in der Ich- oder Wir-Form als Teilnehmer eines Bankgespraechs, Gerichtstermins, einer Gesellschafterrunde oder eines Gremiums schreiben. SWOT ist Softwarehersteller, kein Interim-CFO und kein Berater am Tisch. Erlaubt ist die Beobachterposition: "in Einfuehrungsprojekten sehe ich", "Kunden berichten", "in der Schulung zeigt sich"
-- "Glaube" ist kein Fachwort: es heisst Annahme, Hypothese oder Praemisse""",
+- Nie in der Ich- oder Wir-Form als Teilnehmer eines Bankgespraechs, Gerichtstermins, einer Gesellschafterrunde oder eines Gremiums schreiben. SWOT ist Softwarehersteller, kein Interim-CFO und kein Berater am Tisch""",
 
     # --- Englisch: SWOT ist DACH-only (FEATURES["en_draft"] = False). Die
     # Tokens muessen trotzdem existieren, weil apply_tokens beim Import auch
@@ -813,6 +813,10 @@ _HERSTELLER_POSITION = (
 # Konten. Dieselbe Lehre wie bei "Glaube:" am 24.08.: was der Prompt als
 # fertigen Satzbaustein anbietet, schreibt das Modell ab. Die Position bleibt,
 # der Satzbaustein ist weg, und naturalness.TICS erzwingt jetzt den Neulauf.
+# Dieselbe Phrase stand bis 28.08.2026 zusaetzlich als ERLAUBNIS in
+# LANGUAGE_BANS_DE ("Erlaubt ist die Beobachterposition: ..."), zwei Regeln
+# im selben Prompt gegeneinander. Jetzt weg; der Leser (tools/naturalness)
+# faengt die benannte Beobachterposition als Befund.
 
 
 # Stimmprofile aus den Call-Transkripten (Richard 25.08.2026: "wo hast du
@@ -821,6 +825,10 @@ _HERSTELLER_POSITION = (
 # Sie haengen an der Kontostimme und gehen damit in den Schreib-Prompt UND
 # als Massstab in den Lektor (naturalness.critic_prompt). Fehlt die Datei,
 # bleibt nur die Rollenbeschreibung, nichts bricht.
+# Schriftdeutsch-Regel im Kopf (28.08.2026): Werners "Kurze Hauptsaetze" im
+# Profil und "Kein Stakkato" im Generik-Block widersprachen sich, das Modell
+# loeste es per Echo-Fragment ("Stimmen sie nicht."). Entschieden: Rhythmus
+# aus dem Profil, Syntax bleibt Schrift.
 _VOICES_DIR = os.path.join(os.path.dirname(__file__), "voices")
 
 
@@ -830,8 +838,10 @@ def load_voice_profile(name: str) -> str:
         return ""
     with open(path, encoding="utf-8") as f:
         return ("\n\nSTIMMPROFIL, daran misst sich jeder Satz. Es beschreibt gesprochene "
-                "Sprache: Rhythmus, Bilder, Haltung und Wortwahl uebernehmen; Fuellwoerter "
-                "(halt, irgendwie, also, ne) NIE; die typischen Wendungen sind Muster, "
+                "Sprache: Rhythmus, Bilder, Haltung und Wortwahl uebernehmen. Der Satzbau "
+                "bleibt Schriftdeutsch: vollstaendige Saetze, Verb an zweiter Stelle, "
+                "keine Echo-Antworten, kein Fragment als Aussagesatz, keine Fuellwoerter "
+                "der gesprochenen Sprache. Die typischen Wendungen sind Muster, "
                 "hoechstens eine davon woertlich je Beitrag.\n" + f.read().strip())
 
 

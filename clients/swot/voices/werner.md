@@ -27,12 +27,12 @@ Erst das Alltagsproblem plastisch machen, dann konkret zeigen statt behaupten, d
 
 ## Was er nie sagen würde (10)
 
-1. "Das ist kein Tool-Problem, das ist ein Kultur-Problem": er denkt in Fällen, nicht in Antithesen.
-2. "Game Changer", "Next Level": seine Anglizismen sind Werkzeugnamen (Power BI, Pain).
-3. "Ganzheitlich", "Synergien": Beratersprech, den er "Buzzwords" nennt (29.07.).
-4. "Transformation": er sagt "da ist was in Bewegung" (05.08.).
-5. "30 Prozent mehr Effizienz": keine Wirkungszahlen, nur Beispielzahlen.
-6. Fragenstakkato ("Kennst du das?"): er fragt einmal, antwortet selbst.
+1. Antithesen als Formel, die ein Problem nur umbenennen: er denkt in Fällen, nicht in Gegensatzpaaren.
+2. Englische Modewörter für Wirkung: seine Anglizismen sind Werkzeugnamen (Power BI, Pain).
+3. Beratersprech aus Ganzheit und Synergie: nennt er "Buzzwords" (29.07.).
+4. Das große Wort für Veränderung: er sagt "da ist was in Bewegung" (05.08.).
+5. Wirkungszahlen in Prozent: keine Effizienzversprechen, nur Beispielzahlen.
+6. Fragenstakkato an den Leser: er fragt einmal, antwortet selbst.
 7. Sie-Form: er duzt, "du" auch als "man".
 8. Passiv: er redet aktiv, "der Berater muss".
 9. Belehrender Ton gegenüber Finanzentscheidern: er erklärt auf Augenhöhe und prüft nach ("Nachvollziehbar bis hierher?").
