@@ -163,19 +163,19 @@ FINDING_ARTEN = ("schriftdeutsch", "kohaerenz", "deckung", "fachlogik",
                  "schablone", "muendlich", "fremdstimme", "satzlaenge")
 MAX_FINDINGS = 6
 
-READER_PROMPT = """Du liest einen deutschen LinkedIn-Beitrag als strenger Fachlektor mit Controlling-Hintergrund. Du bewertest nicht, du findest Defekte und belegst jeden mit einem wörtlichen Zitat aus dem Text.
+READER_PROMPT = """Du liest einen deutschen LinkedIn-Beitrag als strenger, aber fairer Fachlektor mit Controlling-Hintergrund. Du bewertest nicht, du findest Defekte, die ein Lektor tatsächlich ändern würde, und belegst jeden mit einem wörtlichen Zitat aus dem Text. Ein sauberer Text hat null Befunde. Im Zweifel kein Befund: jeder Fehlalarm löst eine Reparatur aus, die den Text verschlechtert.
 {voice_block}
 MATERIAL, das der Beitrag einlösen soll:
 {material}
 
 Sieben Fragen. Jede Antwort ist entweder "nichts gefunden" oder ein Befund mit Zitat:
-1. schriftdeutsch: Gibt es einen Satz, der als geschriebenes Deutsch nicht korrekt ist? Ein Aussagesatz mit dem Verb an erster Stelle, der weder Frage noch Befehl noch Bedingungssatz ist ("Stimmen sie nicht."); fehlendes Subjekt oder Verb; ein Fragment, das der Leser als abgebrochenen Nebensatz liest; eine Echo-Antwort aus der gesprochenen Sprache.
-2. kohaerenz: Behauptet der erste Absatz etwas, das der Rest einschränkt, widerlegt oder nicht wieder aufgreift? Zitiere beide Stellen im Feld zitat, getrennt durch " | ".
-3. deckung: Löst der Text ein, was das Material verspricht? Fehlt ein versprochener Teil, oder handelt der Text von etwas anderem?
-4. fachlogik: Gibt es eine Aussage, die ein Controller oder Wirtschaftsprüfer als falsch oder unpräzise erkennt? Verfahren (etwa ein rollierender Forecast, der "einmal" gebaut wird), Fristen, Fachbegriffe, Zahlen.
-5. schablone: Gibt es rhetorische Formeln? Antithese als Pointe ("kein A, sondern B", "Das ist kein X, das ist ein Y"), Negation-Negation-Korrektur ("Nicht A. Nicht B. Sondern C."), Pointen-Einzeiler als eigener Absatz, Sentenz ("Wer A, bezahlt B"), Dreier-Parallelismus, Absolution nach der Pointe ("Und das ist in Ordnung.").
-6. muendlich: Füllwörter (halt, irgendwie, sozusagen, quasi, "Also," am Satzanfang), Gesprächsfloskeln, Verständnisfragen an den Leser als Floskel.
-7. fremdstimme: Beratersprech und Lehnübersetzungen (Mehrwert schaffen, ganzheitlich, Hebel, orchestrieren, macht Sinn, am Ende des Tages, Ownership, Level), Kunstwörter (Übergabefähigkeit, Vertrauensereignis, Fortschreibungslogik), oder eine Passage, die die Person laut Maßstab so nie schreiben würde.
+1. schriftdeutsch: Gibt es einen Satz, der als geschriebenes Deutsch nicht korrekt ist? Nur: ein Aussagesatz mit dem Verb an erster Stelle, der weder Frage noch Befehl noch Bedingungssatz ist ("Stimmen sie nicht." als Antwort auf den Satz davor); fehlendes Subjekt oder Verb; ein Fragment, das der Leser als abgebrochenen Nebensatz liest. Kein Befund: uneingeleitete Bedingungssätze ("Stimmen Planung und Gliederung nicht überein, entsteht doppeltes Rechnen"), Ellipsen mit Modalverb ("wo er hin will"), bewusst kurze vollständige Sätze.
+2. kohaerenz: Behauptet der erste Absatz etwas, das der Rest widerlegt? Nur, wenn beide Stellen zusammen unvereinbar sind. Kein Befund: der Rest vertieft oder erweitert den Opener, nennt die Ursache hinter dem Symptom oder wechselt zur Lösung. Zitiere beide Stellen im Feld zitat, getrennt durch " | ", und nenne im Feld grund, warum sie einander ausschließen. Stimme und Register gehören zu Frage 7, nicht hierher.
+3. deckung: Löst der Text ein, was das Material verspricht? Nur, wenn ein versprochener Teil fehlt oder der Text von etwas anderem handelt.
+4. fachlogik: Gibt es eine Aussage, die ein Controller oder Wirtschaftsprüfer als falsch erkennt? Nur Verfahren, Fristen, Fachbegriffe und Zahlen, und nur, wenn du die richtige Fassung nennen kannst (Norm mit Paragraf, Datum, Zahl). Ein rollierender Forecast, der monatlich um einen Monat vorrückt, ist korrekt beschrieben; falsch wäre ein rollierender Forecast, der "einmal" gebaut wird. Kein Befund: Vorschläge, die die Aussage nur umformulieren; Kritik an Belegdichte oder Formulierung; Normen, deren Fundstelle du nicht sicher weißt.
+5. schablone: Gibt es rhetorische Formeln, die eine eigene Pointe tragen? Antithese als Absatzschluss ("kein A, sondern B", "Das ist kein X, das ist ein Y"), Negation-Negation-Korrektur ("Nicht A. Nicht B. Sondern C."), Pointen-Einzeiler als eigener Absatz ohne neuen Sachverhalt, Sentenz ("Wer A, bezahlt B"), Dreier-Parallelismus mit gleichem Satzbau, Absolution nach der Pointe ("Und das ist in Ordnung."). Kein Befund: ein einzelner Kontrast im Satzinneren, eine sachliche Aufzählung, Wendungen, die der Maßstab als typisch für die Person nennt.
+6. muendlich: Nur Wörter dieser abschließenden Liste: halt, irgendwie, sozusagen, quasi, "Also," am Satzanfang, "ne?"; dazu Verständnisfragen an den Leser als Floskel ("Kennst du das?", "Ist das soweit klar?"). Kein Befund: kurze vollständige Sätze, "also" im Satzinneren, "irgendwann", "tatsächlich", Herkunftsangaben wie "in Schulungen".
+7. fremdstimme: Nur drei Fälle. Erstens Beratersprech und Lehnübersetzungen dieser Art: Mehrwert schaffen, ganzheitlich, Hebel, orchestrieren, skalieren, Mindset, Enabler, macht Sinn, am Ende des Tages, Ownership, Level, Game Changer. Zweitens Neubildungen ohne Wörterbucheintrag (Übergabefähigkeit, Vertrauensereignis, Fortschreibungslogik); gewöhnliche Wörter wie Übergabe, Brücke, Stand sind keine. Drittens eine Passage, die eine Regel des Maßstabs verletzt; dann zitierst du im Feld grund die verletzte Regel wörtlich, sonst gilt der Befund nicht. Die Herkunft der eigenen Kenntnis zu benennen ("in Einführungsprojekten sehe ich") ist nur dann ein Befund, wenn der Maßstab es ausdrücklich verbietet.
 
 Antworte NUR mit JSON, ohne Kommentar:
 {{"befunde": [{{"art": "<schriftdeutsch|kohaerenz|deckung|fachlogik|schablone|muendlich|fremdstimme>", "zitat": "<wörtlich aus dem Text>", "grund": "<ein Satz>", "vorschlag": "<so schreibt es ein Mensch>"}}]}}
@@ -185,7 +185,7 @@ TEXT:
 {text}"""
 
 _READER_VOICE_BLOCK = """
-MASSSTAB für Frage 7 ist die Person, in deren Namen der Beitrag erscheint. So spricht und schreibt sie:
+MASSSTAB für die Fragen 5 und 7 ist die Person, in deren Namen der Beitrag erscheint. So spricht und schreibt sie:
 {voice}
 """
 
