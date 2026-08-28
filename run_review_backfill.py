@@ -25,6 +25,7 @@ import datetime as dt
 import json
 import os
 import sys
+import time
 
 import requests
 
@@ -84,55 +85,86 @@ def _backup(rows: list[dict], out_dir: str) -> str:
 
 
 def _patch_and_readback(page_id: str, text_neu: str) -> bool:
-    resp = requests.patch(f"{NOTION_API}/pages/{page_id}", headers=notion_headers(),
-                          json={"properties": rb.notion_props_for(text_neu)}, timeout=TIMEOUT)
-    if not resp.ok:
-        print(f"  Notion-Fehler {resp.status_code}: {resp.text[:160]}", flush=True)
-        return False
-    back = requests.get(f"{NOTION_API}/pages/{page_id}", headers=notion_headers(), timeout=TIMEOUT)
-    back.raise_for_status()
-    ist = _rt(back.json()["properties"], "Post-Text")
-    ok = ist.strip() == text_neu.strip()
-    if not ok:
+    """Schreibt und liest zurueck. Weicht die Rueckgelesene vom gewollten
+    Text ab (Notion-Eventual-Consistency, kein harter Fehler), ein zweiter
+    Versuch; bleibt der Abweicher, False. Ein Notion-Fehler auf dem PATCH
+    selbst bricht sofort ab, ohne Neuversuch. Rate-Limit Notion rund 3
+    Requests/Sekunde: Pause nach jedem PATCH/GET-Paar."""
+    for _ in range(2):
+        resp = requests.patch(f"{NOTION_API}/pages/{page_id}", headers=notion_headers(),
+                              json={"properties": rb.notion_props_for(text_neu)}, timeout=TIMEOUT)
+        if not resp.ok:
+            print(f"  Notion-Fehler {resp.status_code}: {resp.text[:160]}", flush=True)
+            return False
+        back = requests.get(f"{NOTION_API}/pages/{page_id}", headers=notion_headers(), timeout=TIMEOUT)
+        back.raise_for_status()
+        ist = _rt(back.json()["properties"], "Post-Text")
+        ok = ist.strip() == text_neu.strip()
+        time.sleep(0.35)
+        if ok:
+            return True
         print(f"  Readback weicht ab ({len(ist)} statt {len(text_neu)} Zeichen)", flush=True)
-    return ok
+    return False
 
 
 def write(out_dir: str, cfg, refill_passes: int) -> dict:
+    """Bereinigt jede Entwurf-Zeile. Ein Notion-Fehler oder eine Ausnahme in
+    einer einzelnen Zeile bricht den Lauf nicht ab (Review 28.08.2026): das
+    Protokoll wird nach jeder Zeile geschrieben, nicht erst am Ende, sonst
+    geht es beim ersten Abbruch verloren. Nachfuellen laeuft nur ueber
+    geleert_ids: Zeilen, die dieser Lauf selbst geleert hat, nie ueber
+    andere textlose Zeilen im selben Monat (only_page_ids)."""
     rows = rb.plan_rows(read_plan(cfg.CONTENT_PLAN_DB_ID))
     print(f"Entwurf-Zeilen mit Text: {len(rows)}", flush=True)
     print(f"Backup: {_backup(rows, out_dir)}", flush=True)
     zaehler = {"unveraendert": 0, "repariert": 0, "geleert": 0, "fehler": 0}
-    monate, protokoll = set(), []
+    monate, protokoll, geleert_ids = set(), [], set()
+    stem = os.path.join(out_dir, dt.date.today().isoformat() + "_bestand-write")
     for i, row in enumerate(rows, 1):
         print(f"  {i:2d}/{len(rows)} {row['datum']} {row['kanal']:20s} {row['titel'][:50]}", flush=True)
-        d = rb.decide_row(row, cfg, _reader_loop)
-        protokoll.append({k: v for k, v in d.items() if k != "text_neu"})
-        if d["aktion"] == "unveraendert":
-            zaehler["unveraendert"] += 1
-            continue
-        if _patch_and_readback(d["page_id"], d["text_neu"]):
-            zaehler[d["aktion"]] += 1
-            if d["aktion"] == "geleert":
+        try:
+            d = rb.decide_row(row, cfg, _reader_loop)
+            if d["aktion"] == "unveraendert":
+                zaehler["unveraendert"] += 1
+            elif _patch_and_readback(d["page_id"], d["text_neu"]):
+                zaehler[d["aktion"]] += 1
+                if d["aktion"] == "geleert":
+                    monate.add(d["datum"][:7])
+                    geleert_ids.add(d["page_id"])
+                    print(f"    geleert: {d['grund']}", flush=True)
+            elif d["aktion"] == "repariert" and _patch_and_readback(d["page_id"], ""):
+                d = {**d, "aktion": "geleert", "grund": "Readback-Abweichung, geleert"}
+                zaehler["geleert"] += 1
                 monate.add(d["datum"][:7])
+                geleert_ids.add(d["page_id"])
                 print(f"    geleert: {d['grund']}", flush=True)
-        else:
+            else:
+                d = {**d, "aktion": "fehler"}
+                zaehler["fehler"] += 1
+                print(f"    FEHLER {d['page_id']}", flush=True)
+            protokoll.append({k: v for k, v in d.items() if k != "text_neu"})
+        except Exception as e:
             zaehler["fehler"] += 1
-    stem = os.path.join(out_dir, dt.date.today().isoformat() + "_bestand-write")
-    with open(stem + ".json", "w", encoding="utf-8") as f:
-        json.dump({"zaehler": zaehler, "zeilen": protokoll}, f, ensure_ascii=False, indent=1)
+            protokoll.append({"page_id": row["page_id"], "titel": row["titel"], "kanal": row["kanal"],
+                              "datum": row["datum"], "aktion": "fehler", "grund": f"Ausnahme: {e}"})
+            print(f"    FEHLER {row['page_id']}: {e}", flush=True)
+        with open(stem + ".json", "w", encoding="utf-8") as f:
+            json.dump({"zaehler": zaehler, "zeilen": protokoll}, f, ensure_ascii=False, indent=1)
     print(f"Bereinigung: {zaehler}, Protokoll {stem}.json", flush=True)
     months = sorted((int(m[:4]), int(m[5:7])) for m in monate)
     for p in range(refill_passes):
         if not months:
             break
         print(f"Nachfuellen, Durchgang {p + 1}: {months}", flush=True)
-        r = text_fill(months, cfg=cfg)
+        r = text_fill(months, cfg=cfg, only_page_ids=geleert_ids)
         print(f"  geschrieben {r['geschrieben']} von {r['zeilen']}", flush=True)
     offen = [r for r in rb.plan_rows_all_entwurf(read_plan(cfg.CONTENT_PLAN_DB_ID)) if not r["text"]]
     print(f"Entwurf-Zeilen ohne Text nach dem Lauf: {len(offen)}", flush=True)
     for r in offen:
         print(f"  OFFEN {r['datum']} {r['kanal']} {r['titel'][:50]}", flush=True)
+    for r in protokoll:
+        if r["aktion"] == "fehler":
+            print(f"  FEHLER {r['datum']} {r['kanal']} {r['titel'][:50]}", flush=True)
     return {**zaehler, "offen": len(offen)}
 
 

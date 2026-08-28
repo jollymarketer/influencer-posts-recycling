@@ -178,12 +178,17 @@ def _choose_format(cfg, material: str, fmts: list, used_assets: list):
     return fmt, cm.asset_for_format(fmt, cfg, used_assets)
 
 
-def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) -> dict:
+def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False,
+              only_page_ids: set | None = None) -> dict:
     """Textet Plan-Zeilen der genannten Monate, ohne Termine oder Kanaele
     anzufassen. Ketten-Schritt hinter run_monthly_plan: die Zeilen sind dort
     bereits geslottet, hier fehlt nur der Beitragstext. fill() dagegen
     verteilt ALLE Zeilen neu auf Slots und darf nie hinter write_proposals
-    laufen, sonst datiert es Bestandsmonate um."""
+    laufen, sonst datiert es Bestandsmonate um. only_page_ids (Default None,
+    Verhalten unveraendert) beschraenkt den Lauf zusaetzlich auf genau diese
+    Seiten-IDs: die Bestandsbereinigung darf im Nachfuellen nur die frisch
+    geleerten Zeilen neu texten, keine andere textlose Zeile im selben
+    Monat mit demselben Status-Downgrade auf Entwurf ueberschreiben."""
     cfg = cfg or load_client()
     month_keys = {f"{y:04d}-{m:02d}" for y, m in months}
     rows = read_plan(cfg.CONTENT_PLAN_DB_ID)
@@ -193,6 +198,8 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False) ->
         datum = _date(p)
         achse = axis_id(_sel(p, "Achse"))
         if datum[:7] not in month_keys or not achse:
+            continue
+        if only_page_ids is not None and r["id"] not in only_page_ids:
             continue
         kandidaten.append({
             "page_id": r["id"], "datum": datum, "achse": achse,

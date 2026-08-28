@@ -85,3 +85,31 @@ def test_build_prompt_carries_voice_persona_and_bans():
     baked_ban = post_scorer._cfg.TOKENS["LANGUAGE_BANS_DE"].splitlines()[0]
     assert baked_ban in prompt
     assert "Ein Titel" in prompt
+
+
+def test_text_fill_only_page_ids_limits_run_to_named_pages():
+    """Bestandsbereinigung (Task 6 Review): das Nachfuellen darf nur die
+    selbst geleerten Seiten neu texten, keine andere textlose Zeile im
+    selben Monat."""
+    def _row_datiert(pid, titel):
+        return {"id": pid, "properties": {
+            "Titel": {"title": [{"plain_text": titel}]},
+            "Achse": {"select": {"name": "fristen"}},
+            "Kanal": {"select": {"name": "LinkedIn Robert"}},
+            "Kurzbeschreibung": {"rich_text": [{"plain_text": "Herkunft"}]},
+            "Post-Text": {"rich_text": []},
+            "Geplant für": {"date": {"start": "2026-09-01"}},
+        }}
+    rows = [_row_datiert("a", "A"), _row_datiert("b", "B")]
+    result = {"text": "NEU", "soundbyte": "S", "kontext": "", "skeleton": ""}
+    cfg = MagicMock()
+    cfg.CONTENT_PLAN_DB_ID = "db"
+    resp = MagicMock(ok=True)
+    with patch.object(run_plan_fill, "read_plan", return_value=rows), \
+         patch.object(run_plan_fill, "pick_format", return_value="Opinion"), \
+         patch.object(run_plan_fill, "write_post", return_value=result) as mock_write, \
+         patch("run_plan_fill.requests.patch", return_value=resp):
+        r = run_plan_fill.text_fill([(2026, 9)], cfg=cfg, only_page_ids={"a"})
+    assert r["zeilen"] == 1
+    assert mock_write.call_count == 1
+    assert mock_write.call_args.args[0] == "A"
