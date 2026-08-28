@@ -105,7 +105,9 @@ def test_lisocon_has_balance_window_jolly_not():
 
 
 def test_dach_prompt_has_german_image_parts():
-    # Der DE-Prompt muss Soundbyte/Kontext/Infografik liefern koennen, weil sie
-    # bei en_draft=False die Bild-Inputs sind.
+    # Seit dem Infografik-Split (28.08.2026) liefert nicht mehr der DE-Prompt
+    # Soundbyte/Kontext/Infografik, sondern PARTS_PROMPT in einem eigenen
+    # Haiku-Call (post_scorer._parts_call), wenn en_draft False ist.
     for marker in ("===SOUNDBYTE===", "===KONTEXT===", "===INFOGRAFIK==="):
-        assert marker in post_scorer.DACH_POST_PROMPT
+        assert marker in post_scorer.PARTS_PROMPT
+        assert marker not in post_scorer.DACH_POST_PROMPT

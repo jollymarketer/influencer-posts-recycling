@@ -138,7 +138,7 @@ Tonalitaet:
 - [[CONTEXT_TRANSFER_DE]]
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
 - Kein Satz ueber 25 Woerter. Ein Gedanke je Satz, hoechstens ein Nebensatz
-- Deutsch, wie ein Fachmensch es selbst schreibt: Verben statt Substantivierungen, keine Kunstwoerter (Uebergabefaehigkeit, Vertrauensereignis, Fortschreibungslogik), keine Lehnuebersetzungen aus dem Englischen. Keine Formeln wie "Das ist kein X-Problem, das ist ein Y-Problem", "Nicht X. Nicht Y. Sondern Z.", "X ist kein Y. Es ist ein Z.", "Wer X, bezahlt Y". Keine Pointen-Einzeiler als eigener Absatz. Der Beitrag muss nicht mit einer Frage enden
+- Deutsch, wie ein Fachmensch es selbst schreibt: Verben statt Substantivierungen, keine Kunstwoerter, keine Lehnuebersetzungen aus dem Englischen. Keine rhetorischen Schablonen: keine Antithesen in Serie, keine Pointen-Einzeiler als eigener Absatz, keine Sentenzen. Der Beitrag muss nicht mit einer Frage enden
 
 Sprach-Verbote (hart):
 [[LANGUAGE_BANS_DE]]
@@ -172,14 +172,28 @@ Qualitaetspruefung (E3):
 
 [[HASHTAG_LINE_DE]]
 
+OUTPUT-FORMAT (exakt einhalten):
+
+===POST===
+[LinkedIn-Post-Text auf Deutsch]"""
+# Infografik-Split (28.08.2026): Soundbyte, Kontext und Skelett standen als
+# TEIL 2 bis 4 im Schreib-Prompt, 3.064 von 19.756 Zeichen, und konkurrierten
+# mit dem Text um Aufmerksamkeit. Jetzt ein eigener Haiku-Call nach dem
+# fertigen Text (nur ohne EN-Draft; Mandanten mit EN-Draft beziehen die
+# Teile weiter aus dem EN-Call). Wortlaut der Regeln unveraendert uebernommen.
+PARTS_PROMPT = """Aus dem folgenden fertigen LinkedIn-Beitrag leitest du Sound Byte, Kontext und Infografik-Skelett ab. Der Beitrag selbst ist fertig und wird nicht veraendert.
+
+BEITRAG:
+{post}
+
 ---
 
 TEIL 2 - SOUND BYTE:
 
-Extrahiere aus dem generierten Post einen einzigen, kurzen, praegnanten Satz als Sound Byte fuer das Bild.
+Extrahiere aus dem Beitrag einen einzigen, kurzen, praegnanten Satz als Sound Byte fuer das Bild.
 
 Regeln:
-- Kein vollstaendiges Summary des Posts — kein erklaerungsbeduerftiger Satz
+- Kein vollstaendiges Summary des Posts, kein erklaerungsbeduerftiger Satz
 - Muss sofort haengen bleiben und eine Reaktion ausloesen
 - Klingt wie ein starkes Zitat oder eine provokante These
 - Maximal 12 Woerter
@@ -193,7 +207,7 @@ Fuer wen ist die Aussage besonders relevant? 1-2 Woerter Zielgruppe, z.B. "CEOs,
 
 TEIL 4 - INFOGRAFIK-SKELETT:
 
-Basierend auf dem generierten Post: Empfehle den staerksten Infografik-Typ und liefere die Keywords fuer den Canva-Aufbau.
+Basierend auf dem Beitrag: Empfehle den staerksten Infografik-Typ und liefere die Keywords fuer den Canva-Aufbau.
 
 INFOGRAFIK-TYPEN (waehle den EINEN der zur Logik des Posts am besten passt):
 - Vergleichstabelle: Zwei Spalten (z.B. "Was Leute denken" vs. "Was es wirklich ist")
@@ -208,7 +222,7 @@ INFOGRAFIK-TYPEN (waehle den EINEN der zur Logik des Posts am besten passt):
 - Vorher/Nachher-Split: ein Zustand vs. der veraenderte Zustand, nebeneinander
 - Baum/Verzweigung: eine Wurzel, die sich in Aeste oder Ergebnisse teilt
 
-Typ-Wahl-Regeln (Output ist aktuell viel zu monoton — das beheben):
+Typ-Wahl-Regeln (Output ist aktuell viel zu monoton, das beheben):
 - Typ an die echte Logik des Posts koppeln: Trade-off -> Waage, Prozess -> Funnel oder Timeline, zwei Denkweisen -> Vergleichstabelle, Zyklus -> Flywheel, zwei Achsen -> 2x2-Matrix.
 - Eisberg ist stark ueberstrapaziert. Nur waehlen wenn es im Post wirklich um eine sichtbare Oberflaeche geht, die eine tiefere Realitaet verbirgt, und nichts anderes besser passt.
 {recent_types_line}
@@ -222,11 +236,8 @@ Regeln:
 
 OUTPUT-FORMAT (exakt einhalten):
 
-===POST===
-[LinkedIn-Post-Text auf Deutsch]
-
 ===SOUNDBYTE===
-[Sound Byte — ein Satz, max. 12 Woerter]
+[Sound Byte, ein Satz, max. 12 Woerter]
 
 ===KONTEXT===
 [Zielgruppe/Kontext oder leer]
@@ -234,12 +245,14 @@ OUTPUT-FORMAT (exakt einhalten):
 ===INFOGRAFIK===
 TYP: [Typ-Name]
 METAPHER: [Visuelle Metapher oder "keine"]
-KOMPLEMENTARITAET: [Infografik zeigt X → Post-Text erklaert Y]
+KOMPLEMENTARITAET: [Infografik zeigt X -> Post-Text erklaert Y]
 EBENEN:
 [Label 1]: [Keyword 1], [Keyword 2], [Keyword 3]
 [Label 2]: [Keyword 1], [Keyword 2], [Keyword 3]
 [Label 3]: [Keyword 1], [Keyword 2], [Keyword 3]
 TOOL-LOGOS: keine"""
+
+_EMPTY_PARTS = {"post": "", "soundbyte": "", "kontext": "", "infografik": ""}
 # PERSONA_DE wird erst zur Generierungszeit gefuellt: der Persona-Split kann
 # die Stimme wechseln (voice_de in CONTENT_PERSONAS, z.B. lisocon: Anwender-
 # Posts in Jaes Stimme). Ohne Override bleibt TOKENS["PERSONA_DE"].
@@ -609,6 +622,24 @@ def _recent_types_lines(recent_infographic_types) -> tuple[str, str]:
     en = (f"- Types used in recent posts (newest first): {joined}. "
           f"Avoid any type from the last 3 runs unless it is clearly the best fit.")
     return de, en
+
+
+def _parts_call(de_draft: str, recent_infographic_types=None) -> dict:
+    """Soundbyte, Kontext und Infografik-Skelett aus dem fertigen DE-Text
+    (Haiku). Ohne EN-Draft der einzige Lieferant dieser Teile. Fehler
+    liefern leere Teile; der Text bleibt, das Bild fehlt dann."""
+    de_recent, _ = _recent_types_lines(recent_infographic_types)
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=800,
+            messages=[{"role": "user", "content": PARTS_PROMPT.format(
+                post=de_draft, recent_types_line=de_recent)}],
+        )
+        return _parse_generation_response(resp.content[0].text.strip())
+    except Exception as e:
+        print(f"  Teile-Call fehlgeschlagen (nicht kritisch): {e}", flush=True)
+        return dict(_EMPTY_PARTS)
 
 
 def _format_prompts(post: dict, post_format: str = "Opinion",
@@ -1551,8 +1582,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    avoid_phrases: list[str] | None = None) -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
-    EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus dem
-    DE-Response (der DACH-Prompt liefert sie auf Deutsch), en_draft ist "".
+    EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus
+    einem eigenen Haiku-Call (_parts_call) nach dem fertigen Text, en_draft ist "".
     Die Bild-Text-Sprache steuert IMAGE_LANGUAGE der Client-Config.
     post_format waehlt den Struktur-Block (Opinion/POV/Signature).
     recent_infographic_types steuert das Anti-Repeat des Infografik-Typs.
@@ -1616,7 +1647,9 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         image_parts = en_parts
     else:
         en_draft = ""
-        image_parts = de_parts
+        # Teile aus dem fertigen Text, nicht mehr aus dem Schreib-Prompt.
+        image_parts = (_parts_call(de_draft, recent_infographic_types)
+                       if de_draft else dict(_EMPTY_PARTS))
 
     sound_byte = sanitize_generated_text(image_parts["soundbyte"])
     kontext = image_parts["kontext"]

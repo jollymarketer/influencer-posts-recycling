@@ -43,8 +43,12 @@ def test_normalize_unknown_returns_raw_capped():
 # --- anti-repeat line injection (guards prompt .format placeholders) ----------
 
 def test_format_prompts_injects_recent_types_into_both_languages():
-    de, en = post_scorer._format_prompts(POST, "Opinion", ["Iceberg", "Funnel/pyramid"])
-    assert "Iceberg, Funnel/pyramid" in de and "letzten 3 Runs" in de
+    # DE-Zeile lebt seit Task 4 (Infografik-Split) in PARTS_PROMPT, nicht mehr
+    # in _format_prompts' DE-Prompt; EN-Pfad unveraendert.
+    _, en = post_scorer._format_prompts(POST, "Opinion", ["Iceberg", "Funnel/pyramid"])
+    de_recent, _ = post_scorer._recent_types_lines(["Iceberg", "Funnel/pyramid"])
+    parts = post_scorer.PARTS_PROMPT.format(post="x", recent_types_line=de_recent)
+    assert "Iceberg, Funnel/pyramid" in parts and "letzten 3 Runs" in parts
     assert "Iceberg, Funnel/pyramid" in en and "last 3 runs" in en
 
 

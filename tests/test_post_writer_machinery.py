@@ -28,8 +28,7 @@ def test_topic_template_is_reframed():
 def test_topic_template_keeps_enforcement_blocks():
     t = pw.TOPIC_DE_TEMPLATE
     assert "Qualitaetspruefung (E3)" in t
-    assert "===SOUNDBYTE===" in t
-    assert "===INFOGRAFIK===" in t
+    assert "===POST===" in t
     assert "{structure_block}" in t
     assert "{length_target_de}" in t
 

@@ -123,8 +123,13 @@ def _gen_with_responses(bodies, post_format="Opinion", band=None, grammar=False,
     captured, bodies = [], list(bodies)
 
     def fake_create(**kw):
-        captured.append(kw["messages"][0]["content"])
+        content = kw["messages"][0]["content"]
         resp = MagicMock()
+        if content.startswith("Aus dem folgenden fertigen LinkedIn-Beitrag"):
+            # Teile-Call (Infografik-Split, Task 4): nicht mitzaehlen.
+            resp.content = [MagicMock(text="===SOUNDBYTE===\nx\n===INFOGRAFIK===\nTYP: Waage")]
+            return resp
+        captured.append(content)
         resp.content = [MagicMock(text=bodies.pop(0))]
         return resp
 
