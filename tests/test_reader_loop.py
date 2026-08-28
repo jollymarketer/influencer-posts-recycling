@@ -85,3 +85,14 @@ def test_fix_output_failing_textwache_is_rejected():
     caps = "DAS IST DIE ANTWORT DARAUF.\n\nDen Forecast baut man auf und denkt, die Zahlen stimmen. Tun sie nicht."
     de, sent = _run(["===POST===\n" + BAD, FIND, caps])
     assert de == ""
+
+
+SOFT = '{"befunde": [{"art": "schablone", "zitat": "Tun sie nicht.", "grund": "Pointe", "vorschlag": "x"}]}'
+
+
+def test_soft_residue_after_two_rounds_keeps_text():
+    # Trockenlauf 28.08.2026: Reparierer ersetzt Formel durch Formel; weiche
+    # Reste verwerfen keinen Text mehr, nur harte (HARD_ARTEN) und Textwache.
+    de, sent = _run(["===POST===\n" + GOOD, SOFT, GOOD, SOFT, GOOD, SOFT])
+    assert de.startswith(GOOD)
+    assert len(sent) == 6

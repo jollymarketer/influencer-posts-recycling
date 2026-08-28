@@ -180,3 +180,8 @@ def test_merge_findings_drops_regex_duplicates_of_reader_quotes():
     assert [f["grund"] for f in out] == ["g", "lang"]
     assert nat.merge_findings(None, det) == det
     assert nat.merge_findings([], []) == []
+
+
+def test_hard_arten_are_the_sense_errors():
+    assert set(nat.HARD_ARTEN) == {"schriftdeutsch", "kohaerenz", "deckung", "fachlogik"}
+    assert set(nat.HARD_ARTEN) < set(nat.FINDING_ARTEN)

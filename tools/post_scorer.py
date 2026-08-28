@@ -1497,6 +1497,7 @@ HARTE REGELN:
 - Nur die zitierten Passagen umschreiben, so knapp wie moeglich. Kein neuer Absatz, keine Umstellung, keine Kuerzung anderswo.
 - Fakten, Zahlen, Fristen und Namen bleiben; korrigiere Fachlogik nur so, wie der Befund es begruendet.
 - Schriftdeutsch: vollstaendige Saetze, Verb an zweiter Stelle, keine Echo-Antworten, keine Pointen-Formeln.
+- Ersetze eine Formel durch einen schlichten Aussagesatz, nie durch eine andere Formel: kein Satz beginnt mit "Wer", keine Konstruktion aus "nicht ..., sondern ...", kein Absatz endet mit einer Umdeutung. Sage, was der Fall ist.
 - Bei "kohaerenz": passe den ersten Absatz an den Rest an, nie umgekehrt.
 - Kein Kommentar, kein Markdown, keine Erklaerung: antworte NUR mit dem vollstaendigen Text.
 
@@ -1566,8 +1567,9 @@ def _short(findings: list[dict]) -> str:
 
 def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -> str:
     """Leser, bis zu MAX_FIX_ROUNDS chirurgische Reparaturen, Leser. Gibt ""
-    zurueck, wenn danach Befunde bleiben oder eine Reparatur verworfen
-    wurde. Ohne Urteil des Lesers bleibt der Text, wie er ist."""
+    zurueck, wenn danach harte Befunde (naturalness.HARD_ARTEN) bleiben;
+    weiche Reste bleiben mit Log stehen. Ohne Urteil des Lesers bleibt der
+    Text, wie er ist."""
     findings = _all_findings(de_draft, voice, material)
     if findings is None:
         print("  Leser: kein Urteil, Text bleibt", flush=True)
@@ -1584,9 +1586,18 @@ def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -
         if findings is None:
             print("  Leser: kein Urteil nach Reparatur, Text bleibt", flush=True)
             return de_draft
-    if findings:
-        print(f"  Leser: Text verworfen, Restbefund: {_short(findings)}", flush=True)
+    hart = [f for f in findings if f["art"] in naturalness.HARD_ARTEN]
+    if hart:
+        print(f"  Leser: Text verworfen, harter Restbefund: {_short(hart)}", flush=True)
         return ""
+    if findings:
+        # Trockenlauf 28.08.2026: 3 von 3 Texten verworfen, weil der Reparierer
+        # eine Formel durch die naechste ersetzte und der Leser sie wiederfand.
+        # Weiche Reste (Schablone, Fremdstimme, Muendlich, Satzlaenge) bleiben
+        # mit Log stehen; nur Sinnfehler und die Textwache verwerfen. Das
+        # weicht von Spec B.4 ab (Ruling Controller, Ledger).
+        print(f"  Leser: weicher Restbefund bleibt: {_short(findings)}", flush=True)
+        return de_draft
     print(f"  Leser: sauber nach {rounds} Reparatur(en)", flush=True)
     return de_draft
 
