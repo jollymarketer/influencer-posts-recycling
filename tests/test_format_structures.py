@@ -171,35 +171,6 @@ def test_textwache_umlaut_only_goes_to_grammar_check_not_drop():
 
 
 _CLEAN = "===POST===\nDie zweite Gesellschaft kostet so viel wie die erste, weil der Kontenrahmen neu verhandelt wird.\n===SOUNDBYTE===\nx"
-_FORMEL = "===POST===\nDas ist kein Planungsproblem. Das ist ein Strukturproblem.\n===SOUNDBYTE===\nx"
-
-
-def test_lektor_accepts_good_text_with_one_call():
-    de, sent = _gen_with_responses([_CLEAN, '{"note": 9, "fundstellen": []}'], naturalness=True)
-    assert de.startswith("Die zweite Gesellschaft")
-    assert len(sent) == 2 and "Lektor" in sent[1]
-
-
-def test_lektor_low_note_triggers_rewrite_and_keeps_better():
-    low = '{"note": 4, "fundstellen": ["Das ist kein Planungsproblem: Formel, sagt niemand"]}'
-    de, sent = _gen_with_responses([_FORMEL, low, _CLEAN, '{"note": 8, "fundstellen": []}'],
-                                   naturalness=True)
-    assert de.startswith("Die zweite Gesellschaft")
-    assert len(sent) == 4
-    assert "KORREKTUR" in sent[2] and "Note 4 von 10" in sent[2]
-    assert "kein X-Problem" in sent[2]                 # deterministischer Tic im Hinweis
-
-
-def test_lektor_keeps_original_when_rewrite_is_worse():
-    de, sent = _gen_with_responses(
-        [_CLEAN, '{"note": 6, "fundstellen": ["x: y"]}', _FORMEL, '{"note": 5, "fundstellen": []}'],
-        naturalness=True)
-    assert de.startswith("Die zweite Gesellschaft")
-
-
-def test_lektor_unreadable_verdict_keeps_text():
-    de, sent = _gen_with_responses([_CLEAN, "kein json"], naturalness=True)
-    assert de.startswith("Die zweite Gesellschaft") and len(sent) == 2
 
 
 def test_avoid_phrases_land_in_prompt():

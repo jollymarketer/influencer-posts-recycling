@@ -1483,49 +1483,112 @@ def _finish_draft(de_draft: str, cap: int) -> str:
     return de_draft
 
 
-def _naturalness_verdict(text: str, voice: str = "") -> dict | None:
-    """Urteil des deutschen Lektors (Sonnet), mit der Kontostimme als
-    Massstab. None bei Fehler oder unlesbarer Antwort: dann bleibt der
-    Text, wie er ist."""
+# Leser-Loop (Richard 28.08.2026, Spec docs/superpowers/specs/
+# 2026-08-28-leser-gate-design.md). Ersetzt Lektor-Note plus Vollneulauf:
+# der Leser liefert Befunde mit Zitat, die Reparatur aendert nur die
+# zitierten Passagen, nach MAX_FIX_ROUNDS Reparaturen mit Restbefund wird
+# der Text verworfen (fail-closed, wie CAPS und Ueberlaenge). Kein Lese-
+# Schritt bei Jolly: was hier durchkommt, sieht der Kunde.
+MAX_FIX_ROUNDS = 2
+
+FIX_PROMPT = """Du korrigierst einen deutschen LinkedIn-Beitrag chirurgisch. Ein Lektor hat Befunde mit woertlichen Zitaten geliefert. Aendere NUR die zitierten Passagen, jede andere Zeile bleibt zeichengenau erhalten.
+
+HARTE REGELN:
+- Nur die zitierten Passagen umschreiben, so knapp wie moeglich. Kein neuer Absatz, keine Umstellung, keine Kuerzung anderswo.
+- Fakten, Zahlen, Fristen und Namen bleiben; korrigiere Fachlogik nur so, wie der Befund es begruendet.
+- Schriftdeutsch: vollstaendige Saetze, Verb an zweiter Stelle, keine Echo-Antworten, keine Pointen-Formeln.
+- Bei "kohaerenz": passe den ersten Absatz an den Rest an, nie umgekehrt.
+- Kein Kommentar, kein Markdown, keine Erklaerung: antworte NUR mit dem vollstaendigen Text.
+
+BEFUNDE:
+{befunde}
+
+TEXT:
+{text}"""
+
+
+def _read_findings(text: str, voice: str = "", material: str = "") -> list[dict] | None:
+    """Befunde des Lesers (Sonnet). None bei Fehler oder unlesbarer Antwort.
+    Structured Output (Sonde 28.08.2026): ohne Schema schrieb das Modell erst
+    eine Prosa-Analyse und lief bei 1024 Tokens ins Limit."""
     try:
         resp = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": naturalness.critic_prompt(text, voice)}],
+            max_tokens=4096,
+            output_config={"format": {"type": "json_schema",
+                                      "schema": naturalness.READER_SCHEMA}},
+            messages=[{"role": "user", "content": naturalness.reader_prompt(
+                text, material=material, voice=voice)}],
         )
-        return naturalness.parse_verdict(resp.content[0].text)
+        return naturalness.parse_findings(resp.content[0].text, text)
     except Exception as e:
-        print(f"  Lektor fehlgeschlagen (nicht kritisch): {e}", flush=True)
+        print(f"  Leser fehlgeschlagen (nicht kritisch): {e}", flush=True)
         return None
 
 
-def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int,
-                      voice: str = "") -> tuple[str, dict]:
-    """Natuerlichkeits-Stufe (Richard 24.08.2026): Lektor-Note plus
-    deterministische Formeln; ein Neulauf mit den Fundstellen, danach bleibt
-    die Fassung mit der besseren Note. Nie ein Verwerfen: Stil ist weicher
-    als Grossbuchstaben oder Laenge. voice ist die Kontostimme samt
-    Stimmprofil, der Lektor misst daran."""
-    verdict = _naturalness_verdict(de_draft, voice)
-    tics = naturalness.tic_hits(de_draft, voice)
-    longs = naturalness.long_sentences(de_draft)
-    note = verdict["note"] if verdict else None
-    if not tics and (note is None or note >= naturalness.NATURALNESS_MIN):
-        print(f"  Lektor: Note {note}, keine Formeln", flush=True)
-        return de_draft, de_parts
-    print(f"  Lektor: Note {note}, Formeln {len(tics)}, Neulauf", flush=True)
-    parts2 = _generate_de(de_prompt + naturalness.rewrite_note(verdict, tics, longs))
-    draft2 = _finish_draft(sanitize_generated_text(parts2["post"]), cap)
-    if not draft2:
-        return de_draft, de_parts
-    verdict2 = _naturalness_verdict(draft2, voice)
-    note2 = verdict2["note"] if verdict2 else None
-    tics2 = naturalness.tic_hits(draft2, voice)
-    better = (len(tics2) < len(tics)) or (
-        len(tics2) == len(tics) and note2 is not None and (note is None or note2 >= note))
-    print(f"  Lektor: Neulauf Note {note2}, Formeln {len(tics2)}, "
-          f"{'uebernommen' if better else 'verworfen'}", flush=True)
-    return (draft2, parts2) if better else (de_draft, de_parts)
+def _all_findings(text: str, voice: str = "", material: str = "") -> list[dict] | None:
+    """Leser plus deterministische Befunde. None nur, wenn der Leser kein
+    Urteil liefert UND nichts Deterministisches anliegt."""
+    llm = _read_findings(text, voice, material)
+    det = naturalness.deterministic_findings(text, voice)
+    if llm is None and not det:
+        return None
+    return (llm or []) + det
+
+
+def _fix_passages(text: str, findings: list[dict], cap: int) -> str:
+    """Ein Reparatur-Call. "" wenn die Reparatur verworfen wird: Fehler,
+    Laengen-Guard (wie grammar_check) oder Textwache."""
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
+            messages=[{"role": "user", "content": FIX_PROMPT.format(
+                befunde=naturalness.findings_note(findings), text=text)}],
+        )
+        fixed = sanitize_generated_text(resp.content[0].text.strip())
+    except Exception as e:
+        print(f"  Reparatur fehlgeschlagen (nicht kritisch): {e}", flush=True)
+        return ""
+    if not fixed or abs(len(fixed) - len(text)) > max(80, int(len(text) * 0.15)):
+        print("  Reparatur verworfen (Laengen-Guard).", flush=True)
+        return ""
+    hard = text_gate.hard_violations(fixed, cap)
+    if hard:
+        print("  Reparatur verworfen (Textwache): " + "; ".join(hard), flush=True)
+        return ""
+    return fixed
+
+
+def _short(findings: list[dict]) -> str:
+    return "; ".join(f"{f['art']} \"{f['zitat'][:50]}\"" for f in findings)
+
+
+def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -> str:
+    """Leser, bis zu MAX_FIX_ROUNDS chirurgische Reparaturen, Leser. Gibt ""
+    zurueck, wenn danach Befunde bleiben oder eine Reparatur verworfen
+    wurde. Ohne Urteil des Lesers bleibt der Text, wie er ist."""
+    findings = _all_findings(de_draft, voice, material)
+    if findings is None:
+        print("  Leser: kein Urteil, Text bleibt", flush=True)
+        return de_draft
+    rounds = 0
+    while findings and rounds < MAX_FIX_ROUNDS:
+        rounds += 1
+        print(f"  Leser: {len(findings)} Befund(e), Reparatur {rounds}: {_short(findings)}", flush=True)
+        fixed = _fix_passages(de_draft, findings, cap)
+        if not fixed:
+            break
+        de_draft = fixed
+        findings = _all_findings(de_draft, voice, material)
+        if findings is None:
+            print("  Leser: kein Urteil nach Reparatur, Text bleibt", flush=True)
+            return de_draft
+    if findings:
+        print(f"  Leser: Text verworfen, Restbefund: {_short(findings)}", flush=True)
+        return ""
+    print(f"  Leser: sauber nach {rounds} Reparatur(en)", flush=True)
+    return de_draft
 
 
 def _parse_generation_response(raw: str) -> dict:
@@ -1599,9 +1662,9 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     de_draft ist "", wenn der Text auch nach einem Neulauf gegen die Textwache
     verstoesst (Grossbuchstaben-Block, Ueberlaenge): lieber keine Zeile als
     eine, die der Kunde zurueckweist.
-    Mit FEATURES["naturalness_check"] beurteilt danach ein deutscher Lektor
-    (tools/naturalness) den Text; unter NATURALNESS_MIN oder bei Formel-
-    Treffern schreibt das Modell einmal neu, die bessere Fassung bleibt.
+    Mit FEATURES["naturalness_check"] liest danach der Leser (tools/naturalness)
+    den Text; Befunde werden chirurgisch repariert (hoechstens MAX_FIX_ROUNDS),
+    bleibt ein Befund, ist de_draft "".
     avoid_phrases: im Lauf schon verbrauchte Formulierungen (siehe
     naturalness.phrases), damit sich Konten nicht selbst zitieren.
     """
@@ -1629,9 +1692,10 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
 
     de_draft = _finish_draft(de_draft, cap)
     if de_draft and _cfg.FEATURES.get("naturalness_check"):
-        de_draft, de_parts = _naturalness_loop(
-            de_draft, de_parts, de_prompt, cap,
-            voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"])
+        de_draft = _reader_loop(
+            de_draft, cap,
+            voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
+            material=post["post_text"][:1500])
     de_draft = enforce_magnet_cta(de_draft, post_format, asset)
     de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
 

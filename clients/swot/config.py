@@ -534,9 +534,10 @@ FEATURES = {
     "keyword_source_daily": False,
     "en_draft": False,
     "grammar_check": True,
-    # Deutscher Lektor hinter der Textwache (Richard 24.08.2026: "gutes und
-    # natuerlich klingendes Deutsch"). Ein Sonnet-Call je Post, bei Neulauf
-    # zwei mehr. Siehe tools/naturalness.py.
+    # Leser hinter der Textwache (Richard 28.08.2026, vorher Lektor-Note seit
+    # 24.08.): Befunde mit Zitat, chirurgische Reparatur, Verwerfen bei
+    # Restbefund. Ein Sonnet-Call je Post, je Reparatur zwei mehr. Siehe
+    # tools/naturalness.py und post_scorer._reader_loop.
     "naturalness_check": True,
     # Kein Slate- und kein Winner-Pfad, siehe Modul-Docstring.
     "slate_mode": False,
@@ -823,7 +824,7 @@ _HERSTELLER_POSITION = (
 # die Menschlichkeit eingebaut?"). Je Konto eine Seite in clients/swot/voices/:
 # Satzbau, typische und verbotene Wendungen, Haltung, zwei Schreibmuster.
 # Sie haengen an der Kontostimme und gehen damit in den Schreib-Prompt UND
-# als Massstab in den Lektor (naturalness.critic_prompt). Fehlt die Datei,
+# als Massstab in den Leser (naturalness.reader_prompt). Fehlt die Datei,
 # bleibt nur die Rollenbeschreibung, nichts bricht.
 # Schriftdeutsch-Regel im Kopf (28.08.2026): Werners "Kurze Hauptsaetze" im
 # Profil und "Kein Stakkato" im Generik-Block widersprachen sich, das Modell
