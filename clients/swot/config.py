@@ -783,6 +783,14 @@ PROOF_ASSETS = [
 # Stufen "Text freigegeben" und "Freigegeben" setzt der Kunde von Hand.
 CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 
+# Buchungs-CTA unter jedem LinkedIn-Beitrag (Richard 28.08.2026, Wortlaut
+# verbindlich). Bis dahin stand der Link nur per Notion-Handlauf auf den 51
+# Bestandsposts; die Pipeline haengte nichts an. post_scorer.blanket_cta
+# liest dieses Attribut, Magnet und Offer bleiben aussen vor (fuer SWOT
+# ohnehin gesperrt). Blog und Kommentare bekommen keinen Link.
+CTA_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
+          "kostenfrei: https://www.swot.de/demo-buchen/")
+
 # Stimme je Kanal fuer tools/post_writer.py. Der Text traegt die Stimme des
 # Kontos, nicht nur das Thema: wechselt ein Beitrag das Konto, wird er neu
 # geschrieben. Fehlt ein Kanal hier, entsteht kein Text (lieber leer als im
