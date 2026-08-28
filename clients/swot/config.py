@@ -795,10 +795,16 @@ CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 _HERSTELLER_POSITION = (
     " Du bist Softwarehersteller, kein Interim-CFO und kein Berater: du sitzt "
     "nicht im Bankgespraech, nicht vor Gericht, nicht in der "
-    "Gesellschafterrunde. Du siehst in Einfuehrungsprojekten, Schulungen und "
-    "Supportfaellen, wie Kunden ihr Zahlenwerk fuer solche Termine "
-    "aufbereiten, und schreibst aus dieser Beobachterposition."
+    "Gesellschafterrunde. Deine Kenntnis stammt aus der Arbeit an der Software "
+    "beim Kunden. Diese Herkunft zeigt sich im Detail des Beispiels, sie wird "
+    "nie benannt: schreibe nie, wo du etwas siehst, erlebst oder hoerst."
 )
+# Die Aufzaehlung "in Einfuehrungsprojekten, Schulungen und Supportfaellen"
+# stand bis 27.08.2026 woertlich hier und landete danach woertlich im Text:
+# Lauf vom 27.08. hatte sie in 6 von 8 Beitraegen, gleich verteilt ueber beide
+# Konten. Dieselbe Lehre wie bei "Glaube:" am 24.08.: was der Prompt als
+# fertigen Satzbaustein anbietet, schreibt das Modell ab. Die Position bleibt,
+# der Satzbaustein ist weg, und naturalness.TICS erzwingt jetzt den Neulauf.
 
 
 # Stimmprofile aus den Call-Transkripten (Richard 25.08.2026: "wo hast du

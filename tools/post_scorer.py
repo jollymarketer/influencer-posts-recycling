@@ -1476,7 +1476,7 @@ def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int,
     als Grossbuchstaben oder Laenge. voice ist die Kontostimme samt
     Stimmprofil, der Lektor misst daran."""
     verdict = _naturalness_verdict(de_draft, voice)
-    tics = naturalness.tic_hits(de_draft)
+    tics = naturalness.tic_hits(de_draft, voice)
     longs = naturalness.long_sentences(de_draft)
     note = verdict["note"] if verdict else None
     if not tics and (note is None or note >= naturalness.NATURALNESS_MIN):
@@ -1489,7 +1489,7 @@ def _naturalness_loop(de_draft: str, de_parts: dict, de_prompt: str, cap: int,
         return de_draft, de_parts
     verdict2 = _naturalness_verdict(draft2, voice)
     note2 = verdict2["note"] if verdict2 else None
-    tics2 = naturalness.tic_hits(draft2)
+    tics2 = naturalness.tic_hits(draft2, voice)
     better = (len(tics2) < len(tics)) or (
         len(tics2) == len(tics) and note2 is not None and (note is None or note2 >= note))
     print(f"  Lektor: Neulauf Note {note2}, Formeln {len(tics2)}, "

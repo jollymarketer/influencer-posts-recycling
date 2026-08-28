@@ -107,7 +107,11 @@ def test_build_prompt_carries_hersteller_position_and_bans():
     # Template beim Import mit dem Prozess-Mandanten, deshalb direkt geprueft.
     p = pw.build_prompt("T", "K", "LinkedIn Christian", "rechenschaft", cfg=swot)
     assert "kein Interim-CFO" in p
-    assert "Beobachterposition" in p
+    # 27.08.2026: die Beobachterposition wird nicht mehr als fertiger
+    # Satzbaustein angeboten. Sie stand woertlich im Prompt und landete
+    # woertlich in 6 von 8 Texten des Revision-2-Laufs.
+    assert "Einfuehrungsprojekten" not in p
+    assert "nie benannt" in p
     assert "Grossbuchstaben" in p                 # globales Template
     assert "StaRUG, IFRS 18, AVR, InsO" in swot.TOKENS["CONTEXT_TRANSFER_DE"]
     assert "Annahme, Hypothese oder Praemisse" in swot.TOKENS["LANGUAGE_BANS_DE"]

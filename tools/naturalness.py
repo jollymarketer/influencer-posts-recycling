@@ -50,7 +50,28 @@ TICS = [
     # Sprache samt Fuellwoertern ("halt", "irgendwie", Einstieg mit "Also,").
     ("Fuellwort der gesprochenen Sprache",
      re.compile(r"\b(?:halt|irgendwie|sozusagen|quasi)\b|(?:^|\n)Also,|\bne\?", re.I)),
+    # Revision-2-Lauf (27.08.2026): die Beobachterposition wurde benannt statt
+    # gezeigt, in 6 von 8 Beitraegen. Sie stand als fertiger Satzbaustein im
+    # Prompt (SWOT _HERSTELLER_POSITION) und wurde abgeschrieben. Als weiche
+    # avoid_phrase reichte sie nicht, deshalb jetzt harter Neulauf.
+    ("Beobachterposition benannt statt gezeigt",
+     re.compile(r"(?:In|Aus) (?:Einführungsprojekten|Projekten|Schulungen|Supportfällen)"
+                r"[^.:,]{0,25}?(?:sehe|erlebe|höre) ich"
+                r"|Was ich (?:in|bei) [^.:,]{3,40}(?:sehe|erlebe|höre)")),
 ]
+
+# Formeln, die NUR fuer ein Konto eine Formel sind. "Nicht weil ..., sondern
+# weil ..." ist Christian Kulles echte Konstruktion (Stimmprofil 25.08.2026)
+# und steht deshalb nicht in TICS. Im Revision-2-Lauf am 27.08.2026 leakte sie
+# aber zu Robert Werner: 2 Treffer je Konto, gleich verteilt. Der Schluessel
+# wird im voice-String gesucht (ACCOUNT_VOICES nennt den Namen des Kontos);
+# fehlt der Name, greift die Regel nicht.
+VOICE_TICS = {
+    "Robert Werner": [
+        ("Fremdstimme: nicht weil, sondern weil (Kulle)",
+         re.compile(r"\bicht,? weil\b[^.!?\n]{2,80}\bsondern weil\b", re.I)),
+    ],
+}
 
 # Formulierungen, die je Konto und Monat nur einmal vorkommen duerfen. Die
 # Beobachterposition ist erwuenscht, aber "In Einfuehrungsprojekten sehe ich"
@@ -68,10 +89,16 @@ PHRASE_PATTERNS = [
 CLOSING_QUESTION = "Schlussfrage"
 
 
-def tic_hits(text: str) -> list[str]:
-    """Name plus Fundstelle je getroffener Formel, fuer Log und Neulauf."""
+def tic_hits(text: str, voice: str = "") -> list[str]:
+    """Name plus Fundstelle je getroffener Formel, fuer Log und Neulauf.
+    voice ist die Kontostimme: nennt sie den Sprecher eines VOICE_TICS-
+    Eintrags, gelten dessen Fremdstimmen-Formeln zusaetzlich."""
+    regeln = list(TICS)
+    for sprecher, extra in VOICE_TICS.items():
+        if sprecher in voice:
+            regeln.extend(extra)
     out = []
-    for name, rx in TICS:
+    for name, rx in regeln:
         m = rx.search(text)
         if m:
             out.append(f"{name}: \"{m.group(0).strip()[:90]}\"")
