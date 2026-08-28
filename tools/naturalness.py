@@ -147,6 +147,128 @@ def avoid_note(used: list[str] | None) -> str:
     return ("\n\n" + "\n".join(lines)) if lines else ""
 
 
+# Leser statt Lektor (Richard 28.08.2026, Spec docs/superpowers/specs/
+# 2026-08-28-leser-gate-design.md). Anlass: "Den 13-Wochen-Cashforecast baut
+# man einmal auf und denkt, die Zahlen muessen stimmen. Stimmen sie nicht. Und
+# das ist in Ordnung." Verberststellung, Opener gegen Text, rollierender
+# Forecast "einmal" gebaut: keine der drei Stellen fiel dem Lektor auf, weil
+# eine Note mittelt und elf Stilpunkte keinen Sinn pruefen. Der Leser stellt
+# Fragen mit Zitatpflicht; jeder Befund ist eine Reparatur, keine Note.
+# Der Leser darf Beispiel-Wortlaute tragen: er schreibt nichts ab. Verbots-
+# listen mit Wortlaut gehoeren deshalb hierher, nie in den Schreib-Prompt.
+FINDING_ARTEN = ("schriftdeutsch", "kohaerenz", "deckung", "fachlogik",
+                 "schablone", "muendlich", "fremdstimme", "satzlaenge")
+MAX_FINDINGS = 6
+
+READER_PROMPT = """Du liest einen deutschen LinkedIn-Beitrag als strenger Fachlektor mit Controlling-Hintergrund. Du bewertest nicht, du findest Defekte und belegst jeden mit einem wörtlichen Zitat aus dem Text.
+{voice_block}
+MATERIAL, das der Beitrag einlösen soll:
+{material}
+
+Sieben Fragen. Jede Antwort ist entweder "nichts gefunden" oder ein Befund mit Zitat:
+1. schriftdeutsch: Gibt es einen Satz, der als geschriebenes Deutsch nicht korrekt ist? Ein Aussagesatz mit dem Verb an erster Stelle, der weder Frage noch Befehl noch Bedingungssatz ist ("Stimmen sie nicht."); fehlendes Subjekt oder Verb; ein Fragment, das der Leser als abgebrochenen Nebensatz liest; eine Echo-Antwort aus der gesprochenen Sprache.
+2. kohaerenz: Behauptet der erste Absatz etwas, das der Rest einschränkt, widerlegt oder nicht wieder aufgreift? Zitiere beide Stellen im Feld zitat, getrennt durch " | ".
+3. deckung: Löst der Text ein, was das Material verspricht? Fehlt ein versprochener Teil, oder handelt der Text von etwas anderem?
+4. fachlogik: Gibt es eine Aussage, die ein Controller oder Wirtschaftsprüfer als falsch oder unpräzise erkennt? Verfahren (etwa ein rollierender Forecast, der "einmal" gebaut wird), Fristen, Fachbegriffe, Zahlen.
+5. schablone: Gibt es rhetorische Formeln? Antithese als Pointe ("kein A, sondern B", "Das ist kein X, das ist ein Y"), Negation-Negation-Korrektur ("Nicht A. Nicht B. Sondern C."), Pointen-Einzeiler als eigener Absatz, Sentenz ("Wer A, bezahlt B"), Dreier-Parallelismus, Absolution nach der Pointe ("Und das ist in Ordnung.").
+6. muendlich: Füllwörter (halt, irgendwie, sozusagen, quasi, "Also," am Satzanfang), Gesprächsfloskeln, Verständnisfragen an den Leser als Floskel.
+7. fremdstimme: Beratersprech und Lehnübersetzungen (Mehrwert schaffen, ganzheitlich, Hebel, orchestrieren, macht Sinn, am Ende des Tages, Ownership, Level), Kunstwörter (Übergabefähigkeit, Vertrauensereignis, Fortschreibungslogik), oder eine Passage, die die Person laut Maßstab so nie schreiben würde.
+
+Antworte NUR mit JSON, ohne Kommentar:
+{{"befunde": [{{"art": "<schriftdeutsch|kohaerenz|deckung|fachlogik|schablone|muendlich|fremdstimme>", "zitat": "<wörtlich aus dem Text>", "grund": "<ein Satz>", "vorschlag": "<so schreibt es ein Mensch>"}}]}}
+Leere Liste, wenn nichts gefunden. Höchstens {max_findings} Befunde, die schwersten zuerst. Kein Befund ohne wörtliches Zitat.
+
+TEXT:
+{text}"""
+
+_READER_VOICE_BLOCK = """
+MASSSTAB für Frage 7 ist die Person, in deren Namen der Beitrag erscheint. So spricht und schreibt sie:
+{voice}
+"""
+
+
+def reader_prompt(text: str, material: str = "", voice: str = "") -> str:
+    """Leser-Prompt: Text, Material (Thema und Kurzbeschreibung oder Quell-
+    Post) und das Stimmprofil als Massstab, wenn eines vorliegt."""
+    voice = (voice or "").strip()
+    return READER_PROMPT.format(
+        text=text,
+        material=(material or "").strip() or "(kein Material)",
+        voice_block=_READER_VOICE_BLOCK.format(voice=voice) if voice else "",
+        max_findings=MAX_FINDINGS,
+    )
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"\s+", " ", s or "").strip()
+
+
+def _quote_in_text(zitat: str, text: str) -> bool:
+    """Jeder Zitat-Teil (bei kohaerenz durch " | " getrennt) muss woertlich im
+    Text stehen, Whitespace normalisiert. Erfundene Zitate fallen raus; die
+    Reparatur muss die Passage sonst nicht finden."""
+    t = _norm(text)
+    return all(_norm(part) in t for part in zitat.split(" | ") if _norm(part))
+
+
+def parse_findings(raw: str, text: str | None = None) -> list[dict] | None:
+    """Befundliste aus der Leser-Antwort. None bei unlesbarer Antwort (dann
+    kein Urteil, der Text bleibt). Befunde ohne Zitat oder mit Zitat, das
+    nicht im Text steht, werden verworfen. Hoechstens MAX_FINDINGS."""
+    m = re.search(r"\{.*\}", raw or "", re.S)
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(0))
+        items = data.get("befunde")
+    except (ValueError, AttributeError):
+        return None
+    if not isinstance(items, list):
+        return None
+    out = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        zitat = str(it.get("zitat") or "").strip()
+        if not zitat or (text is not None and not _quote_in_text(zitat, text)):
+            continue
+        art = str(it.get("art") or "").strip().lower()
+        out.append({
+            "art": art if art in FINDING_ARTEN else "sonstiges",
+            "zitat": zitat[:200],
+            "grund": str(it.get("grund") or "").strip()[:200],
+            "vorschlag": str(it.get("vorschlag") or "").strip()[:300],
+        })
+    return out[:MAX_FINDINGS]
+
+
+def deterministic_findings(text: str, voice: str = "") -> list[dict]:
+    """Regex-Formeln und Satzlaengen als Befunde derselben Form, damit die
+    Reparatur eine Liste bekommt. Die Regex-Liste waechst nicht mehr; der
+    Leser ist der allgemeine Fang."""
+    out = []
+    for hit in tic_hits(text, voice):
+        name, _, zitat = hit.partition(": ")
+        out.append({"art": "schablone", "zitat": zitat.strip().strip('"'),
+                    "grund": name, "vorschlag": ""})
+    for s in long_sentences(text):
+        out.append({"art": "satzlaenge", "zitat": s,
+                    "grund": f"ueber {MAX_SENTENCE_WORDS} Woerter",
+                    "vorschlag": "in zwei Saetze teilen"})
+    return out
+
+
+def findings_note(findings: list[dict]) -> str:
+    """Befunde als Zeilen fuer den Reparatur-Prompt und das Log."""
+    lines = []
+    for f in findings:
+        line = f"- [{f['art']}] \"{f['zitat']}\": {f['grund']}"
+        if f.get("vorschlag"):
+            line += f" Vorschlag: {f['vorschlag']}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
 CRITIC_PROMPT = """Du bist Lektor für deutsche B2B-Fachtexte. Prüfe, ob der folgende LinkedIn-Beitrag klingt, als hätte ihn ein deutschsprachiger Fachmensch selbst geschrieben, oder wie eine Maschine, die Deutsch aus dem Englischen ableitet.
 {voice_block}
 Prüfliste, jeder Treffer kostet Punkte:

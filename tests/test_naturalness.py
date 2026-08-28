@@ -113,3 +113,73 @@ def test_rewrite_note_carries_findings():
                             ["Glaube als Fachwort: \"Glaube:\""], ["ein langer Satz"])
     assert "Note 4 von 10" in note and "Glaube: sagt niemand" in note
     assert "Formeln" in note and "aufteilen" in note
+
+
+def test_reader_prompt_carries_material_and_voice():
+    p = nat.reader_prompt("Der Text.", material="Thema: Forecast\nKurzbeschreibung: Annahmen",
+                          voice="So schreibt Robert: kurz.")
+    assert "Der Text." in p
+    assert "Thema: Forecast" in p and "Kurzbeschreibung: Annahmen" in p
+    assert "So schreibt Robert" in p
+    assert '"befunde"' in p
+    assert "{max_findings}" not in p and "{voice_block}" not in p
+
+
+def test_reader_prompt_without_voice_has_no_massstab_block():
+    p = nat.reader_prompt("Der Text.")
+    assert "MASSSTAB" not in p
+    assert "Der Text." in p
+
+
+def test_parse_findings_reads_json_and_caps_at_six():
+    raw = 'Hier: {"befunde": [' + ",".join(
+        f'{{"art": "schablone", "zitat": "Satz {i}.", "grund": "g", "vorschlag": "v"}}'
+        for i in range(8)) + ']} danke'
+    out = nat.parse_findings(raw)
+    assert len(out) == nat.MAX_FINDINGS
+    assert out[0] == {"art": "schablone", "zitat": "Satz 0.", "grund": "g", "vorschlag": "v"}
+
+
+def test_parse_findings_none_on_garbage_and_empty_list_on_clean():
+    assert nat.parse_findings("kein json") is None
+    assert nat.parse_findings('{"note": 7}') is None
+    assert nat.parse_findings('{"befunde": []}') == []
+
+
+def test_parse_findings_drops_quotes_missing_from_text():
+    text = "Stimmen sie nicht. Und das ist in Ordnung.\n\nDas Problem sitzt in den Annahmen."
+    raw = ('{"befunde": ['
+           '{"art": "schriftdeutsch", "zitat": "Stimmen sie nicht.", "grund": "Verb vorn", "vorschlag": "Tun sie nicht."},'
+           '{"art": "fachlogik", "zitat": "Das steht nirgends im Text.", "grund": "x", "vorschlag": "y"},'
+           '{"art": "kohaerenz", "zitat": "Und das ist in Ordnung. | Das Problem sitzt in den Annahmen.", "grund": "x", "vorschlag": "y"},'
+           '{"art": "kohaerenz", "zitat": "Und das ist in Ordnung. | Frei erfunden.", "grund": "x", "vorschlag": "y"}'
+           ']}')
+    out = nat.parse_findings(raw, text)
+    assert [f["art"] for f in out] == ["schriftdeutsch", "kohaerenz"]
+
+
+def test_parse_findings_unknown_art_becomes_sonstiges_and_needs_quote():
+    raw = '{"befunde": [{"art": "stil", "zitat": "A.", "grund": "g"}, {"art": "schablone", "zitat": "", "grund": "g"}]}'
+    out = nat.parse_findings(raw)
+    assert out == [{"art": "sonstiges", "zitat": "A.", "grund": "g", "vorschlag": ""}]
+
+
+def test_deterministic_findings_wrap_tics_and_long_sentences():
+    long = " ".join(["Wort"] * 30) + "."
+    text = "Das ist kein Planungsproblem. Das ist ein Strukturproblem.\n" + long
+    out = nat.deterministic_findings(text)
+    arten = [f["art"] for f in out]
+    assert "schablone" in arten and "satzlaenge" in arten
+    schablone = next(f for f in out if f["art"] == "schablone")
+    assert schablone["zitat"].startswith("kein Planungsproblem")
+    assert '"' not in schablone["zitat"]
+
+
+def test_findings_note_lists_each_finding_with_quote():
+    note = nat.findings_note([
+        {"art": "schriftdeutsch", "zitat": "Stimmen sie nicht.", "grund": "Verb vorn", "vorschlag": "Tun sie nicht."},
+        {"art": "satzlaenge", "zitat": "Langer Satz", "grund": "ueber 25 Woerter", "vorschlag": ""},
+    ])
+    assert '[schriftdeutsch] "Stimmen sie nicht.": Verb vorn Vorschlag: Tun sie nicht.' in note
+    assert '[satzlaenge] "Langer Satz": ueber 25 Woerter' in note
+    assert note.count("\n") == 1
