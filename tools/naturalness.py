@@ -16,11 +16,13 @@ LLM-Stil-Judge als zweite Detektionsstufe." Genau das hier:
    nicht wiederholen duerfen (phrases), Schachtelsaetze.
 2. Leser (READER_PROMPT hier, Aufruf in post_scorer._reader_loop): sieben
    Fragen mit Zitatpflicht, Befundliste statt Note. Befunde werden
-   chirurgisch repariert; nach zwei Runden mit Restbefund wird der Text
-   verworfen. Stand 28.08.2026, Spec docs/superpowers/specs/
-   2026-08-28-leser-gate-design.md. Der Lektor mit Note 1-10 (24.08. bis
-   28.08.) mittelte Defekte weg: ein kaputter Opener plus neun saubere
-   Absaetze ergab eine 7.
+   chirurgisch repariert; verworfen wird ein Text nur bei harten
+   Restbefunden (Sinnfehler, HARD_ARTEN) oder Textwache, weiche Reste
+   bleiben mit Log stehen, und eine Reparatur, die harte Befunde erst
+   einbaut, faellt auf das Original zurueck. Stand 28.08.2026, Spec
+   docs/superpowers/specs/2026-08-28-leser-gate-design.md. Der Lektor mit
+   Note 1-10 (24.08. bis 28.08.) mittelte Defekte weg: ein kaputter Opener
+   plus neun saubere Absaetze ergab eine 7.
 
 Massstab ist der Vault-Kontext "00 Kontext/Schreibstil": klar, direkt,
 sachlich, kein Beratersprech, kein unnoetiges Englisch, kein Pathos, keine
@@ -61,6 +63,16 @@ TICS = [
      re.compile(r"(?:In|Aus) (?:Einführungsprojekten|Projekten|Schulungen|Supportfällen)"
                 r"[^.:,]{0,25}?(?:sehe|erlebe|höre) ich"
                 r"|Was ich (?:in|bei) [^.:,]{3,40}(?:sehe|erlebe|höre)")),
+    # Abschluss-Review 28.08.2026: Leser-Frage 5 nimmt seit der Verengung auf
+    # Strukturformeln die einzelne Antithese ausdruecklich aus, und keine
+    # Regex fing die nackte Form. Damit blieb der Grunddefekt der Spec
+    # ("baut kein Modell, sondern eine persoenliche Ueberzeugung") ungefangen.
+    # Der Ausschluss von "sondern weil/dass/damit" haelt Kulles echte
+    # Kausalkonstruktion draussen (siehe VOICE_TICS, sie ist kein Tic).
+    ("kein A, sondern B (Antithese)",
+     re.compile(r"\bkein(?:e|en|em|er|es)? [^.,;:!?\n]{2,40}, sondern "
+                r"(?!weil\b|dass\b|damit\b)(?:ein|eine|einen|einem|einer)? ?"
+                r"[^.,;:!?\n]{2,60}", re.I)),
 ]
 
 # Formeln, die NUR fuer ein Konto eine Formel sind. "Nicht weil ..., sondern
@@ -248,6 +260,18 @@ def _quote_in_text(zitat: str, text: str) -> bool:
     return all(_norm(part) in t for part in zitat.split(" | ") if _norm(part))
 
 
+QUOTE_CAP = 200
+
+
+def _cap_quote(zitat: str) -> str:
+    """Jeden Zitat-Teil einzeln auf QUOTE_CAP kappen. Abschluss-Review
+    28.08.2026: ein kohaerenz-Zitat traegt zwei Passagen, getrennt durch
+    " | ", und ist zusammen oft laenger als 200 Zeichen. Der Schnitt ueber
+    das ganze Zitat kappte mitten im Wort und die zweite Passage weg; der
+    Reparierer fand die Stelle dann nicht mehr."""
+    return " | ".join(part[:QUOTE_CAP] for part in zitat.split(" | "))
+
+
 def parse_findings(raw: str, text: str | None = None) -> list[dict] | None:
     """Befundliste aus der Leser-Antwort. None bei unlesbarer Antwort (dann
     kein Urteil, der Text bleibt). Befunde ohne Zitat oder mit Zitat, das
@@ -272,7 +296,7 @@ def parse_findings(raw: str, text: str | None = None) -> list[dict] | None:
         art = str(it.get("art") or "").strip().lower()
         out.append({
             "art": art if art in FINDING_ARTEN else "sonstiges",
-            "zitat": zitat[:200],
+            "zitat": _cap_quote(zitat),
             "grund": str(it.get("grund") or "").strip()[:200],
             "vorschlag": str(it.get("vorschlag") or "").strip()[:300],
         })
@@ -306,21 +330,30 @@ def findings_note(findings: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# Kuerzester Kern, der eine Dublette belegen darf. Abschluss-Review
+# 28.08.2026: das Leser-Zitat "Also," (muendlich) enthielt als Teilstring
+# einen 130 Zeichen langen satzlaenge-Befund und unterdrueckte ihn.
+DUP_MIN_KERN = 25
+
+
 def merge_findings(llm: list[dict] | None, det: list[dict]) -> list[dict]:
     """Leser-Befunde plus deterministische, ohne Dubletten: trifft eine Regex
     dieselbe Passage wie der Leser (ein Zitat enthaelt das andere), zaehlt
     sie nicht doppelt. Diaet-Messung 28.08.2026: 3 von 8 Befunden eines
-    Posts waren solche Dubletten, die Reparatur sah die Stelle zweimal."""
+    Posts waren solche Dubletten, die Reparatur sah die Stelle zweimal.
+    Dublette nur bei gleicher Art und ab DUP_MIN_KERN Zeichen im kuerzeren
+    Kern: ein kurzes Zitat steckt sonst in jedem langen Satz."""
     def kern(zitat: str) -> str:
         # Satzzeichen an den Raendern weg: der Leser zitiert "X." und die
         # Regex "kein Y. X" ohne Punkt, gemeint ist dieselbe Stelle.
         return _norm(zitat).strip(".,;:!?\"'„“ ")
 
     out = list(llm or [])
-    seen = [kern(f["zitat"]) for f in out]
+    seen = [(f["art"], kern(f["zitat"])) for f in out]
     for f in det:
         z = kern(f["zitat"])
-        if z and any(s and (z in s or s in z) for s in seen):
+        if z and any(art == f["art"] and s and min(len(z), len(s)) >= DUP_MIN_KERN
+                     and (z in s or s in z) for art, s in seen):
             continue
         out.append(f)
     return out

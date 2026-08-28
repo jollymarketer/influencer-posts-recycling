@@ -4,8 +4,11 @@ Anlass (Richard 28.08.2026): 51 LinkedIn-Beitraege stehen als Entwurf im
 Plan, geschrieben mit Prompt-Staenden vom 20. bis 27.08. Richard liest keine
 Beitraege ("dafuer werde ich nicht bezahlt"). Der Bestand wird deshalb
 maschinell gelesen (Task 2, --report) und bereinigt (Task 6, --write):
-Leser plus Reparatur je Zeile, Restbefund leert den Text, der Normal-Lauf
-fuellt nach. Spec: docs/superpowers/specs/2026-08-28-leser-gate-design.md.
+Leser plus Reparatur je Zeile. Geleert wird nur bei harten Restbefunden
+(Sinnfehler) oder Textwache, der Normal-Lauf fuellt diese Zeilen nach;
+weiche Reste bleiben mit Log stehen, und eine Reparatur, die harte Befunde
+erst einbaut, faellt auf das Original zurueck.
+Spec: docs/superpowers/specs/2026-08-28-leser-gate-design.md.
 
 Reine Funktionen hier, Netz und Modell im Runner run_review_backfill.py.
 Der Modellaufruf wird als Funktion injiziert, damit Tests ohne Netz laufen.
@@ -53,7 +56,10 @@ def read_row(row: dict, cfg, read_fn) -> dict:
     voice = getattr(cfg, "ACCOUNT_VOICES", {}).get(row["kanal"], "")
     llm = read_fn(text, material_for(row), voice)
     det = naturalness.deterministic_findings(text, voice)
-    befunde = (llm or []) + det
+    # merge_findings wie in der Pipeline (post_scorer._all_findings), sonst
+    # zaehlen --report und scripts/measure_diet.py Dubletten mit, die der
+    # Loop laengst verwirft (Abschluss-Review 28.08.2026).
+    befunde = naturalness.merge_findings(llm, det)
     if llm is None and not det:
         verdikt = "kein_urteil"
     else:

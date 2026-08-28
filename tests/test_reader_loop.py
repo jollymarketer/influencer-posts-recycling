@@ -17,7 +17,8 @@ CLEAN = '{"befunde": []}'
 
 
 def _run(bodies):
-    """bodies: Modellantworten in Aufrufreihenfolge (ohne Teile-Call).
+    """bodies: Modellantworten in Aufrufreihenfolge (ohne Teile-Call). Eine
+    Ausnahme als Eintrag wird geworfen statt geantwortet (Leser-Ausfall).
     Gibt (de_draft, gesendete Prompts) zurueck."""
     captured, bodies = [], list(bodies)
 
@@ -28,7 +29,10 @@ def _run(bodies):
             resp.content = [MagicMock(text="===SOUNDBYTE===\nx")]
             return resp
         captured.append(content)
-        resp.content = [MagicMock(text=bodies.pop(0))]
+        body = bodies.pop(0)
+        if isinstance(body, Exception):
+            raise body
+        resp.content = [MagicMock(text=body)]
         return resp
 
     with patch("tools.post_scorer.client") as c, \
@@ -96,3 +100,23 @@ def test_soft_residue_after_two_rounds_keeps_text():
     de, sent = _run(["===POST===\n" + GOOD, SOFT, GOOD, SOFT, GOOD, SOFT])
     assert de.startswith(GOOD)
     assert len(sent) == 6
+
+
+def test_repair_introducing_hard_finding_falls_back_to_original():
+    # Bestandslauf 28.08.2026: 5 von 7 Leerungen kamen von harten Befunden,
+    # die erst die Reparatur eingebaut hatte. Eingang nur weich, also bleibt
+    # das Original stehen statt verworfen zu werden.
+    de, sent = _run(["===POST===\n" + GOOD, SOFT, BAD, FIND, BAD, FIND])
+    assert de.startswith(GOOD)
+    assert not de.startswith(BAD)
+    assert len(sent) == 6
+
+
+def test_reader_outage_discards_text_and_counts_failure():
+    # Fail-closed: ohne Urteil geht kein Text zum Kunden, der Zaehler traegt
+    # den Ausfall in die Schlusszeile der Runner.
+    vorher = ps.READER_FAILURES
+    de, sent = _run(["===POST===\n" + GOOD, RuntimeError("API weg")])
+    assert de == ""
+    assert ps.READER_FAILURES == vorher + 1
+    assert len(sent) == 2

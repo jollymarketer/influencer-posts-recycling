@@ -57,6 +57,16 @@ def test_voice_tics_only_bind_to_the_named_speaker():
         ["Fremdstimme nicht weil, sondern weil (Kulle)"]
 
 
+def test_tic_hits_flags_the_bare_antithesis_but_not_the_causal_pair():
+    # Grunddefekt der Spec: Leser-Frage 5 nimmt die einzelne Antithese aus,
+    # also faengt sie die Regex. "Nicht weil ..., sondern weil ..." ist
+    # Kulles echte Kausalkonstruktion und bleibt draussen.
+    treffer = nat.tic_hits("Wer den Forecast einmal aufbaut, baut kein Modell, "
+                           "sondern eine persoenliche Ueberzeugung.")
+    assert [h.split(":")[0] for h in treffer] == ["kein A, sondern B (Antithese)"]
+    assert nat.tic_hits("Nicht weil kein Fit da ist, sondern weil das Timing nicht passt.") == []
+
+
 def test_tic_hits_clean_text():
     text = ("Die zweite Gesellschaft kostet so viel Einrichtung wie die erste, "
             "weil der Kontenrahmen jedes Mal neu verhandelt wird. Das lässt sich "
@@ -135,6 +145,22 @@ def test_parse_findings_drops_quotes_missing_from_text():
     assert [f["art"] for f in out] == ["schriftdeutsch", "kohaerenz"]
 
 
+def test_parse_findings_caps_each_quote_part_not_the_whole_quote():
+    # kohaerenz zitiert zwei Passagen, getrennt durch " | "; ein Schnitt bei
+    # 200 Zeichen ueber das ganze Zitat kappte die zweite Stelle weg und der
+    # Reparierer fand sie nicht mehr.
+    a, b = "A" * 150, "B" * 150
+    text = a + "\n\n" + b
+    raw = ('{"befunde": [{"art": "kohaerenz", "zitat": "' + a + " | " + b
+           + '", "grund": "g", "vorschlag": "v"}]}')
+    out = nat.parse_findings(raw, text)
+    assert out[0]["zitat"] == a + " | " + b
+    lang = "C" * 260
+    einzeln = nat.parse_findings(
+        '{"befunde": [{"art": "schablone", "zitat": "' + lang + '", "grund": "g", "vorschlag": "v"}]}')
+    assert einzeln[0]["zitat"] == "C" * 200
+
+
 def test_parse_findings_unknown_art_becomes_sonstiges_and_needs_quote():
     raw = '{"befunde": [{"art": "stil", "zitat": "A.", "grund": "g"}, {"art": "schablone", "zitat": "", "grund": "g"}]}'
     out = nat.parse_findings(raw)
@@ -180,6 +206,19 @@ def test_merge_findings_drops_regex_duplicates_of_reader_quotes():
     assert [f["grund"] for f in out] == ["g", "lang"]
     assert nat.merge_findings(None, det) == det
     assert nat.merge_findings([], []) == []
+
+
+def test_merge_findings_keeps_long_finding_next_to_a_short_quote():
+    # Abschluss-Review 28.08.2026: das Leser-Zitat "Also," steckte als
+    # Teilstring in einem 130 Zeichen langen satzlaenge-Befund und
+    # unterdrueckte ihn. Dublette gilt nur bei gleicher Art ab 25 Zeichen.
+    lang = "Also, das ist ein sehr langer Satz mit vielen Woertern, der die Grenze " \
+           "von fuenfundzwanzig Woertern deutlich ueberschreitet und geteilt gehoert."
+    llm = [{"art": "muendlich", "zitat": "Also,", "grund": "Fuellwort", "vorschlag": ""}]
+    det = [{"art": "satzlaenge", "zitat": lang, "grund": "ueber 25 Woerter",
+            "vorschlag": "in zwei Saetze teilen"}]
+    out = nat.merge_findings(llm, det)
+    assert [f["art"] for f in out] == ["muendlich", "satzlaenge"]
 
 
 def test_hard_arten_are_the_sense_errors():

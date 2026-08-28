@@ -43,6 +43,7 @@ from tools.monthly_plan import (
     select,
 )
 from tools import content_matrix as cm
+from tools import post_scorer
 from tools.post_scorer import (
     normalize_infographic_type,
     parse_infographic_type,
@@ -178,6 +179,14 @@ def _choose_format(cfg, material: str, fmts: list, used_assets: list):
     return fmt, cm.asset_for_format(fmt, cfg, used_assets)
 
 
+def _reader_failures_line() -> None:
+    """Leser-Ausfaelle des Laufs in der Schlusszeile. Ein Ausfall verwirft den
+    Text (fail-closed, post_scorer.ReaderUnavailable); ohne diese Zeile saehe
+    niemand den Unterschied zwischen "nichts zu texten" und "Leser weg"."""
+    if post_scorer.READER_FAILURES:
+        print(f"Leser-Ausfaelle: {post_scorer.READER_FAILURES}", flush=True)
+
+
 def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False,
               only_page_ids: set | None = None) -> dict:
     """Textet Plan-Zeilen der genannten Monate, ohne Termine oder Kanaele
@@ -266,6 +275,7 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False,
                   f"{k['titel'][:55]}", flush=True)
         else:
             print(f"  Notion-Fehler {resp.status_code}: {resp.text[:160]}")
+    _reader_failures_line()
     return {"zeilen": len(kandidaten), "geschrieben": geschrieben}
 
 
@@ -353,6 +363,7 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
     ohne = [t for t in topics if t.page_id not in {s.topic["page_id"] for s in belegt}]
     for t in ohne:
         print(f"  ohne Termin [{t.axis}] {t.title[:70]}")
+    _reader_failures_line()
     return {"belegt": len(belegt), "gefuellt": gefuellt,
             "neu_geschrieben": neu_geschrieben, "ohne_termin": len(ohne)}
 

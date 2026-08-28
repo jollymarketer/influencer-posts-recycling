@@ -243,3 +243,38 @@ SWOT-Konto: Anthropic-Key des Recycling-Repos (kein Mandanten-Key fuer Text).
 - Werners "Kurze Hauptsaetze" bleiben im Profil; die Schriftdeutsch-Regel
   entscheidet nur die Syntax, nicht die Satzlaenge. Ob der Ton darunter
   leidet, zeigt Schritt 2.
+
+## 9. Nachtrag 28.08.2026 abends
+
+Drei Abweichungen und Messungen aus der Umsetzung, jede mit Grund. Der Text
+oben bleibt als Entwurfsstand stehen; hier gilt der Nachtrag.
+
+1. B.4 (Restbefund verwirft) gilt nicht mehr. Verworfen wird ein Text nur
+   noch, wenn harte Befunde (Sinnfehler: schriftdeutsch, kohaerenz, deckung,
+   fachlogik, `naturalness.HARD_ARTEN`) oder die Textwache offen bleiben.
+   Weiche Reste (Schablone, Fremdstimme, Muendlich, Satzlaenge) bleiben mit
+   Log stehen: der Trockenlauf verwarf 3 von 3 Texten, weil der Reparierer
+   eine Formel durch die naechste ersetzte und der Leser sie wiederfand.
+   Zweite Aenderung nach dem Bestandslauf: hatte der Eingangstext keinen
+   harten Befund und traegt erst die Reparatur einen, gilt wieder das
+   Original. Beleg: 5 von 7 Leerungen im Bestandslauf gingen auf harte
+   Befunde zurueck, die der Eingangstext nicht hatte. Der Loop hielt nur den
+   letzten Stand und entschied am Ende ueber ihn, damit war die Reparatur
+   der einzige Grund fuer die Leerung.
+2. Erfolgskriterium aus Abschnitt 6, Schritt 2 (Befunde je Post unter der
+   Basislinie) ist gemessen und NICHT erfuellt: ALT 4,12 Befunde je Post,
+   NEU 5,62, n = 8, dieselben acht Themen, derselbe Leser mit demselben
+   Prompt. Der DE-Prompt schrumpfte dabei von 20.001 auf 16.739 Zeichen.
+   Die Zunahme sitzt bei Schablone (14 auf 22) und stammt aus dem
+   Genre-Prior des Modells, nicht aus Beispielen im Prompt. Ruling: der Hebel
+   ist der Loop (Leser plus chirurgische Reparatur), nicht die Prompt-Diaet.
+   Die Diaet bleibt, weil sie Widersprueche und Wortlaut-Leaks entfernt hat;
+   eine dritte Messrunde wird dafuer nicht bezahlt.
+3. Der Leser laeuft mit Structured Output (`output_config` mit
+   `json_schema`, `naturalness.READER_SCHEMA`, max_tokens 4096) statt mit
+   "Antworte NUR mit JSON". Sonde 28.08.2026: Sonnet 4.6 schrieb vorher eine
+   Prosa-Analyse samt Volltext-Zitat vor das JSON und lief bei 1024 Tokens
+   ins Limit, 7 von 12 Antworten kamen ohne JSON zurueck. Prefill gibt es
+   auf diesem Modell nicht mehr. Faellt der Leser aus, ist das kein Urteil
+   mehr, sondern ein Ausfall: `ReaderUnavailable`, der Text wird verworfen
+   (fail-closed) und `post_scorer.READER_FAILURES` zaehlt ihn.

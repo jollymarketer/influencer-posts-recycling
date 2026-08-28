@@ -135,8 +135,9 @@ def write_post(titel: str, kurz: str, kanal: str, achse: str,
                avoid_phrases: list[str] | None = None,
                datum: str = "", asset: dict | None = None) -> dict:
     """Ein Beitrag durch die volle Maschinerie: Format-Struktur, Persona,
-    Kontostimme, sanitize + Textwache + grammar_check + Lektor (in
-    generate_post_and_image_prompt). band "kurz" schaltet auf die Kurzform,
+    Kontostimme, sanitize + Textwache + grammar_check + Leser mit Reparatur
+    (in generate_post_and_image_prompt; verworfen wird nur bei harten
+    Restbefunden oder Textwache). band "kurz" schaltet auf die Kurzform,
     avoid_phrases sperrt im Lauf verbrauchte Formulierungen.
     asset ist der Beleg fuer die Asset-Formate (CaseProof/Magnet/Offer): er
     geht als Whitelist-Block in den Prompt, der Aufrufer prueft danach mit

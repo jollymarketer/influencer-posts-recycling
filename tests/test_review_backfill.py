@@ -2,8 +2,11 @@
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+from tools import post_scorer as ps
 from tools import review_backfill as rb
 
 CTA = "30 Minuten mit unseren Planungs- und Konsolidierungsexperten, kostenfrei: https://www.swot.de/demo-buchen/"
@@ -131,6 +134,16 @@ def test_decide_row_cleared_on_residue_or_hard_violation():
     out = rb.decide_row(_row2(long), _cfg(), lambda *a: calls.append(1) or long)
     assert out["aktion"] == "geleert" and "Zeichen" in out["grund"]
     assert calls == []
+
+
+def test_decide_row_lets_a_reader_outage_through():
+    # write() faengt die Ausnahme je Zeile und zaehlt sie als fehler; die
+    # Zeile bleibt unangetastet, statt ungelesen geleert zu werden.
+    def _aus(*a):
+        raise ps.ReaderUnavailable("API weg")
+
+    with pytest.raises(ps.ReaderUnavailable):
+        rb.decide_row(_row2("Kaputt.\n\n" + CTA), _cfg(), _aus)
 
 
 def test_notion_props_for_text_and_for_clearing():

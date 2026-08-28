@@ -47,6 +47,29 @@ def test_without_en_draft_parts_come_from_second_call():
     assert "Body." in calls[1][1]
 
 
+def test_parts_call_sees_the_text_before_the_cta():
+    # Spec Abschnitt 4: Teile-Call vor dem CTA. Sonst zieht Haiku das
+    # Soundbyte aus einem Text, der mit der Buchungszeile endet.
+    calls = []
+
+    def fake_create(**kw):
+        content = kw["messages"][0]["content"]
+        calls.append(content)
+        resp = MagicMock()
+        resp.content = [MagicMock(text=PARTS if "BEITRAG:" in content else "===POST===\nBody.")]
+        return resp
+
+    with patch("tools.post_scorer.client") as c, \
+         patch.dict(ps._cfg.FEATURES, {"grammar_check": False, "en_draft": False,
+                                       "naturalness_check": False}), \
+         patch.object(ps._cfg, "CTA_DE", "TESTCTA", create=True):
+        c.messages.create.side_effect = fake_create
+        de, *_ = ps.generate_post_and_image_prompt(POST, "Opinion")
+    teile = next(p for p in calls if p.startswith("Aus dem folgenden fertigen LinkedIn-Beitrag"))
+    assert "TESTCTA" not in teile
+    assert de.endswith("TESTCTA")
+
+
 def test_with_en_draft_no_parts_call():
     calls = []
 

@@ -153,7 +153,7 @@ Inhaltliche Regeln:
 - Einen eigenen, originellen Gedanken einbauen, den der Quell-Post nicht hat - ohne ihn als solchen zu benennen
 - Haltung eines erfahrenen Praktikers: operative Details, Schrittfolgen, typische Stolpersteine, KPIs
 - Genau EIN konkretes Artefakt liefern, das man speichern will: nummerierte Schritte, eine kurze Checkliste, ein benanntes Framework oder eine harte Zahl. Ob es als abgesetztes Element oder im Fliesstext steht, sagt die Post-Struktur unten. In Story und Opinion ist es eine einzelne, klar benannte Regel oder Zahl im Fliesstext, die haengen bleibt
-- Eine falsche Praxis oder ein Feindbild explizit und hart benennen und sagen, was stattdessen zu tun ist. Es braucht eine klare Gegenposition, gegen die jemand argumentieren kann; ein Absatz endet mit einem Sachverhalt, einer Zahl oder einem naechsten Schritt, nicht mit einer Umdeutung
+- Eine falsche Praxis oder ein Feindbild explizit und hart benennen und sagen, was stattdessen zu tun ist. Es braucht eine klare Gegenposition, gegen die jemand argumentieren kann
 
 {assets_block}
 {structure_block}
@@ -1486,10 +1486,24 @@ def _finish_draft(de_draft: str, cap: int) -> str:
 # Leser-Loop (Richard 28.08.2026, Spec docs/superpowers/specs/
 # 2026-08-28-leser-gate-design.md). Ersetzt Lektor-Note plus Vollneulauf:
 # der Leser liefert Befunde mit Zitat, die Reparatur aendert nur die
-# zitierten Passagen, nach MAX_FIX_ROUNDS Reparaturen mit Restbefund wird
-# der Text verworfen (fail-closed, wie CAPS und Ueberlaenge). Kein Lese-
-# Schritt bei Jolly: was hier durchkommt, sieht der Kunde.
+# zitierten Passagen. Nach MAX_FIX_ROUNDS Reparaturen verwerfen nur harte
+# Restbefunde (Sinnfehler, naturalness.HARD_ARTEN) oder die Textwache den
+# Text (fail-closed, wie CAPS und Ueberlaenge); weiche Reste bleiben mit Log
+# stehen, und hat erst die Reparatur den harten Befund eingebaut, gilt wieder
+# das Original. Kein Lese-Schritt bei Jolly: was hier durchkommt, sieht der
+# Kunde.
 MAX_FIX_ROUNDS = 2
+
+# Zaehler der Leser-Ausfaelle dieses Prozesses (Abschluss-Review 28.08.2026):
+# eine Leser-Ausnahme verwarf den Text frueher nicht, sie liess ihn ungelesen
+# durch. Jetzt fail-closed; die Runner nennen den Zaehler in der Schlusszeile.
+READER_FAILURES = 0
+
+
+class ReaderUnavailable(Exception):
+    """Der Leser antwortet nicht (API-Fehler). Kein Urteil ueber den Text,
+    also darf er nicht ungelesen weiterlaufen: der Aufrufer verwirft ihn."""
+
 
 FIX_PROMPT = """Du korrigierst einen deutschen LinkedIn-Beitrag chirurgisch. Ein Lektor hat Befunde mit woertlichen Zitaten geliefert. Aendere NUR die zitierten Passagen, jede andere Zeile bleibt zeichengenau erhalten.
 
@@ -1509,7 +1523,9 @@ TEXT:
 
 
 def _read_findings(text: str, voice: str = "", material: str = "") -> list[dict] | None:
-    """Befunde des Lesers (Sonnet). None bei Fehler oder unlesbarer Antwort.
+    """Befunde des Lesers (Sonnet). None nur bei unlesbarer Antwort (dann kein
+    Urteil, der Text bleibt). Ein Fehler des Calls wirft ReaderUnavailable:
+    ungelesen darf kein Text zum Kunden.
     Structured Output (Sonde 28.08.2026): ohne Schema schrieb das Modell erst
     eine Prosa-Analyse und lief bei 1024 Tokens ins Limit."""
     try:
@@ -1521,10 +1537,10 @@ def _read_findings(text: str, voice: str = "", material: str = "") -> list[dict]
             messages=[{"role": "user", "content": naturalness.reader_prompt(
                 text, material=material, voice=voice)}],
         )
-        return naturalness.parse_findings(resp.content[0].text, text)
+        raw = resp.content[0].text
     except Exception as e:
-        print(f"  Leser fehlgeschlagen (nicht kritisch): {e}", flush=True)
-        return None
+        raise ReaderUnavailable(str(e))
+    return naturalness.parse_findings(raw, text)
 
 
 def _all_findings(text: str, voice: str = "", material: str = "") -> list[dict] | None:
@@ -1566,14 +1582,19 @@ def _short(findings: list[dict]) -> str:
 
 
 def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -> str:
-    """Leser, bis zu MAX_FIX_ROUNDS chirurgische Reparaturen, Leser. Gibt ""
-    zurueck, wenn danach harte Befunde (naturalness.HARD_ARTEN) bleiben;
+    """Leser, bis zu MAX_FIX_ROUNDS chirurgische Reparaturen, Leser. Verworfen
+    ("") wird nur, wenn schon der Eingangstext einen harten Befund
+    (naturalness.HARD_ARTEN) trug und der eine Runde spaeter noch da ist.
+    Hat erst die Reparatur harte Befunde eingebaut, gilt wieder das Original;
     weiche Reste bleiben mit Log stehen. Ohne Urteil des Lesers bleibt der
-    Text, wie er ist."""
+    Text, wie er ist. Faellt der Leser aus, wirft er ReaderUnavailable nach
+    oben durch: ungelesen geht kein Text zum Kunden."""
+    original = de_draft
     findings = _all_findings(de_draft, voice, material)
     if findings is None:
         print("  Leser: kein Urteil, Text bleibt", flush=True)
         return de_draft
+    erste_harte = {f["art"] for f in findings} & set(naturalness.HARD_ARTEN)
     rounds = 0
     while findings and rounds < MAX_FIX_ROUNDS:
         rounds += 1
@@ -1588,6 +1609,14 @@ def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -
             return de_draft
     hart = [f for f in findings if f["art"] in naturalness.HARD_ARTEN]
     if hart:
+        # Bestandslauf 28.08.2026: 5 von 7 Leerungen gingen auf harte Befunde
+        # zurueck, die der Eingangstext nicht hatte, sondern die Reparatur
+        # eingebaut hatte. Ohne harten Eingangsbefund ist das Original die
+        # bessere Fassung, mit einem ist der Text verworfen (fail-closed).
+        if not erste_harte:
+            print(f"  Leser: Reparatur hat den Text verschlechtert, "
+                  f"Original bleibt: {_short(hart)}", flush=True)
+            return original
         print(f"  Leser: Text verworfen, harter Restbefund: {_short(hart)}", flush=True)
         return ""
     if findings:
@@ -1674,8 +1703,11 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     verstoesst (Grossbuchstaben-Block, Ueberlaenge): lieber keine Zeile als
     eine, die der Kunde zurueckweist.
     Mit FEATURES["naturalness_check"] liest danach der Leser (tools/naturalness)
-    den Text; Befunde werden chirurgisch repariert (hoechstens MAX_FIX_ROUNDS),
-    bleibt ein Befund, ist de_draft "".
+    den Text; Befunde werden chirurgisch repariert (hoechstens MAX_FIX_ROUNDS).
+    de_draft ist danach "", wenn harte Restbefunde (Sinnfehler) aus dem
+    Eingangstext bleiben oder der Leser ausfaellt (fail-closed, Zaehler
+    READER_FAILURES); hat erst die Reparatur harte Befunde eingebaut, steht
+    wieder das Original, weiche Reste bleiben mit Log stehen.
     avoid_phrases: im Lauf schon verbrauchte Formulierungen (siehe
     naturalness.phrases), damit sich Konten nicht selbst zitieren.
     """
@@ -1703,12 +1735,16 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
 
     de_draft = _finish_draft(de_draft, cap)
     if de_draft and _cfg.FEATURES.get("naturalness_check"):
-        de_draft = _reader_loop(
-            de_draft, cap,
-            voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
-            material=post["post_text"][:1500])
-    de_draft = enforce_magnet_cta(de_draft, post_format, asset)
-    de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
+        try:
+            de_draft = _reader_loop(
+                de_draft, cap,
+                voice=persona_voice_de or _cfg.TOKENS["PERSONA_DE"],
+                material=post["post_text"][:1500])
+        except ReaderUnavailable as e:
+            global READER_FAILURES
+            READER_FAILURES += 1
+            print(f"  Leser ausgefallen, Text verworfen (fail-closed): {e}", flush=True)
+            de_draft = ""
 
     if _cfg.FEATURES.get("en_draft", True):
         en_resp = client.messages.create(
@@ -1723,8 +1759,13 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
     else:
         en_draft = ""
         # Teile aus dem fertigen Text, nicht mehr aus dem Schreib-Prompt.
+        # Vor dem CTA (Spec Abschnitt 4): sonst zieht Haiku das Soundbyte aus
+        # einem Text, der mit der Buchungszeile endet.
         image_parts = (_parts_call(de_draft, recent_infographic_types)
                        if de_draft else dict(_EMPTY_PARTS))
+
+    de_draft = enforce_magnet_cta(de_draft, post_format, asset)
+    de_draft = _append_cta(de_draft, blanket_cta(post_format, "CTA_DE", persona_id))
 
     sound_byte = sanitize_generated_text(image_parts["soundbyte"])
     kontext = image_parts["kontext"]

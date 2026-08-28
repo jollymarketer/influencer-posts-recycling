@@ -535,9 +535,11 @@ FEATURES = {
     "en_draft": False,
     "grammar_check": True,
     # Leser hinter der Textwache (Richard 28.08.2026, vorher Lektor-Note seit
-    # 24.08.): Befunde mit Zitat, chirurgische Reparatur, Verwerfen bei
-    # Restbefund. Ein Sonnet-Call je Post, je Reparatur zwei mehr. Siehe
-    # tools/naturalness.py und post_scorer._reader_loop.
+    # 24.08.): Befunde mit Zitat, chirurgische Reparatur, Verwerfen nur bei
+    # harten Restbefunden (Sinnfehler) oder Textwache; weiche Reste bleiben
+    # mit Log stehen, eine Reparatur, die harte Befunde einbaut, faellt auf
+    # das Original zurueck. Ein Sonnet-Call je Post, je Reparatur zwei mehr.
+    # Siehe tools/naturalness.py und post_scorer._reader_loop.
     "naturalness_check": True,
     # Kein Slate- und kein Winner-Pfad, siehe Modul-Docstring.
     "slate_mode": False,

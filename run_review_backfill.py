@@ -7,16 +7,20 @@ Leser aus tools/naturalness, schreibt nichts nach Notion und legt Bericht
 (.md) und Rohdaten (.json) im Ausgabeordner ab. Kosten: ein Sonnet-Call je
 Zeile, bei 50 Zeilen rund 1 EUR.
 
-    CLIENT=swot python run_review_backfill.py --write --out <Ordner> [--refill-passes 3]
+    CLIENT=swot python run_review_backfill.py --write --out <Ordner> [--refill-passes N]
 
 --write bereinigt jede Entwurf-Zeile: Leser plus chirurgische Reparatur
 (post_scorer._reader_loop), reparierte Texte gehen mit CTA zurueck nach
-Notion, Restbefund oder Ueberlaenge leeren den Post-Text. Danach fuellt
+Notion. Geleert wird nur bei harten Restbefunden (Sinnfehler) oder
+Ueberlaenge; weiche Reste bleiben mit Log stehen, und eine Reparatur, die
+harte Befunde erst einbaut, faellt auf das Original zurueck. Danach fuellt
 run_plan_fill.text_fill die geleerten Zeilen der betroffenen Monate mit dem
 neuen Prompt und dem Leser nach, bis zu --refill-passes Durchgaenge (jeder
-Durchgang textet nur Zeilen ohne Text). Vor dem ersten Schreiben liegt ein
-JSON-Backup aller Post-Texte im Ausgabeordner. "Text freigegeben" und hoeher
-wird nie angefasst. Kosten: rund 3 EUR Bereinigung plus 1-2 EUR Nachfuellen.
+Durchgang textet nur Zeilen ohne Text). Default 0: das Nachfuellen kostet
+Modell-Budget und braucht eine eigene Freigabe. Vor dem ersten Schreiben
+liegt ein JSON-Backup aller Post-Texte im Ausgabeordner. "Text freigegeben"
+und hoeher wird nie angefasst. Kosten: rund 3 EUR Bereinigung plus 1-2 EUR
+Nachfuellen.
 
 Siehe tools/review_backfill.py fuer die Regeln und die Spec.
 """
@@ -111,7 +115,10 @@ def write(out_dir: str, cfg, refill_passes: int) -> dict:
     """Bereinigt jede Entwurf-Zeile. Ein Notion-Fehler oder eine Ausnahme in
     einer einzelnen Zeile bricht den Lauf nicht ab (Review 28.08.2026): das
     Protokoll wird nach jeder Zeile geschrieben, nicht erst am Ende, sonst
-    geht es beim ersten Abbruch verloren. Nachfuellen laeuft nur ueber
+    geht es beim ersten Abbruch verloren. Ein Leser-Ausfall
+    (post_scorer.ReaderUnavailable) landet damit als "fehler" im Protokoll
+    und laesst die Zeile unangetastet: kein Text wird ungelesen geschrieben
+    und keiner ohne Urteil geleert. Nachfuellen laeuft nur ueber
     geleert_ids: Zeilen, die dieser Lauf selbst geleert hat, nie ueber
     andere textlose Zeilen im selben Monat (only_page_ids)."""
     rows = rb.plan_rows(read_plan(cfg.CONTENT_PLAN_DB_ID))
@@ -172,7 +179,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--report", action="store_true", help="nur lesen, Bericht schreiben")
     ap.add_argument("--write", action="store_true", help="bereinigen und nachfuellen")
-    ap.add_argument("--refill-passes", type=int, default=3)
+    ap.add_argument("--refill-passes", type=int, default=0,
+                    help="Durchgaenge Nachfuellen (Default 0: braucht Budget-Freigabe)")
     ap.add_argument("--out", required=True, help="Ausgabeordner fuer Bericht und Rohdaten")
     args = ap.parse_args()
     if args.report == args.write:
