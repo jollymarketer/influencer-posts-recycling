@@ -1553,6 +1553,19 @@ def _all_findings(text: str, voice: str = "", material: str = "") -> list[dict] 
     return naturalness.merge_findings(llm, det)
 
 
+def _findings_or_retry(text: str, voice: str = "",
+                       material: str = "") -> list[dict] | None:
+    """Ein zweiter Leseversuch, bevor "kein Urteil" gilt. Bestandslauf
+    28.08.2026: 1 von 21 Zeilen kam mit "kein Urteil" ungeprueft durch und
+    stand danach beim Kunden. Ein unlesbares JSON ist meist ein Ausrutscher
+    des Modells, kein Urteil ueber den Text."""
+    findings = _all_findings(text, voice, material)
+    if findings is not None:
+        return findings
+    print("  Leser: kein Urteil, zweiter Versuch", flush=True)
+    return _all_findings(text, voice, material)
+
+
 def _fix_passages(text: str, findings: list[dict], cap: int) -> str:
     """Ein Reparatur-Call. "" wenn die Reparatur verworfen wird: Fehler,
     Laengen-Guard (wie grammar_check) oder Textwache."""
@@ -1590,10 +1603,11 @@ def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -
     Text, wie er ist. Faellt der Leser aus, wirft er ReaderUnavailable nach
     oben durch: ungelesen geht kein Text zum Kunden."""
     original = de_draft
-    findings = _all_findings(de_draft, voice, material)
+    findings = _findings_or_retry(de_draft, voice, material)
     if findings is None:
-        print("  Leser: kein Urteil, Text bleibt", flush=True)
-        return de_draft
+        print("  Leser: kein Urteil nach zwei Versuchen, Text verworfen "
+              "(fail-closed)", flush=True)
+        return ""
     erste_harte = {f["art"] for f in findings} & set(naturalness.HARD_ARTEN)
     rounds = 0
     while findings and rounds < MAX_FIX_ROUNDS:
@@ -1603,10 +1617,17 @@ def _reader_loop(de_draft: str, cap: int, voice: str = "", material: str = "") -
         if not fixed:
             break
         de_draft = fixed
-        findings = _all_findings(de_draft, voice, material)
+        findings = _findings_or_retry(de_draft, voice, material)
         if findings is None:
-            print("  Leser: kein Urteil nach Reparatur, Text bleibt", flush=True)
-            return de_draft
+            # Der reparierte Text ist ungeprueft. Trug der Eingang keinen
+            # harten Befund, ist das gelesene Original die belastbare Fassung.
+            if not erste_harte:
+                print("  Leser: kein Urteil nach Reparatur, Original bleibt",
+                      flush=True)
+                return original
+            print("  Leser: kein Urteil nach Reparatur, Text verworfen "
+                  "(fail-closed)", flush=True)
+            return ""
     hart = [f for f in findings if f["art"] in naturalness.HARD_ARTEN]
     if hart:
         # Bestandslauf 28.08.2026: 5 von 7 Leerungen gingen auf harte Befunde

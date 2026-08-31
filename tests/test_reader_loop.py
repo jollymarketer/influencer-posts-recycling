@@ -72,9 +72,29 @@ def test_residue_after_two_rounds_discards_text():
     assert len(sent) == 6
 
 
-def test_unreadable_reader_answer_keeps_text():
-    de, sent = _run(["===POST===\n" + GOOD, "kein json"])
+def test_unreadable_reader_answer_is_retried_once():
+    # Bestandslauf 28.08.2026: 1 von 21 Zeilen kam mit "kein Urteil"
+    # ungeprueft durch und stand danach beim Kunden. Ein unlesbares JSON ist
+    # meist ein Ausrutscher des Modells, kein Urteil ueber den Text.
+    de, sent = _run(["===POST===\n" + GOOD, "kein json", CLEAN])
     assert de.startswith(GOOD)
+    assert len(sent) == 3
+
+
+def test_unreadable_reader_answer_twice_discards_text():
+    # Fail-closed wie beim Leser-Ausfall: ungelesen geht kein Text zum Kunden.
+    de, sent = _run(["===POST===\n" + GOOD, "kein json", "auch kein json"])
+    assert de == ""
+    assert len(sent) == 3
+
+
+def test_no_verdict_after_fix_falls_back_to_original():
+    # Der reparierte Text ist ungeprueft, das Original wurde gelesen und trug
+    # nur weiche Befunde: dann ist das Original die belastbare Fassung.
+    de, sent = _run(["===POST===\n" + GOOD, SOFT, BAD, "kein json", "kein json"])
+    assert de.startswith(GOOD)
+    assert not de.startswith(BAD)
+    assert len(sent) == 5
 
 
 def test_deterministic_finding_triggers_fix_without_llm_finding():

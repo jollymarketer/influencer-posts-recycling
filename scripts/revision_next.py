@@ -101,6 +101,9 @@ def main() -> int:
                     help="ohne diesen Schalter nur Trockenlauf")
     ap.add_argument("--kanal", default="",
                     help="nur dieses Konto, z.B. 'LinkedIn Robert'")
+    ap.add_argument("--ab", type=int, default=0,
+                    help="die ersten N Themen ueberspringen (Fortsetzen nach "
+                         "Abbruch; die Reihenfolge ist deterministisch)")
     ap.add_argument("--limit", type=int, default=0,
                     help="nur die ersten N Themen (Testcharge)")
     ap.add_argument("--protokoll", default="",
@@ -111,6 +114,8 @@ def main() -> int:
     ks = kandidaten(cfg)
     if args.kanal:
         ks = [k for k in ks if k["kanal"] == args.kanal]
+    if args.ab:
+        ks = ks[args.ab:]
     if args.limit:
         ks = ks[: args.limit]
 
