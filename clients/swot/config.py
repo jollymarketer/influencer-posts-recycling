@@ -61,7 +61,9 @@ uebernommenen Anbieter sind haeufig wechselwillig.
 Fachliche Anker mit Fristwirkung: AVR.DD Entgelterhoehung zum 01.09.2026, AVR
 Caritas Neufassung zum 01.01.2027, IFRS 18 ab Geschaeftsjahr 2027 mit bereits
 laufendem Vergleichsjahr 2026, E-Rechnung: Empfangspflicht seit 01.01.2025,
-Versandpflicht ab 01.01.2027 (nie als Empfangspflicht 2027 schreiben). CSRD ist
+Versandpflicht ab 01.01.2027 fuer Unternehmen mit mehr als 800.000 Euro
+Vorjahresumsatz, ab 01.01.2028 fuer alle (nie als Empfangspflicht 2027
+schreiben, nie ohne die Umsatzschwelle). CSRD ist
 ausdruecklich KEIN Thema: das Omnibus-I-Paket hat die Schwelle auf ueber 1.000
 Beschaeftigte angehoben, SWOTs Mittelstands-Zielgruppe faellt heraus.
 
@@ -935,8 +937,13 @@ AXIS_MIX = {
 FRISTEN_KALENDER = [
     {"id": "ifrs18", "deadline": "2027-01-01",
      "label": "IFRS 18: Vergleichsjahr 2026 schliesst zum 31.12."},
+    # Umsatzschwelle seit 02.09.2026 im Label: der Leser verwarf einen
+    # Fristen-Beitrag als Fachlogik-Fehler, weil "Versandpflicht ab 2027"
+    # ohne die Schwelle (Vorjahresumsatz ueber 800.000 Euro, alle ab 2028)
+    # unvollstaendig ist.
     {"id": "erechnung", "deadline": "2027-01-01",
-     "label": "E-Rechnung: Versandpflicht ab 01.01.2027, Bezugsjahr 2026"},
+     "label": ("E-Rechnung: Versandpflicht ab 01.01.2027 bei mehr als 800.000 Euro "
+               "Vorjahresumsatz, ab 2028 fuer alle, Bezugsjahr 2026")},
     {"id": "avr_caritas", "deadline": "2027-01-01",
      "label": "AVR Caritas: Neufassung ab 01.01.2027"},
     {"id": "avr_dd", "deadline": "2026-09-01",
