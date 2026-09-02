@@ -106,11 +106,12 @@ def test_build_prompt_carries_hersteller_position_and_bans():
     # Template beim Import mit dem Prozess-Mandanten, deshalb direkt geprueft.
     p = pw.build_prompt("T", "K", "LinkedIn Christian", "rechenschaft", cfg=swot)
     assert "kein Interim-CFO" in p
-    # 27.08.2026: die Beobachterposition wird nicht mehr als fertiger
-    # Satzbaustein angeboten. Sie stand woertlich im Prompt und landete
-    # woertlich in 6 von 8 Texten des Revision-2-Laufs.
-    assert "Einfuehrungsprojekten" not in p
-    assert "nie benannt" in p
+    # 02.09.2026 (Inga Baumert 01.09.: "zu sachlich"): genau eine
+    # Ich-Beobachtung je Beitrag, wechselnde Situation, direkte Ansprache am
+    # Schluss. Kein fertiger Satzbaustein wie "In Einfuehrungsprojekten sehe ich".
+    assert "Genau eine Beobachtung je Beitrag in der Ich-Form" in p
+    assert "sehe ich" not in p
+    assert "sprichst du den Leser direkt an" in p
     assert "Grossbuchstaben" in p                 # globales Template
     assert "StaRUG, IFRS 18, AVR, InsO" in swot.TOKENS["CONTEXT_TRANSFER_DE"]
     assert "Glaube" not in swot.TOKENS["LANGUAGE_BANS_DE"]      # 28.08.2026: Zeile raus, der Leser faengt es
@@ -125,6 +126,11 @@ def test_length_band_rotation_per_channel():
     class NoRotation:
         pass
     assert pw.length_band_for(NoRotation(), 2) is None
+    # 02.09.2026: Christian jeder zweite kurz, Robert bleibt bei jedem dritten.
+    assert [pw.length_band_for(swot, i, "LinkedIn Christian") for i in range(4)] == \
+        ["standard", "kurz", "standard", "kurz"]
+    assert [pw.length_band_for(swot, i, "LinkedIn Robert") for i in range(3)] == \
+        ["standard", "standard", "kurz"]
 
 
 def test_build_prompt_unknown_channel_raises():

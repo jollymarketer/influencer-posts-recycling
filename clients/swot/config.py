@@ -154,6 +154,14 @@ TOKENS = {
         "Keine Hashtags verwenden. Der Post endet mit dem letzten "
         "Inhalts-Satz."
     ),
+    # Absatzregel (Inga Baumert 01.09.2026: Vergleichspost mit 14 Absaetzen
+    # zu je ein bis zwei Zeilen wirkt kuerzer als unserer mit 6 Absaetzen zu
+    # je drei bis vier Saetzen bei gleicher Zeichenzahl). Ersetzt in
+    # post_scorer die Standardzeile "Absaetze duerfen 2-4 Saetze lang sein".
+    "PARAGRAPH_RULE_DE": (
+        "- Absaetze mit ein bis zwei Saetzen, dazwischen eine Leerzeile. Ein "
+        "Gedanke je Absatz, kein Absatz ueber drei Zeilen auf dem Handy"
+    ),
 
     # Sperrliste. Die Wettbewerber-Sperre stammt von Christian Kulle
     # (Notion-Kommentar 13.08.2026) und ist von uns auf IDL und Unit4 mit
@@ -786,13 +794,16 @@ PROOF_ASSETS = [
 # Stufen "Text freigegeben" und "Freigegeben" setzt der Kunde von Hand.
 CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 
-# Buchungs-CTA unter jedem LinkedIn-Beitrag (Richard 28.08.2026, Wortlaut
-# verbindlich). Bis dahin stand der Link nur per Notion-Handlauf auf den 51
-# Bestandsposts; die Pipeline haengte nichts an. post_scorer.blanket_cta
-# liest dieses Attribut, Magnet und Offer bleiben aussen vor (fuer SWOT
-# ohnehin gesperrt). Blog und Kommentare bekommen keinen Link.
-CTA_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
-          "kostenfrei: https://www.swot.de/demo-buchen/")
+# Schlusszeile unter jedem LinkedIn-Beitrag (post_scorer.blanket_cta liest
+# CTA_DE). Seit 02.09.2026 ohne Link: Inga Baumert (Notion-Kommentar
+# 01.09.2026) will Links in den Kommentaren, nicht im Text; Richard hat das
+# zugesagt. Der Buchungssatz mit Link steht in FIRST_COMMENT_DE und landet in
+# der Plan-Spalte "Erster Kommentar" (run_plan_fill), den postet der Absender
+# direkt unter den Beitrag. Bis 28.08. stand der Link nur per Notion-Handlauf
+# auf den 51 Bestandsposts, vom 28.08. bis 02.09. als Textzeile.
+CTA_DE = "Den Link zum Termin findet ihr im ersten Kommentar."
+FIRST_COMMENT_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
+                    "kostenfrei: https://www.swot.de/demo-buchen/")
 
 # Stimme je Kanal fuer tools/post_writer.py. Der Text traegt die Stimme des
 # Kontos, nicht nur das Thema: wechselt ein Beitrag das Konto, wird er neu
@@ -807,9 +818,17 @@ _HERSTELLER_POSITION = (
     " Du bist Softwarehersteller, kein Interim-CFO und kein Berater: du sitzt "
     "nicht im Bankgespraech, nicht vor Gericht, nicht in der "
     "Gesellschafterrunde. Deine Kenntnis stammt aus der Arbeit an der Software "
-    "beim Kunden. Diese Herkunft zeigt sich im Detail des Beispiels, sie wird "
-    "nie benannt: schreibe nie, wo du etwas siehst, erlebst oder hoerst."
+    "beim Kunden. Genau eine Beobachtung je Beitrag in der Ich-Form aus einer "
+    "konkreten Situation dort (Einfuehrungsprojekt, Schulung, Supportfall, "
+    "Datenuebernahme, Abschlusslauf), jedes Mal eine andere Situation mit "
+    "anderen Worten, nie dieselbe Formel. Am Schluss sprichst du den Leser "
+    "direkt an, du oder ihr, ohne Floskel."
 )
+# Ich-Beobachtung wieder drin (Inga Baumert 01.09.2026: "immer noch zu
+# sachlich, wenig persoenlicher Charakter"; Messung: 0 Ich-Formen in der
+# Fassung, bei Vergleichspost sechs). Die Streichung vom 27.08. traf nicht nur
+# die Banktisch-Pose, sondern jede Ich-Perspektive. Die Formel-Gefahr faengt
+# naturalness.PHRASE_PATTERNS je Konto und Lauf, nicht mehr ein harter Tic.
 # Die Aufzaehlung "in Einfuehrungsprojekten, Schulungen und Supportfaellen"
 # stand bis 27.08.2026 woertlich hier und landete danach woertlich im Text:
 # Lauf vom 27.08. hatte sie in 6 von 8 Beitraegen, gleich verteilt ueber beide
@@ -886,6 +905,10 @@ ACTIVE_ACCOUNTS = ["werner", "kulle"]
 # Liste). Kulle 24.08.2026: "Posts immer sehr lang, Aufbau immer gleich."
 # Die Vielfalt steht im Code, nicht als Bitte im Prompt.
 LENGTH_ROTATION = ["standard", "standard", "kurz"]
+# Je Kanal abweichend (Inga Baumert 01.09.2026 "zu lang", Richard 02.09.):
+# auf Christians Konto ist jeder zweite Beitrag kurz. Fehlt ein Kanal hier,
+# gilt LENGTH_ROTATION.
+LENGTH_ROTATION_BY_KANAL = {"LinkedIn Christian": ["standard", "kurz"]}
 
 # Feste Beitragstage je Konto (Wochentag, Montag=0). Aus dem September-Plan.
 POSTING_SCHEDULE = {

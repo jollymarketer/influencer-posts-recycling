@@ -55,14 +55,11 @@ TICS = [
     # Sprache samt Fuellwoertern ("halt", "irgendwie", Einstieg mit "Also,").
     ("Fuellwort der gesprochenen Sprache",
      re.compile(r"\b(?:halt|irgendwie|sozusagen|quasi)\b|(?:^|\n)Also,|\bne\?", re.I)),
-    # Revision-2-Lauf (27.08.2026): die Beobachterposition wurde benannt statt
-    # gezeigt, in 6 von 8 Beitraegen. Sie stand als fertiger Satzbaustein im
-    # Prompt (SWOT _HERSTELLER_POSITION) und wurde abgeschrieben. Als weiche
-    # avoid_phrase reichte sie nicht, deshalb jetzt harter Neulauf.
-    ("Beobachterposition benannt statt gezeigt",
-     re.compile(r"(?:In|Aus) (?:Einführungsprojekten|Projekten|Schulungen|Supportfällen)"
-                r"[^.:,]{0,25}?(?:sehe|erlebe|höre) ich"
-                r"|Was ich (?:in|bei) [^.:,]{3,40}(?:sehe|erlebe|höre)")),
+    # Die benannte Beobachterposition ("In Einfuehrungsprojekten sehe ich") war
+    # vom 27.08. bis 02.09.2026 ein harter Tic. Seit dem Kundenfeedback vom
+    # 01.09. (Inga Baumert: "zu sachlich, wenig persoenlich") ist genau eine
+    # Ich-Beobachtung je Beitrag erwuenscht; die Wiederholung derselben Formel
+    # ueber einen Lauf faengt PHRASE_PATTERNS unten.
     # Abschluss-Review 28.08.2026: Leser-Frage 5 nimmt seit der Verengung auf
     # Strukturformeln die einzelne Antithese ausdruecklich aus, und keine
     # Regex fing die nackte Form. Damit blieb der Grunddefekt der Spec

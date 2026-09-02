@@ -40,9 +40,20 @@ def test_voice_profiles_carry_no_spelled_out_formulas():
         assert "Was er nie sagen würde" in p
 
 
-def test_cta_de_is_the_binding_wording():
-    assert cfg.CTA_DE == ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
-                          "kostenfrei: https://www.swot.de/demo-buchen/")
+def test_cta_de_points_to_the_first_comment():
+    # 02.09.2026 (Inga Baumert 01.09.): Link in den ersten Kommentar, nicht in
+    # den Text. Der Buchungssatz wandert in FIRST_COMMENT_DE / Plan-Spalte
+    # "Erster Kommentar".
+    assert cfg.CTA_DE == "Den Link zum Termin findet ihr im ersten Kommentar."
+    assert "http" not in cfg.CTA_DE
+    assert cfg.FIRST_COMMENT_DE == ("30 Minuten mit unseren Planungs- und "
+                                    "Konsolidierungsexperten, kostenfrei: "
+                                    "https://www.swot.de/demo-buchen/")
+
+
+def test_paragraph_rule_and_ich_beobachtung_in_prompt():
+    assert "ein bis zwei Saetzen" in cfg.TOKENS["PARAGRAPH_RULE_DE"]
+    assert cfg.LENGTH_ROTATION_BY_KANAL["LinkedIn Christian"] == ["standard", "kurz"]
 
 
 def test_no_persona_offers_the_banned_kunstwort():

@@ -266,6 +266,14 @@ _PERSONA_PROMPT_TOKENS = ("audience_de", "decision_makers_de", "focus_topics_de"
 DACH_POST_PROMPT = DACH_POST_PROMPT.replace("[[PERSONA_DE]]", "{persona_voice}")
 for _tok in _PERSONA_PROMPT_TOKENS:
     DACH_POST_PROMPT = DACH_POST_PROMPT.replace(f"[[{_tok.upper()}]]", "{" + _tok + "}")
+# Absatzregel je Mandant (SWOT, Kundenfeedback 01.09.2026: kurze Absaetze).
+# Ohne PARAGRAPH_RULE_DE in TOKENS bleibt die Standardzeile byte-identisch.
+_PARAGRAPH_RULE_DEFAULT = ("- Absaetze duerfen 2-4 Saetze lang sein. Nicht jeder Satz ist ein "
+                           "eigener Absatz. Leerzeilen nur zwischen thematischen Bloecken, "
+                           "nicht nach jedem Satz")
+assert _PARAGRAPH_RULE_DEFAULT in DACH_POST_PROMPT, "Absatzregel-Anker fehlt im DACH_POST_PROMPT"
+DACH_POST_PROMPT = DACH_POST_PROMPT.replace(
+    _PARAGRAPH_RULE_DEFAULT, _cfg.TOKENS.get("PARAGRAPH_RULE_DE", _PARAGRAPH_RULE_DEFAULT))
 DACH_POST_PROMPT = apply_tokens(DACH_POST_PROMPT, _cfg)
 
 

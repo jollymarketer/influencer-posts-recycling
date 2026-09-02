@@ -37,12 +37,13 @@ def test_tic_hits_flags_spoken_fillers():
     assert nat.tic_hits("Alsosolche Halterung ist keine Sprache.") == []
 
 
-def test_tic_hits_flags_named_observer_position():
-    # Lauf 27.08.2026: die Beobachterposition wurde benannt statt gezeigt, in
-    # 6 von 8 Beitraegen, weil sie woertlich im Prompt stand.
+def test_named_observer_position_is_a_phrase_not_a_tic():
+    # 27.08. bis 02.09.2026 harter Tic. Seit dem Kundenfeedback vom 01.09.
+    # (Inga Baumert: "zu sachlich") ist genau eine Ich-Beobachtung je Beitrag
+    # erwuenscht; nur die Wiederholung derselben Formel im Lauf wird gesperrt.
     text = "In Einführungsprojekten sehe ich Prognosen ohne dokumentierte Annahmen."
-    assert [h.split(":")[0] for h in nat.tic_hits(text)] == \
-        ["Beobachterposition benannt statt gezeigt"]
+    assert nat.tic_hits(text) == []
+    assert "In Einführungsprojekten sehe ich" in nat.phrases(text)
 
 
 def test_voice_tics_only_bind_to_the_named_speaker():

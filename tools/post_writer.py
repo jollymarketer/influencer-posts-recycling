@@ -62,13 +62,18 @@ def _derive_topic_template(template: str) -> str:
 TOPIC_DE_TEMPLATE = _derive_topic_template(DACH_POST_PROMPT)
 
 
-def length_band_for(cfg, n_written: int) -> str | None:
+def length_band_for(cfg, n_written: int, kanal: str | None = None) -> str | None:
     """Laengenband fuer den n-ten Beitrag eines Kanals in diesem Lauf, aus
     LENGTH_ROTATION der Client-Config (z.B. ["standard", "standard", "kurz"]).
     Kundenfeedback SWOT 24.08.2026: die Posts waren alle lang und gleich
     gebaut. Die Vielfalt entsteht hier im Code, nicht als Bitte im Prompt.
+    LENGTH_ROTATION_BY_KANAL (dict Kanal -> Liste) ueberschreibt die Rotation
+    fuer einzelne Kanaele (SWOT 02.09.2026: Christian jeder zweite kurz).
     Ohne Eintrag None: das Format entscheidet, andere Mandanten unveraendert."""
-    rotation = getattr(cfg, "LENGTH_ROTATION", None)
+    by_kanal = getattr(cfg, "LENGTH_ROTATION_BY_KANAL", None) or {}
+    rotation = by_kanal.get(kanal) if kanal else None
+    if not rotation:
+        rotation = getattr(cfg, "LENGTH_ROTATION", None)
     if not isinstance(rotation, (list, tuple)) or not rotation:
         return None
     return rotation[n_written % len(rotation)]

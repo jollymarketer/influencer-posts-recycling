@@ -80,6 +80,15 @@ def _rich(text: str) -> dict:
     return {"rich_text": [{"text": {"content": c}} for c in _chunks(text)]}
 
 
+def _first_comment_prop(cfg) -> dict:
+    """Plan-Spalte "Erster Kommentar": der Buchungssatz mit Link, den der
+    Absender direkt unter den Beitrag postet (Inga Baumert 01.09.2026: Links
+    in die Kommentare, nicht in den Text). Ohne FIRST_COMMENT_DE in der
+    Client-Config bleibt die Spalte unberuehrt."""
+    text = getattr(cfg, "FIRST_COMMENT_DE", "")
+    return {"Erster Kommentar": _rich(text)} if text else {}
+
+
 def _title(props, key="Titel") -> str:
     return "".join(x.get("plain_text", "") for x in (props.get(key) or {}).get("title", []))
 
@@ -238,7 +247,7 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False,
         fmts = recent_formats.setdefault(k["kanal"], [])
         typs = recent_types.setdefault(k["kanal"], [])
         fmt, asset = _choose_format(cfg, material, fmts, used_assets)
-        band = length_band_for(cfg, neu_je_kanal.get(k["kanal"], 0))
+        band = length_band_for(cfg, neu_je_kanal.get(k["kanal"], 0), k["kanal"])
         r = write_post(k["titel"], k["kurz"], k["kanal"], k["achse"],
                        post_format=fmt, recent_infographic_types=list(typs), cfg=cfg,
                        band=band, avoid_phrases=list(used.get(k["kanal"], [])),
@@ -258,6 +267,7 @@ def text_fill(months: list[tuple[int, int]], cfg=None, rewrite: bool = False,
             "Format": {"select": {"name": fmt}},
             "Soundbyte": _rich(r["soundbyte"]),
             "Infografik-Skelett": _rich(r["skeleton"]),
+            **_first_comment_prop(cfg),
         }
         resp = requests.patch(f"{NOTION_API}/pages/{k['page_id']}",
                               headers=notion_headers(), json={"properties": props},
@@ -326,7 +336,7 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             typs = recent_types.setdefault(s.kanal, [])
             material = f"{m['titel']}\n{m['kurz']}"
             fmt, asset = _choose_format(cfg, material, fmts, used_assets)
-            band = length_band_for(cfg, neu_je_kanal.get(s.kanal, 0))
+            band = length_band_for(cfg, neu_je_kanal.get(s.kanal, 0), s.kanal)
             r = write_post(m["titel"], m["kurz"], s.kanal, s.axis,
                            post_format=fmt, recent_infographic_types=list(typs),
                            cfg=cfg, band=band,
@@ -344,6 +354,7 @@ def fill(months: list[tuple[int, int]], write: bool = False, cfg=None,
             props["Format"] = {"select": {"name": fmt}}
             props["Soundbyte"] = _rich(r["soundbyte"])
             props["Infografik-Skelett"] = _rich(r["skeleton"])
+            props.update(_first_comment_prop(cfg))
             fmts.insert(0, fmt)
             neu_je_kanal[s.kanal] = neu_je_kanal.get(s.kanal, 0) + 1
             if asset:
