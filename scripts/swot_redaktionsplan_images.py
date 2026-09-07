@@ -9,7 +9,7 @@ Notion-Eintraege passiert separat (Claude-Session via Notion-MCP, weil die
 Engine-Integration keinen Zugriff auf das SWOT-Portal hat).
 
 Run (Git Bash):
-  cd "Jolly Automations/Jolly Influencer Post Recycling"
+  cd "Jolly Automations/Jolly Linkedin Content Creation"
   CLIENT=swot python scripts/swot_redaktionsplan_images.py --slug datev   # Testbild
   CLIENT=swot python scripts/swot_redaktionsplan_images.py               # alle fehlenden
 """
