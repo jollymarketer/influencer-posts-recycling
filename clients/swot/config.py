@@ -175,7 +175,11 @@ TOKENS = {
 - CSRD ist kein Thema: das Omnibus-I-Paket hat die Schwelle angehoben, die Zielgruppe faellt heraus
 - Kein Em-Dash. Echte Umlaute schreiben
 - Keine erfundenen Zahlen. Belegt sind ausschliesslich die Angaben aus dem KONTEXT
-- Nie in der Ich- oder Wir-Form als Teilnehmer eines Bankgespraechs, Gerichtstermins, einer Gesellschafterrunde oder eines Gremiums schreiben. SWOT ist Softwarehersteller, kein Interim-CFO und kein Berater am Tisch""",
+- Nie in der Ich- oder Wir-Form als Teilnehmer eines Bankgespraechs, Gerichtstermins, einer Gesellschafterrunde oder eines Gremiums schreiben. SWOT ist Softwarehersteller, kein Interim-CFO und kein Berater am Tisch
+- Kunden, Referenzkunden und genannte Personen nie abwerten: den frueheren Zustand neutral beschreiben (Dauer, Aufwand, Ergebnis), nie als Fehler oder Unvermoegen
+- Ein Register je Beitrag: Alltagsdeutsch eines Fachmenschen, Anrede du oder ihr, keine Amtssprache und kein Nominalstil daneben
+- Fachwoerter, wie Kunden sie sagen: die Vorschau der Zahlungsfaehigkeit heisst Liquiditaetsplanung, auch als 13-Wochen- oder 12-Monats-Sicht
+- Ein Zweizeiler-Muster mit Label (Annahme/Praxis, Frage/Antwort) hoechstens zweimal je Beitrag""",
 
     # --- Englisch: SWOT ist DACH-only (FEATURES["en_draft"] = False). Die
     # Tokens muessen trotzdem existieren, weil apply_tokens beim Import auch
@@ -812,19 +816,73 @@ FIRST_COMMENT_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperte
 # geschrieben. Fehlt ein Kanal hier, entsteht kein Text (lieber leer als im
 # falschen Ton).
 #
+# Abschlussregel (Richard 08.09.2026 aus den Notion-Kommentaren 01. bis
+# 07.09.: "CTA kommt komplett ohne einleitende Worte", "Frage plus Link-
+# Zeile"): ein CTA je Beitrag. Der Schlussabsatz ist die Bruecke zur
+# Terminzeile CTA_DE, die post_scorer automatisch anhaengt. Ersetzt in
+# post_scorer._client_structure die Abschlusszeile jeder Format-Struktur
+# ("Offene Schleife ... streitbare Frage"), sonst staenden zwei Regeln im
+# selben Prompt gegeneinander. Geprueft von tools/copy_rules (cta).
+CLOSING_RULE_DE = (
+    "Der letzte Absatz ist eine Bruecke von einem Satz in du- oder ihr-Form: "
+    "er nennt aus dem Thema den Anlass, das einmal gemeinsam durchzugehen, "
+    "ohne Frage und ohne Floskel. Davor darf ein Satz die Regel oder Zahl "
+    "festhalten. Der Beitrag endet nie mit einer Frage und nennt weder Link "
+    "noch Kommentar: die Terminzeile steht automatisch darunter."
+)
+# Signature: hoechstens zwei Annahme/Praxis-Paare (Muhammed Doganguezel
+# 07.09.2026: vier Paare "wieder zu KI-technisch"; Regel: ein Strukturmuster
+# hoechstens zweimal). Anker aus post_scorer.FORMAT_STRUCTURES["Signature"].
+STRUCTURE_REPLACEMENTS = [
+    ("2-4 Annahme-gegen-Praxis-Paare", "zwei Annahme-gegen-Praxis-Paare, nie mehr"),
+]
+
 # Beide aktiven Stimmen tragen die Softwarehersteller-Position (Kulle,
 # 24.08.2026): der Autor sitzt nicht im Bankgespraech, er sieht in Projekten,
 # wie Kunden das Zahlenwerk dafuer vorbereiten. Sonst liest der Post wie ein
 # Interim-CFO und SWOT verliert Glaubwuerdigkeit.
-_HERSTELLER_POSITION = (
-    " Du bist Softwarehersteller, kein Interim-CFO und kein Berater: du sitzt "
-    "nicht im Bankgespraech, nicht vor Gericht, nicht in der "
-    "Gesellschafterrunde. Deine Kenntnis stammt aus der Arbeit an der Software "
-    "beim Kunden. Genau eine Beobachtung je Beitrag in der Ich-Form aus einer "
-    "konkreten Situation dort (Einfuehrungsprojekt, Schulung, Supportfall, "
-    "Datenuebernahme, Abschlusslauf), jedes Mal eine andere Situation mit "
-    "anderen Worten, nie dieselbe Formel. Am Schluss sprichst du den Leser "
-    "direkt an, du oder ihr, ohne Floskel."
+# Situationen je Konto (Inga Baumert 07.09.2026: "Robert selbst fuehrt keine
+# Einfuehrungsprojekte"; bis dahin stand hier EINE Liste fuer beide Konten,
+# und vier Werner-Beitraege eroeffneten mit "Beim Einfuehrungsprojekt").
+# Werner: Vertrieb und Akademie, also Erstgespraech, Demo, Workshop,
+# Schulung. Kulle: Geschaeftsfuehrer im Kundenprojekt, also Datenuebernahme,
+# Abschlusslauf, Supportfall. Erzwungen in COPY_RULES["role_frames"].
+def _hersteller_position(situationen: str) -> str:
+    return (
+        " Du bist Softwarehersteller, kein Interim-CFO und kein Berater: du sitzt "
+        "nicht im Bankgespraech, nicht vor Gericht, nicht in der "
+        "Gesellschafterrunde. Deine Kenntnis stammt aus der Arbeit an der Software "
+        "beim Kunden. Genau eine Beobachtung je Beitrag in der Ich-Form aus einer "
+        f"konkreten Situation dort, und zwar nur aus diesen: {situationen}. Jedes "
+        "Mal eine andere Situation mit anderen Worten, nie dieselbe Formel. Anrede "
+        "durchgehend du oder ihr, nie Sie. Am Schluss: " + CLOSING_RULE_DE
+    )
+
+
+_SITUATIONEN_WERNER = "Erstgespraech, Live-Demo, Workshop, Schulung"
+_SITUATIONEN_KULLE = "Datenuebernahme, Kundenprojekt, Abschlusslauf, Supportfall"
+
+# Tonmarker je Konto (Inga Baumert und Muhammed Doganguezel 07.09.2026:
+# "Christians und Roberts Wording hoeren sich identisch an"). Die Trennung
+# laeuft ueber Zuege aus den Stimmprofilen, nicht ueber Satzlaenge; der Leser
+# (naturalness, Frage 7) prueft, ob ein Beitrag Zuege seiner Person traegt.
+# Der Name des jeweils anderen Kontos darf hier NICHT stehen: naturalness
+# (VOICE_TICS) und copy_rules (role_frames) erkennen den Sprecher am Namen im
+# voice-String; beim Live-Check 08.09.2026 bekam Kulle sonst Werners Rollen-
+# sperre ("Datenuebernahme" als Befund) und Werner Kulles Fremdstimmen-Tic.
+_TONMARKER_WERNER = (
+    "\n\nTONMARKER, daran unterscheidet sich dieses Konto vom anderen "
+    "Personenkonto, nie ueber Satzlaenge: ein trockener, selbstironischer Halbsatz; ein "
+    "Alltagsbild aus dem Stimmprofil; ein Beispiel als gedachter Dialog oder mit "
+    "Referenzname; einmal Selbstfrage mit Selbstantwort; ein knappes Urteil, auch "
+    "gegen das eigene Interesse. Mindestens zwei davon je Beitrag."
+)
+_TONMARKER_KULLE = (
+    "\n\nTONMARKER, daran unterscheidet sich dieses Konto vom anderen "
+    "Personenkonto, nie ueber Satzlaenge: Einschaetzung mit Vorbehalt (in meinen Augen, "
+    "wuerde ich vermuten); Abwaegen in Paaren oder mit Schwelle; ein Satz, der "
+    "auf einer Zahl endet; Erfolge im Wir, Fehlversuche im Ich; Schluss mit einer "
+    "klaren Aussage. Mindestens zwei davon je Beitrag."
 )
 # Ich-Beobachtung wieder drin (Inga Baumert 01.09.2026: "immer noch zu
 # sachlich, wenig persoenlicher Charakter"; Messung: 0 Ich-Formen in der
@@ -874,14 +932,16 @@ ACCOUNT_VOICES = {
         "Du schreibst als Robert Werner, Leiter Vertrieb und Akademie der SWOT "
         "Controlling GmbH. Du sprichst taeglich mit Beratungsgesellschaften, "
         "Steuerberatern und Wirtschaftspruefern und schreibst aus der Praxis "
-        "der Einfuehrungen und Schulungen." + _HERSTELLER_POSITION
+        "der Erstgespraeche, Demos und Schulungen."
+        + _hersteller_position(_SITUATIONEN_WERNER) + _TONMARKER_WERNER
         + load_voice_profile("werner")
     ),
     "LinkedIn Christian": (
         "Du schreibst als Christian Kulle von der SWOT Controlling GmbH. Du "
         "sprichst zu Verantwortlichen, die Zahlen nach aussen vertreten: vor "
         "Bank, Gesellschaftern, Aufsichtsgremium oder Pruefer. Nenne keinen "
-        "Titel und keine Funktion im Text." + _HERSTELLER_POSITION
+        "Titel und keine Funktion im Text."
+        + _hersteller_position(_SITUATIONEN_KULLE) + _TONMARKER_KULLE
         + load_voice_profile("kulle")
     ),
     "LinkedIn Inga": (
@@ -894,6 +954,48 @@ ACCOUNT_VOICES = {
         "Du schreibst fuer die Unternehmensseite der SWOT Controlling GmbH, "
         "also in der Wir-Form. Sachlich, kein Ich."
     ),
+}
+
+# Kundenregeln, deterministisch geprueft nach der Generierung (tools/copy_rules
+# ueber naturalness.deterministic_findings, harte Befunde mit Vorschlag fuer
+# die chirurgische Reparatur). Richard 08.09.2026 aus den Notion-Kommentaren
+# von Inga Baumert und Muhammed Doganguezel (01. bis 07.09.2026):
+# - role_frames: Erzaehlsituation muss zur echten Rolle passen (Werner
+#   fuehrt keine Einfuehrungsprojekte). Sprechername wie in ACCOUNT_VOICES.
+# - disparagement: kein Kunde wird abgewertet, benannt oder anonym
+#   ("vorher falsch gebaut" neben Moebes/Plickert; "aber schlechter").
+# - term_map: Fachbegriff aus dem VoC-Korpus. Auszaehlung 08.09.2026 ueber
+#   Anwenderberichte, Sales-Calls, Stellenanzeigen: Liquiditaetsplanung 36,
+#   Liquiditaetsprognose 1, Cashforecast 0.
+# - address du: ein Register, Sie-Form ist ein Bruch (Ingas CTA-Vorschlag
+#   stand in Sie-Form unter einem ihr-Text).
+# - cta_bridge: ein CTA je Beitrag, Schlussabsatz als Bruecke, nie Frage plus
+#   Terminzeile (siehe CLOSING_RULE_DE).
+# - structure_max_repeat: ein Label-Muster hoechstens zweimal.
+COPY_RULES = {
+    "role_frames": {
+        "Robert Werner": {
+            "erlaubt": "Erstgespräch, Live-Demo, Workshop, Schulung",
+            "verboten": [r"Einf(?:ü|ue)hrungsprojekt\w*", r"Daten(?:ü|ue)bernahme\w*",
+                         r"Implementierung\w*", r"Abschlusslauf\w*",
+                         r"Supportf(?:ä|ae|a)ll\w*"],
+        },
+        "Christian Kulle": {
+            "erlaubt": "Datenübernahme, Kundenprojekt, Abschlusslauf, Supportfall",
+            "verboten": [r"Erstgespr(?:ä|ae)ch\w*", r"Live-Demo\w*", r"\bDemos?\b",
+                         r"Vertriebstermin\w*", r"Verkaufsgespr(?:ä|ae)ch\w*"],
+        },
+    },
+    "disparagement": [r"falsch (?:gebaut|umgesetzt|aufgesetzt|aufgebaut|gemacht)",
+                      r"aber schlechter", r"niemand wusste", r"keiner (?:wusste|verstand)",
+                      r"dilettantisch"],
+    "term_map": {"Cashforecast": "Liquiditätsplanung",
+                 "Cash-Forecast": "Liquiditätsplanung",
+                 "Cashflow-Forecast": "Liquiditätsplanung",
+                 "Liquiditätsprognose": "Liquiditätsplanung"},
+    "address": "du",
+    "cta_bridge": True,
+    "structure_max_repeat": 2,
 }
 
 # Aktive Absender-Konten (Richard, 20.08.2026). Nur diese bekommen Slots und

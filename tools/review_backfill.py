@@ -55,7 +55,8 @@ def read_row(row: dict, cfg, read_fn) -> dict:
     text = strip_cta(row["text"], getattr(cfg, "CTA_DE", ""))
     voice = getattr(cfg, "ACCOUNT_VOICES", {}).get(row["kanal"], "")
     llm = read_fn(text, material_for(row), voice)
-    det = naturalness.deterministic_findings(text, voice)
+    det = naturalness.deterministic_findings(
+        text, voice, rules=getattr(cfg, "COPY_RULES", None))
     # merge_findings wie in der Pipeline (post_scorer._all_findings), sonst
     # zaehlen --report und scripts/measure_diet.py Dubletten mit, die der
     # Loop laengst verwirft (Abschluss-Review 28.08.2026).

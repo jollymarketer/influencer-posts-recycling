@@ -193,9 +193,27 @@ def test_reader_schema_matches_parser_contract():
     props = nat.READER_SCHEMA["properties"]["befunde"]["items"]["properties"]
     assert set(props) == {"art", "zitat", "grund", "vorschlag"}
     assert "satzlaenge" not in props["art"]["enum"]
-    assert set(props["art"]["enum"]) == set(nat.FINDING_ARTEN) - {"satzlaenge"}
+    assert set(props["art"]["enum"]) == set(nat.FINDING_ARTEN) - set(nat.DETERMINISTIC_ARTEN)
+    assert {"abwertung", "register"} <= set(props["art"]["enum"])
     assert nat.READER_SCHEMA["required"] == ["befunde"]
     assert nat.READER_SCHEMA["additionalProperties"] is False
+
+
+def test_reader_prompt_asks_for_abwertung_register_and_missing_tone():
+    p = nat.reader_prompt("Der Text.", voice="So schreibt Robert.")
+    assert "8. abwertung:" in p and "9. register:" in p and "Neun Fragen" in p
+    assert "Aussagewert" in p
+    assert "keinen der typischen Züge" in p
+
+
+def test_deterministic_findings_take_copy_rules():
+    # Kundenregeln (08.09.2026) laufen als harte Befunde in dieselbe Liste
+    # wie Tics und Satzlaengen; ohne rules bleibt alles wie vorher.
+    rules = {"cta_bridge": True}
+    text = "Ein Satz.\n\nWie lange dauert das bei euch?"
+    assert [f["art"] for f in nat.deterministic_findings(text, "", rules)] == ["cta"]
+    assert nat.deterministic_findings(text, "") == []
+    assert "cta" in nat.HARD_ARTEN and "rolle" in nat.HARD_ARTEN
 
 
 def test_merge_findings_drops_regex_duplicates_of_reader_quotes():
@@ -222,6 +240,7 @@ def test_merge_findings_keeps_long_finding_next_to_a_short_quote():
     assert [f["art"] for f in out] == ["muendlich", "satzlaenge"]
 
 
-def test_hard_arten_are_the_sense_errors():
-    assert set(nat.HARD_ARTEN) == {"schriftdeutsch", "kohaerenz", "deckung", "fachlogik"}
+def test_hard_arten_are_sense_errors_plus_customer_rules():
+    assert {"schriftdeutsch", "kohaerenz", "deckung", "fachlogik"} <= set(nat.HARD_ARTEN)
+    assert {"schablone", "muendlich", "fremdstimme", "satzlaenge"}.isdisjoint(nat.HARD_ARTEN)
     assert set(nat.HARD_ARTEN) < set(nat.FINDING_ARTEN)

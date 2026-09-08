@@ -13,8 +13,11 @@ LLM-Stil-Judge als zweite Detektionsstufe." Genau das hier:
 
 1. Deterministisch (dieses Modul, kein Netz): Formeln, die das Modell
    reflexhaft baut (TICS), Formulierungen, die sich ueber einen Monats-Batch
-   nicht wiederholen duerfen (phrases), Schachtelsaetze.
-2. Leser (READER_PROMPT hier, Aufruf in post_scorer._reader_loop): sieben
+   nicht wiederholen duerfen (phrases), Schachtelsaetze. Seit 08.09.2026
+   dazu die Kundenregeln aus COPY_RULES der Client-Config (tools/copy_rules:
+   Rolle je Konto, Abwertung, Fachwort, Register, CTA-Bruecke, Muster-
+   Wiederholung), die als harte Befunde in dieselbe Liste laufen.
+2. Leser (READER_PROMPT hier, Aufruf in post_scorer._reader_loop): neun
    Fragen mit Zitatpflicht, Befundliste statt Note. Befunde werden
    chirurgisch repariert; verworfen wird ein Text nur bei harten
    Restbefunden (Sinnfehler, HARD_ARTEN) oder Textwache, weiche Reste
@@ -169,12 +172,21 @@ def avoid_note(used: list[str] | None) -> str:
 # Der Leser darf Beispiel-Wortlaute tragen: er schreibt nichts ab. Verbots-
 # listen mit Wortlaut gehoeren deshalb hierher, nie in den Schreib-Prompt.
 FINDING_ARTEN = ("schriftdeutsch", "kohaerenz", "deckung", "fachlogik",
-                 "schablone", "muendlich", "fremdstimme", "satzlaenge")
-# Sinnfehler: nur sie verwerfen einen Text nach der letzten Reparaturrunde.
-# Stil-Reste (Schablone, Fremdstimme, Muendlich, Satzlaenge) bleiben mit Log
-# stehen (Trockenlauf 28.08.2026: der Reparierer ersetzt Formeln durch
-# Formeln, harte Verwerfung leerte 3 von 3 Texten).
-HARD_ARTEN = ("schriftdeutsch", "kohaerenz", "deckung", "fachlogik")
+                 "schablone", "muendlich", "fremdstimme", "satzlaenge",
+                 "abwertung", "register", "rolle", "fachbegriff", "cta", "struktur")
+# Nur deterministisch (tools/copy_rules, satzlaenge): der Leser vergibt
+# diese Arten nicht, das Schema laesst sie deshalb aus.
+DETERMINISTIC_ARTEN = ("satzlaenge", "rolle", "fachbegriff", "cta", "struktur")
+# Sinnfehler verwerfen einen Text nach der letzten Reparaturrunde. Stil-Reste
+# (Schablone, Fremdstimme, Muendlich, Satzlaenge) bleiben mit Log stehen
+# (Trockenlauf 28.08.2026: der Reparierer ersetzt Formeln durch Formeln,
+# harte Verwerfung leerte 3 von 3 Texten). Dazu seit 08.09.2026 die
+# Kundenregeln aus COPY_RULES (Richard, aus den Notion-Kommentaren vom 01. bis
+# 07.09.): falsche Rolle, Abwertung, Registerbruch, fremdes Fachwort, zweiter
+# CTA und Muster-Wiederholung sind Rueckweisungsgruende des Kunden, und jede
+# hat einen konkreten Vorschlag, den der Reparierer umsetzen kann.
+HARD_ARTEN = ("schriftdeutsch", "kohaerenz", "deckung", "fachlogik",
+              "abwertung", "register", "rolle", "fachbegriff", "cta", "struktur")
 MAX_FINDINGS = 6
 
 READER_PROMPT = """Du liest einen deutschen LinkedIn-Beitrag als strenger, aber fairer Fachlektor mit Controlling-Hintergrund. Du bewertest nicht, du findest Defekte, die ein Lektor tatsächlich ändern würde, und belegst jeden mit einem wörtlichen Zitat aus dem Text. Ein sauberer Text hat null Befunde. Im Zweifel kein Befund: jeder Fehlalarm löst eine Reparatur aus, die den Text verschlechtert.
@@ -182,17 +194,19 @@ READER_PROMPT = """Du liest einen deutschen LinkedIn-Beitrag als strenger, aber 
 MATERIAL, das der Beitrag einlösen soll:
 {material}
 
-Sieben Fragen. Jede Antwort ist entweder "nichts gefunden" oder ein Befund mit Zitat:
+Neun Fragen. Jede Antwort ist entweder "nichts gefunden" oder ein Befund mit Zitat:
 1. schriftdeutsch: Gibt es einen Satz, der als geschriebenes Deutsch nicht korrekt ist? Nur: ein Aussagesatz mit dem Verb an erster Stelle, der weder Frage noch Befehl noch Bedingungssatz ist ("Stimmen sie nicht." als Antwort auf den Satz davor); fehlendes Subjekt oder Verb; ein Fragment, das der Leser als abgebrochenen Nebensatz liest. Kein Befund: uneingeleitete Bedingungssätze ("Stimmen Planung und Gliederung nicht überein, entsteht doppeltes Rechnen"), Ellipsen mit Modalverb ("wo er hin will"), bewusst kurze vollständige Sätze.
 2. kohaerenz: Behauptet der erste Absatz etwas, das der Rest widerlegt? Nur, wenn beide Stellen zusammen unvereinbar sind. Kein Befund: der Rest vertieft oder erweitert den Opener, nennt die Ursache hinter dem Symptom oder wechselt zur Lösung. Zitiere beide Stellen im Feld zitat, getrennt durch " | ", und nenne im Feld grund, warum sie einander ausschließen. Stimme und Register gehören zu Frage 7, nicht hierher.
 3. deckung: Löst der Text ein, was das Material verspricht? Nur, wenn ein versprochener Teil fehlt oder der Text von etwas anderem handelt.
 4. fachlogik: Gibt es eine Aussage, die ein Controller oder Wirtschaftsprüfer als falsch erkennt? Nur Verfahren, Fristen, Fachbegriffe und Zahlen, und nur, wenn du die richtige Fassung nennen kannst (Norm mit Paragraf, Datum, Zahl). Ein rollierender Forecast, der monatlich um einen Monat vorrückt, ist korrekt beschrieben; falsch wäre ein rollierender Forecast, der "einmal" gebaut wird. Kein Befund: Vorschläge, die die Aussage nur umformulieren; Kritik an Belegdichte oder Formulierung; Normen, deren Fundstelle du nicht sicher weißt.
 5. schablone: Gibt es Strukturformeln, die eine eigene Pointe tragen? Nur: Negation-Negation-Korrektur ("Nicht A. Nicht B. Sondern C."), Pointen-Einzeiler als eigener Absatz ohne neuen Sachverhalt, Dreier-Parallelismus mit gleichem Satzbau, Absolution nach der Pointe ("Und das ist in Ordnung."), dieselbe Antithese ("kein A, sondern B") mehr als einmal im Text. Kein Befund: eine einzelne Antithese, ein einzelner Satz, der mit "Wer" beginnt, ein Kontrast im Satzinneren, eine sachliche Aufzählung, Wendungen, die der Maßstab als typisch für die Person nennt.
 6. muendlich: Nur Wörter dieser abschließenden Liste: halt, irgendwie, sozusagen, quasi, "Also," am Satzanfang, "ne?"; dazu Verständnisfragen an den Leser als Floskel ("Kennst du das?", "Ist das soweit klar?"). Kein Befund: kurze vollständige Sätze, "also" im Satzinneren, "irgendwann", "tatsächlich", Herkunftsangaben wie "in Schulungen".
-7. fremdstimme: Nur drei Fälle. Erstens Beratersprech und Lehnübersetzungen dieser Art: Mehrwert schaffen, ganzheitlich, Hebel, orchestrieren, skalieren, Mindset, Enabler, macht Sinn, am Ende des Tages, Ownership, Level, Game Changer. Zweitens Neubildungen ohne Wörterbucheintrag (Übergabefähigkeit, Vertrauensereignis, Fortschreibungslogik); gewöhnliche Wörter wie Übergabe, Brücke, Stand sind keine. Drittens eine Passage, die eine Regel des Maßstabs verletzt; dann zitierst du im Feld grund die verletzte Regel wörtlich, sonst gilt der Befund nicht. Die Herkunft der eigenen Kenntnis zu benennen ("in Einführungsprojekten sehe ich") ist nur dann ein Befund, wenn der Maßstab es ausdrücklich verbietet.
+7. fremdstimme: Nur drei Fälle. Erstens Beratersprech und Lehnübersetzungen dieser Art: Mehrwert schaffen, ganzheitlich, Hebel, orchestrieren, skalieren, Mindset, Enabler, macht Sinn, am Ende des Tages, Ownership, Level, Game Changer. Zweitens Neubildungen ohne Wörterbucheintrag (Übergabefähigkeit, Vertrauensereignis, Fortschreibungslogik); gewöhnliche Wörter wie Übergabe, Brücke, Stand sind keine. Drittens eine Passage, die eine Regel des Maßstabs verletzt; dann zitierst du im Feld grund die verletzte Regel wörtlich, sonst gilt der Befund nicht. Die Herkunft der eigenen Kenntnis zu benennen ("in Einführungsprojekten sehe ich") ist nur dann ein Befund, wenn der Maßstab es ausdrücklich verbietet. Viertens: der Text trägt keinen der typischen Züge, die der Maßstab für diese Person nennt (Humor, Bilder, Wendungen, Haltung); zitiere dann den ersten Satz und nenne im Feld grund, welcher Zug fehlt. Satzlänge ist kein Zug.
+8. abwertung: Wird ein Kunde, ein Referenzkunde, eine genannte Person oder ihr früherer Zustand herabgesetzt? Nur: "falsch gebaut", "falsch umgesetzt", "schlechter", "niemand wusste", "keine Ahnung", "Chaos", "dilettantisch", "sich zu Tode" und jede Formulierung, die dem Kunden Unvermögen zuschreibt, auch anonym. Kein Befund: ein neutral beschriebener früherer Zustand (Dauer, Aufwand, Ergebnis), Kritik an Excel, an einem Verfahren ohne Person oder an einer Praxis, die niemandem zugeordnet ist. Vorschlag: derselbe Sachverhalt ohne Urteil.
+9. register: Steht Amtsdeutsch oder Nominalstil neben Alltagssprache im selben Text? Nur Wörter dieser Art: Aussagewert, Gewährleistung, diesbezüglich, seitens, hinsichtlich, im Rahmen von, Inanspruchnahme, erfolgt (als Vollverb), zur Verfügung stellen, Umsetzung erfolgen, Berücksichtigung finden. Kein Befund: Fachbegriffe des Controllings (Konsolidierungskreis, Abgrenzung, Rückstellung), Normen und Gesetze, ein einzelnes förmliches Wort in einem durchgehend förmlichen Text.
 
 Antworte NUR mit JSON, ohne Kommentar:
-{{"befunde": [{{"art": "<schriftdeutsch|kohaerenz|deckung|fachlogik|schablone|muendlich|fremdstimme>", "zitat": "<wörtlich aus dem Text>", "grund": "<ein Satz>", "vorschlag": "<so schreibt es ein Mensch>"}}]}}
+{{"befunde": [{{"art": "<schriftdeutsch|kohaerenz|deckung|fachlogik|schablone|muendlich|fremdstimme|abwertung|register>", "zitat": "<wörtlich aus dem Text>", "grund": "<ein Satz>", "vorschlag": "<so schreibt es ein Mensch>"}}]}}
 Leere Liste, wenn nichts gefunden. Höchstens {max_findings} Befunde, die schwersten zuerst. Kein Befund ohne wörtliches Zitat.
 
 TEXT:
@@ -218,7 +232,7 @@ READER_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "art": {"type": "string",
-                            "enum": [a for a in FINDING_ARTEN if a != "satzlaenge"]},
+                            "enum": [a for a in FINDING_ARTEN if a not in DETERMINISTIC_ARTEN]},
                     "zitat": {"type": "string"},
                     "grund": {"type": "string"},
                     "vorschlag": {"type": "string"},
@@ -300,11 +314,14 @@ def parse_findings(raw: str, text: str | None = None) -> list[dict] | None:
     return out[:MAX_FINDINGS]
 
 
-def deterministic_findings(text: str, voice: str = "") -> list[dict]:
+def deterministic_findings(text: str, voice: str = "",
+                           rules: dict | None = None) -> list[dict]:
     """Regex-Formeln und Satzlaengen als Befunde derselben Form, damit die
     Reparatur eine Liste bekommt. Die Regex-Liste waechst nicht mehr; der
-    Leser ist der allgemeine Fang."""
-    out = []
+    Leser ist der allgemeine Fang. rules sind die Kundenregeln der
+    Client-Config (COPY_RULES, tools/copy_rules); None laesst sie aus."""
+    from tools import copy_rules
+    out = copy_rules.findings(text, voice, rules)
     for hit in tic_hits(text, voice):
         name, _, zitat = hit.partition(": ")
         out.append({"art": "schablone", "zitat": zitat.strip().strip('"'),

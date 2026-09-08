@@ -278,3 +278,46 @@ oben bleibt als Entwurfsstand stehen; hier gilt der Nachtrag.
    auf diesem Modell nicht mehr. Faellt der Leser aus, ist das kein Urteil
    mehr, sondern ein Ausfall: `ReaderUnavailable`, der Text wird verworfen
    (fail-closed) und `post_scorer.READER_FAILURES` zaehlt ihn.
+
+## 10. Nachtrag 08.09.2026: Kundenregeln aus den Notion-Kommentaren
+
+Inga Baumert und Muhammed Doganguezel (SWOT) kommentierten 01. bis 07.09.
+neun Beitraege. Richard bewertete 24 Kommentare gegen Best Practice und
+gab sieben als Regeln frei; nicht uebernommen wurden Listen aufloesen,
+CTA je Post neu, "Datenuebernahme" durch "Kundentermin" ersetzen, Laenge
+kuerzen und die vagen "wirkt nicht human"-Befunde.
+
+Bauteile:
+
+- `tools/copy_rules.py`: deterministische Pruefung, Regeln aus
+  `COPY_RULES` der Client-Config (Rolle je Konto per Wortliste, Abwertung
+  per Muster, Fachwort-Map aus dem VoC-Korpus, Sie-Form, CTA-Bruecke,
+  Label-Muster hoechstens zweimal). Befunde in Leser-Form mit Vorschlag,
+  eingehaengt in `naturalness.deterministic_findings(rules=...)`, gerufen
+  aus `post_scorer._all_findings` und `review_backfill.read_row`.
+- Neue Arten `abwertung`, `register` (Leser-Fragen 8 und 9) und
+  `rolle`, `fachbegriff`, `cta`, `struktur` (nur deterministisch,
+  `DETERMINISTIC_ARTEN`, nicht im Schema). Alle sechs sind HARD_ARTEN:
+  Rueckweisungsgruende des Kunden mit konkretem Vorschlag, den
+  `FIX_PROMPT` als Vorgabe umsetzt.
+- Schreib-Prompt SWOT: `_hersteller_position(situationen)` je Konto
+  (Werner: Erstgespraech, Live-Demo, Workshop, Schulung; Kulle:
+  Datenuebernahme, Kundenprojekt, Abschlusslauf, Supportfall),
+  `CLOSING_RULE_DE` ersetzt ueber `post_scorer._client_structure` die
+  Abschlusszeile jeder Format-Struktur (sonst "Offene Schleife ... Frage"
+  gegen "keine Frage" im selben Prompt), `STRUCTURE_REPLACEMENTS` kappt
+  Signature auf zwei Paare, `TONMARKER` je Konto trennt die Stimmen ueber
+  Zuege statt Satzlaenge, vier Zeilen in `LANGUAGE_BANS_DE` ohne die
+  falschen Woerter.
+- Falle beim Live-Check: der Name des anderen Kontos im Tonmarker gab
+  Kulle Werners Rollensperre, weil VOICE_TICS und role_frames den Sprecher
+  am Namen im voice-String erkennen. Test `test_each_voice_names_only_its_
+  own_speaker` sichert das.
+
+Live-Check ueber die 10 Beitraege im Plan (nur lesen): 5 Werner-Beitraege
+mit Rollenbefund (Einfuehrungsprojekt, Datenuebernahme), 3 Abwertungen
+("falsch gebaut", "aber schlechter", "Niemand wusste"), 2 Fachwort-Treffer
+(13-Wochen-Cashforecast, Liquiditaetsprognose), 7 Schlussabsaetze ohne
+Bruecke, 1 Signature mit vier Paaren. Bestandsbereinigung (`run_review_
+backfill --write`) nicht gelaufen; Kosten rund 0,10 bis 0,30 EUR je
+Beitrag, braucht Freigabe.

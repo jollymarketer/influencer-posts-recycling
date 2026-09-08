@@ -132,6 +132,21 @@ def test_repair_introducing_hard_finding_falls_back_to_original():
     assert len(sent) == 6
 
 
+def test_copy_rules_from_config_are_hard_findings_with_the_suggestion_in_the_fix_prompt():
+    # Kundenregeln 08.09.2026: eine Schlussfrage ueber der Terminzeile ist ein
+    # harter Befund (cta); der Reparierer bekommt den Vorschlag, danach sauber.
+    frage = "Den Forecast baut man auf und denkt, die Zahlen stimmen. Tun sie nicht.\n\nWie lange dauert das bei euch?"
+    bruecke = "Den Forecast baut man auf und denkt, die Zahlen stimmen. Tun sie nicht.\n\nWenn ihr das einmal durchgehen wollt, lohnt sich der Blick auf eure Annahmen."
+    with patch.object(ps._cfg, "COPY_RULES", {"cta_bridge": True}, create=True):
+        de, sent = _run(["===POST===\n" + frage, CLEAN, bruecke, CLEAN])
+    assert de.startswith(bruecke)
+    assert "[cta]" in sent[2] and "Frage im Schlussabsatz" in sent[2]
+    # Bleibt der Befund nach zwei Runden, ist der Text verworfen (hart).
+    with patch.object(ps._cfg, "COPY_RULES", {"cta_bridge": True}, create=True):
+        de, sent = _run(["===POST===\n" + frage, CLEAN, frage, CLEAN, frage, CLEAN])
+    assert de == ""
+
+
 def test_reader_outage_discards_text_and_counts_failure():
     # Fail-closed: ohne Urteil geht kein Text zum Kunden, der Zaehler traegt
     # den Ausfall in die Schlusszeile der Runner.

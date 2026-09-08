@@ -111,7 +111,8 @@ def test_build_prompt_carries_hersteller_position_and_bans():
     # Schluss. Kein fertiger Satzbaustein wie "In Einfuehrungsprojekten sehe ich".
     assert "Genau eine Beobachtung je Beitrag in der Ich-Form" in p
     assert "sehe ich" not in p
-    assert "sprichst du den Leser direkt an" in p
+    # 08.09.2026: Schlussabsatz als Bruecke zur Terminzeile, ein CTA.
+    assert "Bruecke von einem Satz in du- oder ihr-Form" in p
     assert "Grossbuchstaben" in p                 # globales Template
     assert "StaRUG, IFRS 18, AVR, InsO" in swot.TOKENS["CONTEXT_TRANSFER_DE"]
     assert "Glaube" not in swot.TOKENS["LANGUAGE_BANS_DE"]      # 28.08.2026: Zeile raus, der Leser faengt es

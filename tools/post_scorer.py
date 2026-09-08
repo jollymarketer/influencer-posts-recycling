@@ -650,6 +650,29 @@ def _parts_call(de_draft: str, recent_infographic_types=None) -> dict:
         return dict(_EMPTY_PARTS)
 
 
+# Abschluss- und Strukturregeln je Mandant (SWOT, 08.09.2026, aus den
+# Notion-Kommentaren 01. bis 07.09.): der Schlussabsatz ist eine Bruecke
+# zur automatisch angehaengten Terminzeile, keine offene Frage; Signature
+# traegt hoechstens zwei Annahme/Praxis-Paare. Beides muss im Schreib-Prompt
+# stehen, sonst kaempft der Gate (copy_rules) gegen die Struktur-Zeile
+# "Offene Schleife ... streitbare Frage". Ohne CLOSING_RULE_DE und
+# STRUCTURE_REPLACEMENTS in der Config bleibt jeder Block byte-identisch.
+_CLOSING_LINE = re.compile(r"^(\d)\. (?:Abschluss|Schluss)[^\n]*$", re.M)
+
+
+def _client_structure(structure_de: str) -> str:
+    """Struktur-Block des Mandanten: Abschlusszeile durch CLOSING_RULE_DE
+    ersetzt, STRUCTURE_REPLACEMENTS (Liste von (alt, neu)) angewandt. Ein
+    Ersetzungsanker, der im Block fehlt, ist kein Fehler: die Paare gelten
+    je Format, nicht jedes Format hat jeden Anker."""
+    rule = getattr(_cfg, "CLOSING_RULE_DE", "")
+    if rule:
+        structure_de = _CLOSING_LINE.sub(lambda m: f"{m.group(1)}. Abschluss: {rule}", structure_de)
+    for old, new in getattr(_cfg, "STRUCTURE_REPLACEMENTS", None) or []:
+        structure_de = structure_de.replace(old, new)
+    return structure_de
+
+
 def _format_prompts(post: dict, post_format: str = "Opinion",
                     recent_infographic_types=None,
                     assets_de: str = "", assets_en: str = "",
@@ -681,7 +704,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
-        structure_block=structures["de"],
+        structure_block=_client_structure(structures["de"]),
         recent_types_line=de_recent,
         persona_block=persona_de,
         assets_block=assets_de,
@@ -1521,6 +1544,7 @@ HARTE REGELN:
 - Schriftdeutsch: vollstaendige Saetze, Verb an zweiter Stelle, keine Echo-Antworten, keine Pointen-Formeln.
 - Ersetze eine Formel durch einen schlichten Aussagesatz, nie durch eine andere Formel: kein Satz beginnt mit "Wer", keine Konstruktion aus "nicht ..., sondern ...", kein Absatz endet mit einer Umdeutung. Sage, was der Fall ist.
 - Bei "kohaerenz": passe den ersten Absatz an den Rest an, nie umgekehrt.
+- Bei "rolle", "abwertung", "register", "fachbegriff", "cta" und "struktur" ist der Vorschlag im Befund die Vorgabe: setze ihn um. Bei "fachbegriff" das Wort aus dem Vorschlag einsetzen und Artikel und Endungen anpassen. Bei "cta" den letzten Absatz als einen Satz in du- oder ihr-Form neu schreiben, ohne Frage, ohne Link. Bei "struktur" die ueberzaehligen Zeilen als Fliesstext ohne Label schreiben.
 - Kein Kommentar, kein Markdown, keine Erklaerung: antworte NUR mit dem vollstaendigen Text.
 
 BEFUNDE:
@@ -1555,7 +1579,8 @@ def _all_findings(text: str, voice: str = "", material: str = "") -> list[dict] 
     """Leser plus deterministische Befunde. None nur, wenn der Leser kein
     Urteil liefert UND nichts Deterministisches anliegt."""
     llm = _read_findings(text, voice, material)
-    det = naturalness.deterministic_findings(text, voice)
+    det = naturalness.deterministic_findings(
+        text, voice, rules=getattr(_cfg, "COPY_RULES", None))
     if llm is None and not det:
         return None
     return naturalness.merge_findings(llm, det)
