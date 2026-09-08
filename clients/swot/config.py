@@ -669,6 +669,14 @@ APIFY_ACCOUNT = "kueswot"
 # KIEAI_API_KEY zurueckfaellt. Aufgeloest in tools/kieai_image._api_key.
 KIEAI_TOKEN_ENV = "KIEAI_API_KEY_SWOT"
 
+# Anthropic-Konto SWOT (Richard 08.09.2026, Weg 1 der Kostenumlage): Texte,
+# Leser, Reparatur, Kommentare und Themenwahl laufen auf SWOTs eigener
+# Anthropic-Organisation (Konto seit 18.05.2026, Guthaben mit Nachladung seit
+# 12.08.2026). Kulle 07.08.2026: die Jolly-Ausnahme fuer Anthropic war
+# "momentan", nicht dauerhaft. Aufgeloest in tools/anthropic_auth.get_key,
+# kein Rueckfall auf Jollys ANTHROPIC_API_KEY.
+ANTHROPIC_TOKEN_ENV = "ANTHROPIC_API_KEY_SWOT"
+
 VIRALITY_WEIGHT = 0.3
 MIN_SCORE = 15
 

@@ -20,11 +20,11 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
-import anthropic
 import requests
 from dotenv import load_dotenv
 
 from clients import load_client
+from tools.anthropic_auth import anthropic_client
 from tools.topic_ideas_db import _db_id as topic_db_id, _headers as notion_headers
 
 load_dotenv()
@@ -218,7 +218,7 @@ def classify_axes(topics: list[Topic]) -> list[Topic]:
         f"{i}. {t.title_de or t.title} [Suchbegriff: {t.keyword_de}]"
         for i, t in enumerate(todo)
     )
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = anthropic_client(_cfg)   # Key pro Mandant, tools/anthropic_auth.py
     resp = client.messages.create(
         model=CLASSIFY_MODEL, max_tokens=1000,
         messages=[{"role": "user", "content": _CLASSIFY_PROMPT.format(

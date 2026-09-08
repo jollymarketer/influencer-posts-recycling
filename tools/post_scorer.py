@@ -9,17 +9,20 @@ import math
 import os
 import re
 
-import anthropic
 from dotenv import load_dotenv
 
 from clients import apply_tokens, load_client
 from tools import naturalness, text_gate
+from tools.anthropic_auth import LazyAnthropic
 
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
 _cfg = load_client()
+
+# Key pro Mandant (tools/anthropic_auth, 08.09.2026): SWOT-Texte laufen auf
+# SWOTs Anthropic-Konto. Lazy, damit ein fehlender Key beim Lauf abbricht,
+# nicht beim Import; Tests patchen das Attribut wie bisher.
+client = LazyAnthropic(_cfg)
 
 CLIENT_CONTEXT = _cfg.CONTEXT
 

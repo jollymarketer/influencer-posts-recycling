@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from PIL import Image, ImageFilter
 
 from clients import load_client
+from tools import anthropic_auth
 
 load_dotenv()
 
@@ -156,9 +157,12 @@ def _wipe_bottom_left_zone(image_bytes: bytes) -> bytes:
 
 def _detect_brand_marks(image_bytes: bytes) -> list:
     """Stufe 2: Claude Vision prüft das Bild auf verbleibende Marken-Marks und gibt Boxen zurück."""
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("  Stufe 2 übersprungen: ANTHROPIC_API_KEY fehlt", flush=True)
+    # Key pro Mandant (tools/anthropic_auth.py, 08.09.2026); fehlt er, faellt
+    # die Stufe wie bisher weg statt still auf einen anderen Key zu gehen.
+    try:
+        api_key = anthropic_auth.get_key()
+    except ValueError as e:
+        print(f"  Stufe 2 übersprungen: {e}", flush=True)
         return []
 
     try:

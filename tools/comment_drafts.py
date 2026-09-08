@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 
 import anthropic
 import requests
+from tools.anthropic_auth import LazyAnthropic
 from tools.apify_auth import apify_client
 from dotenv import load_dotenv
 
@@ -30,7 +31,8 @@ from tools.topic_pool import get_meta, set_meta
 load_dotenv()
 
 _cfg = load_client()
-_llm = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# Key pro Mandant, siehe tools/anthropic_auth.py (08.09.2026)
+_llm = LazyAnthropic(_cfg)
 # Token und Kontowache pro Mandant, siehe tools/apify_auth.py
 
 COMMENT_MODEL = "claude-sonnet-4-6"

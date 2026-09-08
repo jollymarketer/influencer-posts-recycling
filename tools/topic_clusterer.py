@@ -6,12 +6,14 @@ import os
 import re
 from dataclasses import dataclass, field
 
-import anthropic
 from dotenv import load_dotenv
+
+from tools.anthropic_auth import LazyAnthropic
 
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# Key pro Mandant, siehe tools/anthropic_auth.py (08.09.2026)
+client = LazyAnthropic()
 
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 8192

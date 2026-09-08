@@ -21,6 +21,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from clients import load_client
+from tools import anthropic_auth
 
 load_dotenv()
 
@@ -102,7 +103,7 @@ def required_env(cfg) -> list:
     features = getattr(cfg, "FEATURES", None) or {}
     env = [
         (getattr(cfg, "NOTION_TOKEN_ENV", "NOTION_TOKEN"), HARD),
-        ("ANTHROPIC_API_KEY", HARD),
+        (anthropic_auth.token_env_name(cfg), HARD),
         (getattr(cfg, "APIFY_TOKEN_ENV", "APIFY_API_KEY"), HARD),
         ("KIEAI_API_KEY", SOFT),
         (getattr(cfg, "MAKE_WEBHOOK_ENV", "MAKE_REVIEW_WEBHOOK"), SOFT),
@@ -206,9 +207,12 @@ def check_apify(cfg) -> list:
 
 
 def check_anthropic(cfg) -> list:
-    key = os.getenv("ANTHROPIC_API_KEY")
+    # Keyname pro Mandant, sonst prueft der Health-Check Jollys Konto,
+    # waehrend der Lauf auf dem Mandantenkonto stattfindet.
+    name = anthropic_auth.token_env_name(cfg)
+    key = os.getenv(name)
     if not key:
-        return [_result("anthropic", False, HARD, "ANTHROPIC_API_KEY fehlt - Check uebersprungen")]
+        return [_result("anthropic", False, HARD, f"{name} fehlt - Check uebersprungen")]
     model = getattr(cfg, "SCORING_MODEL", "claude-haiku-4-5-20251001")
     try:
         resp = requests.get(f"https://api.anthropic.com/v1/models/{model}",
