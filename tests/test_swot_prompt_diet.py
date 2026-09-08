@@ -3,6 +3,7 @@ Selbstwidersprueche im Schreib-Prompt. Laedt die Config direkt, unabhaengig
 vom Prozess-Mandanten der Test-Session."""
 import importlib
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -40,15 +41,16 @@ def test_voice_profiles_carry_no_spelled_out_formulas():
         assert "Was er nie sagen würde" in p
 
 
-def test_cta_de_points_to_the_first_comment():
-    # 02.09.2026 (Inga Baumert 01.09.): Link in den ersten Kommentar, nicht in
-    # den Text. Der Buchungssatz wandert in FIRST_COMMENT_DE / Plan-Spalte
-    # "Erster Kommentar".
-    assert cfg.CTA_DE == "Den Link zum Termin findet ihr im ersten Kommentar."
-    assert "http" not in cfg.CTA_DE
-    assert cfg.FIRST_COMMENT_DE == ("30 Minuten mit unseren Planungs- und "
-                                    "Konsolidierungsexperten, kostenfrei: "
-                                    "https://www.swot.de/demo-buchen/")
+def test_cta_de_carries_the_booking_link():
+    # 08.09.2026 (Richard): Link zurueck in den Text, der Verweis auf den
+    # ersten Kommentar zwang den Absender zu einem zweiten Handgriff. Ohne
+    # FIRST_COMMENT_DE bleibt die Plan-Spalte "Erster Kommentar" unberuehrt.
+    assert cfg.CTA_DE == ("30 Minuten mit unseren Planungs- und "
+                          "Konsolidierungsexperten, kostenfrei: "
+                          "https://www.swot.de/demo-buchen/")
+    assert not hasattr(cfg, "FIRST_COMMENT_DE")
+    # Keine Sie-Anrede: der Beitrag spricht mit du/ihr.
+    assert not re.search(r"\b(?:Sie|Ihnen|Ihre?[nmrs]?)\b", cfg.CTA_DE)
 
 
 def test_paragraph_rule_and_ich_beobachtung_in_prompt():

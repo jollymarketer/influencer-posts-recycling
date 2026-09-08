@@ -809,15 +809,18 @@ PROOF_ASSETS = [
 CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 
 # Schlusszeile unter jedem LinkedIn-Beitrag (post_scorer.blanket_cta liest
-# CTA_DE). Seit 02.09.2026 ohne Link: Inga Baumert (Notion-Kommentar
-# 01.09.2026) will Links in den Kommentaren, nicht im Text; Richard hat das
-# zugesagt. Der Buchungssatz mit Link steht in FIRST_COMMENT_DE und landet in
-# der Plan-Spalte "Erster Kommentar" (run_plan_fill), den postet der Absender
-# direkt unter den Beitrag. Bis 28.08. stand der Link nur per Notion-Handlauf
-# auf den 51 Bestandsposts, vom 28.08. bis 02.09. als Textzeile.
-CTA_DE = "Den Link zum Termin findet ihr im ersten Kommentar."
-FIRST_COMMENT_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
-                    "kostenfrei: https://www.swot.de/demo-buchen/")
+# CTA_DE). Seit 08.09.2026 wieder mit Link im Text: der Verweis auf den ersten
+# Kommentar zwang den Absender zu einem zweiten Handgriff je Beitrag, den
+# niemand garantiert. Richard 08.09.2026. Kehrt die Regel vom 02.09. um (Inga
+# Baumert, Notion-Kommentar 01.09.: Links in die Kommentare). Der Wortlaut ist
+# der von SWOT abgenommene aus dem bisherigen FIRST_COMMENT_DE, nur die
+# Platzierung wechselt; ohne FIRST_COMMENT_DE laesst run_plan_fill die
+# Plan-Spalte "Erster Kommentar" unberuehrt.
+# Keine Anrede: der Beitrag spricht mit du/ihr, ein "Sie" hier braeche das
+# Register. Kein "Erstgespraech": das ist laut COPY_RULES Werners Rolle, die
+# Zeile haengt aber unter beiden Konten.
+CTA_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
+          "kostenfrei: https://www.swot.de/demo-buchen/")
 
 # Stimme je Kanal fuer tools/post_writer.py. Der Text traegt die Stimme des
 # Kontos, nicht nur das Thema: wechselt ein Beitrag das Konto, wird er neu
