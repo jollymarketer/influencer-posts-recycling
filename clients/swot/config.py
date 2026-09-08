@@ -819,7 +819,7 @@ CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 # Keine Anrede: der Beitrag spricht mit du/ihr, ein "Sie" hier braeche das
 # Register. Kein "Erstgespraech": das ist laut COPY_RULES Werners Rolle, die
 # Zeile haengt aber unter beiden Konten.
-CTA_DE = ("30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
+CTA_DE = ("→ 30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
           "kostenfrei: https://www.swot.de/demo-buchen/")
 
 # Stimme je Kanal fuer tools/post_writer.py. Der Text traegt die Stimme des

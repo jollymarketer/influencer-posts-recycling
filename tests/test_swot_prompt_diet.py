@@ -45,7 +45,7 @@ def test_cta_de_carries_the_booking_link():
     # 08.09.2026 (Richard): Link zurueck in den Text, der Verweis auf den
     # ersten Kommentar zwang den Absender zu einem zweiten Handgriff. Ohne
     # FIRST_COMMENT_DE bleibt die Plan-Spalte "Erster Kommentar" unberuehrt.
-    assert cfg.CTA_DE == ("30 Minuten mit unseren Planungs- und "
+    assert cfg.CTA_DE == ("→ 30 Minuten mit unseren Planungs- und "
                           "Konsolidierungsexperten, kostenfrei: "
                           "https://www.swot.de/demo-buchen/")
     assert not hasattr(cfg, "FIRST_COMMENT_DE")
