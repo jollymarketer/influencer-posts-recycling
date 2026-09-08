@@ -12,3 +12,4 @@ Gemini_Generated_Image_*.png
 
 # Third-party source material — never publish in this public repo
 Resources/transcriptions/
+runs/

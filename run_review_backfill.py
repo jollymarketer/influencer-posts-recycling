@@ -59,9 +59,12 @@ def read_with_model(text: str, material: str, voice: str):
         return None
 
 
-def report(out_dir: str, cfg) -> dict:
+def report(out_dir: str, cfg, limit: int = 0) -> dict:
     rows = rb.plan_rows(read_plan(cfg.CONTENT_PLAN_DB_ID))
     print(f"Entwurf-Zeilen mit Text: {len(rows)}", flush=True)
+    if limit:
+        rows = rows[:limit]
+        print(f"Probelauf, gelesen: {len(rows)}", flush=True)
     results = []
     for i, row in enumerate(rows, 1):
         r = rb.read_row(row, cfg, read_with_model)
@@ -111,7 +114,7 @@ def _patch_and_readback(page_id: str, text_neu: str) -> bool:
     return False
 
 
-def write(out_dir: str, cfg, refill_passes: int) -> dict:
+def write(out_dir: str, cfg, refill_passes: int, limit: int = 0) -> dict:
     """Bereinigt jede Entwurf-Zeile. Ein Notion-Fehler oder eine Ausnahme in
     einer einzelnen Zeile bricht den Lauf nicht ab (Review 28.08.2026): das
     Protokoll wird nach jeder Zeile geschrieben, nicht erst am Ende, sonst
@@ -124,6 +127,11 @@ def write(out_dir: str, cfg, refill_passes: int) -> dict:
     rows = rb.plan_rows(read_plan(cfg.CONTENT_PLAN_DB_ID))
     print(f"Entwurf-Zeilen mit Text: {len(rows)}", flush=True)
     print(f"Backup: {_backup(rows, out_dir)}", flush=True)
+    # Das Backup deckt immer den ganzen Bestand ab, --limit schneidet erst
+    # danach: ein Probelauf soll die Wiederherstellung nicht verkuerzen.
+    if limit:
+        rows = rows[:limit]
+        print(f"Probelauf, bearbeitet: {len(rows)}", flush=True)
     zaehler = {"unveraendert": 0, "repariert": 0, "geleert": 0, "fehler": 0}
     monate, protokoll, geleert_ids = set(), [], set()
     stem = os.path.join(out_dir, dt.date.today().isoformat() + "_bestand-write")
@@ -182,11 +190,14 @@ def main() -> int:
     ap.add_argument("--refill-passes", type=int, default=0,
                     help="Durchgaenge Nachfuellen (Default 0: braucht Budget-Freigabe)")
     ap.add_argument("--out", required=True, help="Ausgabeordner fuer Bericht und Rohdaten")
+    ap.add_argument("--limit", type=int, default=0,
+                    help="nur die ersten N Zeilen (Probelauf); 0 heisst alle")
     args = ap.parse_args()
     if args.report == args.write:
         ap.error("genau eines von --report oder --write angeben")
     cfg = load_client()
-    r = report(args.out, cfg) if args.report else write(args.out, cfg, args.refill_passes)
+    r = (report(args.out, cfg, args.limit) if args.report
+         else write(args.out, cfg, args.refill_passes, args.limit))
     print(f"Fertig: {r}")
     return 0
 

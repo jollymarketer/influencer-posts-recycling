@@ -21,7 +21,11 @@ Schluessel von COPY_RULES, alle optional:
   (Inga 07.09.2026 zu "vorher falsch gebaut" neben einem Kundennamen).
 - term_map: {Begriff: Ersatz}. Fachwort nicht aus dem VoC-Korpus; das ganze
   Kompositum wird zitiert und mit Ersatz vorgeschlagen.
-- address: "du". Sie-Form mitten im Satz ist ein Registerbruch.
+- address: "du" oder "Sie". Die jeweils andere Anrede mitten im Satz ist ein
+  Registerbruch. Bei "Sie" zaehlen nur eindeutige Marker (du/dich/dir/dein,
+  euch/euer/eure, und kleingeschriebenes "ihr", dem kein Substantiv folgt);
+  "ihre", "ihrem" und ein grossgeschriebenes "Ihr" sind Besitzformen und
+  bleiben unberuehrt.
 - cta_bridge: True. Der Schlussabsatz ist eine Bruecke zur automatisch
   angehaengten Terminzeile: keine Frage, kein eigener Link-Hinweis, und er
   spricht den Leser an.
@@ -33,6 +37,10 @@ _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+|\n+")
 _SIE = re.compile(r"\b(?:Sie|Ihnen|Ihre?[nmrs]?)\b")
 _LABEL = re.compile(r"^([A-ZÄÖÜ][\wäöüß-]{1,24}):", re.M)
 _ADDRESS = re.compile(r"\b(?:du|dich|dir|dein\w*|ihr|euch|euer|eure\w*)\b", re.I)
+# Anrede des Lesers in du/ihr, eindeutig: "ihr" nur klein und ohne folgendes
+# Substantiv ("ihr habt" ist Pronomen, "ihr Zahlenwerk" ist Besitzform).
+_DU = re.compile(r"\b(?:[Dd]u|[Dd]ich|[Dd]ir|[Dd]ein\w*|[Ee]uch|[Ee]uer|[Ee]ure\w*)\b"
+                 r"|\bihr\b(?!\s+[A-ZÄÖÜ])")
 _LINK_HINT = re.compile(r"im (?:ersten )?Kommentar|Link zum Termin|https?://|Termin buchen", re.I)
 QUOTE_CAP = 200
 
@@ -95,7 +103,15 @@ def _terms(text: str, term_map: dict) -> list[dict]:
     return out
 
 
-def _register(text: str) -> list[dict]:
+def _register(text: str, address: str) -> list[dict]:
+    if address == "Sie":
+        m = _DU.search(text)
+        if not m:
+            return []
+        return [_finding(
+            "register", _sentence_with(text, m.start()),
+            "du- oder ihr-Form im Text, der Beitrag siezt den Leser",
+            "in die Sie-Form umschreiben")]
     for s in _SENTENCE_SPLIT.split(text):
         for m in _SIE.finditer(s):
             if s[:m.start()].strip(' "„“\'(') == "":
@@ -107,12 +123,14 @@ def _register(text: str) -> list[dict]:
     return []
 
 
-def _cta(text: str) -> list[dict]:
+def _cta(text: str, address: str) -> list[dict]:
     absaetze = [a.strip() for a in re.split(r"\n\s*\n", text.strip()) if a.strip()]
     if not absaetze:
         return []
     letzter = absaetze[-1]
-    bruecke = ("Schlussabsatz als Brücke in du- oder ihr-Form ohne Frage: den "
+    form = "Sie-Form" if address == "Sie" else "du- oder ihr-Form"
+    anrede = _SIE if address == "Sie" else _ADDRESS
+    bruecke = (f"Schlussabsatz als Brücke in {form} ohne Frage: den "
                "Anlass nennen, das einmal gemeinsam durchzugehen; die "
                "Terminzeile folgt automatisch darunter")
     q = letzter.rfind("?")
@@ -125,7 +143,7 @@ def _cta(text: str) -> list[dict]:
         return [_finding("cta", _sentence_with(letzter, m.start()),
                          "eigener Link- oder Terminhinweis im Text, die Terminzeile kommt automatisch",
                          bruecke)]
-    if not _ADDRESS.search(letzter):
+    if not anrede.search(letzter):
         return [_finding("cta", letzter,
                          "Schlussabsatz ohne Leseransprache, keine Brücke zur Terminzeile",
                          bruecke)]
@@ -156,10 +174,11 @@ def findings(text: str, voice: str = "", rules: dict | None = None) -> list[dict
     out += _role(text, voice, rules.get("role_frames"))
     out += _disparagement(text, rules.get("disparagement"))
     out += _terms(text, rules.get("term_map"))
-    if rules.get("address") == "du":
-        out += _register(text)
+    address = rules.get("address")
+    if address in ("du", "Sie"):
+        out += _register(text, address)
     if rules.get("cta_bridge"):
-        out += _cta(text)
+        out += _cta(text, address)
     cap = rules.get("structure_max_repeat")
     if cap:
         out += _structure(text, int(cap))

@@ -25,10 +25,13 @@ RULES = {
     },
     "disparagement": [r"falsch (?:gebaut|umgesetzt)", r"aber schlechter", r"niemand wusste"],
     "term_map": {"Cashforecast": "Liquiditätsplanung", "Liquiditätsprognose": "Liquiditätsplanung"},
-    "address": "du",
+    "address": "Sie",
     "cta_bridge": True,
     "structure_max_repeat": 2,
 }
+# Anrede-Mechanik in die andere Richtung (Richard 08.09.2026: SWOT siezt; die
+# du-Variante bleibt geprueft, weil andere Mandanten sie fahren koennen).
+DU_RULES = {**RULES, "address": "du"}
 ROBERT = "Du schreibst als Robert Werner, Leiter Vertrieb und Akademie."
 CHRISTIAN = "Du schreibst als Christian Kulle von der SWOT Controlling GmbH."
 
@@ -43,7 +46,7 @@ def test_role_frame_flags_forbidden_situation_for_the_named_speaker():
     # Fundtext Werner 22.09.2026 (Inga: "Robert selbst fuehrt keine
     # Einfuehrungsprojekte").
     text = ("Beim Einführungsprojekt letzte Woche hat mich der Controller "
-            "unterbrochen.\n\nEuch fehlt das Mapping.")
+            "unterbrochen.\n\nIhnen fehlt das Mapping.")
     out = cr.findings(text, ROBERT, RULES)
     rolle = [f for f in out if f["art"] == "rolle"]
     assert len(rolle) == 1
@@ -54,7 +57,7 @@ def test_role_frame_flags_forbidden_situation_for_the_named_speaker():
 
 
 def test_role_frame_ignores_unknown_speaker_and_missing_rules():
-    text = "Beim Einführungsprojekt letzte Woche.\n\nIhr kennt das."
+    text = "Beim Einführungsprojekt letzte Woche.\n\nSie kennen das."
     assert cr.findings(text, "Du schreibst fuer die Unternehmensseite.", RULES) == []
     assert cr.findings(text, ROBERT, None) == []
     assert cr.findings(text, ROBERT, {}) == []
@@ -67,7 +70,7 @@ def test_disparagement_pattern_is_a_finding_with_neutral_suggestion():
     # zuvor schlicht falsch umgesetzt wurde".
     text = ("Hans-Joachim Möbes hat seinen Monatsabschluss auf einen Tag "
             "gebracht. Nicht durch Fleiß, sondern weil das Verfahren vorher "
-            "falsch gebaut war.\n\nPrüft, wie viele eurer Vorlagen deckungsgleich sind.")
+            "falsch gebaut war.\n\nPrüfen Sie, wie viele Ihrer Vorlagen deckungsgleich sind.")
     out = [f for f in cr.findings(text, ROBERT, RULES) if f["art"] == "abwertung"]
     assert len(out) == 1
     assert out[0]["zitat"] == "falsch gebaut"
@@ -81,7 +84,7 @@ def test_term_map_quotes_the_whole_compound_and_proposes_replacement():
     # passendere Wort?"). VoC-Korpus: Liquiditaetsplanung 36, Prognose 1,
     # Cashforecast 0.
     text = ("Beim ersten 13-Wochen-Cashforecast stimmen die Zahlen fast nie.\n\n"
-            "Prüft eure Annahmen, bevor ihr die Zahlen weitergebt.")
+            "Prüfen Sie Ihre Annahmen, bevor Sie die Zahlen weitergeben.")
     out = [f for f in cr.findings(text, ROBERT, RULES) if f["art"] == "fachbegriff"]
     assert len(out) == 1
     assert out[0]["zitat"] == "13-Wochen-Cashforecast"
@@ -89,18 +92,36 @@ def test_term_map_quotes_the_whole_compound_and_proposes_replacement():
 
 
 def test_term_map_reports_each_term_once():
-    text = "Cashforecast hier, Cashforecasts dort.\n\nIhr seht es."
+    text = "Cashforecast hier, Cashforecasts dort.\n\nSie sehen es."
     out = [f for f in cr.findings(text, ROBERT, RULES) if f["art"] == "fachbegriff"]
     assert len(out) == 1
 
 
-# --- Ein Register: du/ihr ------------------------------------------------------
+# --- Ein Register: Sie ---------------------------------------------------------
 
-def test_sie_form_mid_sentence_is_a_register_finding():
-    # Ingas CTA-Vorschlag vom 07.09.2026 in Sie-Form, alle Beitraege sind du/ihr.
-    text = ("Der Vorlauf fehlt im Kalender.\n\nSie möchten noch in diesem Jahr "
-            "starten? Lassen Sie uns besprechen, welche Schritte dafür jetzt nötig sind.")
+def test_du_form_is_a_register_finding():
+    # Richard 08.09.2026: SWOT-Content wird gesiezt, der Bestand stand in du/ihr.
+    text = ("Der Vorlauf fehlt im Kalender.\n\nPrüfen Sie das, bevor euch der "
+            "Stichtag einholt.")
     out = [f for f in cr.findings(text, CHRISTIAN, RULES) if f["art"] == "register"]
+    assert len(out) == 1
+    assert "euch" in out[0]["zitat"]
+    assert "Sie-Form" in out[0]["vorschlag"]
+
+
+def test_ihr_as_pronoun_is_a_finding_but_possessive_ihr_is_not():
+    pronomen = ("Die Frist steht.\n\nWenn ihr das jetzt aufsetzt, reicht die Zeit.")
+    assert "register" in _arten(cr.findings(pronomen, ROBERT, RULES))
+    besitz = ("Kunden bereiten ihr Zahlenwerk für die Bank auf.\n\nIhre Annahmen "
+              "sollten Sie dabei dokumentieren.")
+    assert "register" not in _arten(cr.findings(besitz, ROBERT, RULES))
+
+
+def test_sie_form_mid_sentence_is_a_register_finding_when_the_client_says_du():
+    # Ingas CTA-Vorschlag vom 07.09.2026 in Sie-Form unter einem ihr-Text.
+    text = ("Der Vorlauf fehlt im Kalender.\n\nIhr wollt noch in diesem Jahr "
+            "starten? Lassen Sie uns besprechen, welche Schritte jetzt nötig sind.")
+    out = [f for f in cr.findings(text, CHRISTIAN, DU_RULES) if f["art"] == "register"]
     assert len(out) == 1
     assert "Lassen Sie uns" in out[0]["zitat"]
 
@@ -108,7 +129,7 @@ def test_sie_form_mid_sentence_is_a_register_finding():
 def test_plural_sie_at_sentence_start_is_not_a_register_finding():
     text = ("Die Zahlen sahen schlüssig aus. Sie stimmten trotzdem nicht, weil "
             "die Annahmen fehlten.\n\nPrüft, wer welche Annahme gesetzt hat.")
-    assert "register" not in _arten(cr.findings(text, ROBERT, RULES))
+    assert "register" not in _arten(cr.findings(text, ROBERT, DU_RULES))
 
 
 # --- Ein CTA mit Bruecke -------------------------------------------------------
@@ -116,10 +137,10 @@ def test_plural_sie_at_sentence_start_is_not_a_register_finding():
 def test_closing_question_is_a_cta_finding():
     # Fundtext Werner 15.09.2026: Schlussfrage plus Terminzeile darunter.
     text = ("Ein übergabefähiges Modell braucht vier Dinge.\n\n"
-            "Wie lange würde es bei euch dauern?")
+            "Wie lange würde es bei Ihnen dauern?")
     out = [f for f in cr.findings(text, ROBERT, RULES) if f["art"] == "cta"]
     assert len(out) == 1
-    assert out[0]["zitat"] == "Wie lange würde es bei euch dauern?"
+    assert out[0]["zitat"] == "Wie lange würde es bei Ihnen dauern?"
 
 
 def test_last_paragraph_without_reader_address_is_a_cta_finding():
@@ -134,15 +155,15 @@ def test_last_paragraph_without_reader_address_is_a_cta_finding():
 
 def test_self_written_link_hint_is_a_cta_finding():
     text = ("Vier Fristen bis Anfang 2027.\n\n"
-            "Wenn ihr das durchgehen wollt: den Link findet ihr im ersten Kommentar.")
+            "Wenn Sie das durchgehen wollen: den Link finden Sie im ersten Kommentar.")
     out = [f for f in cr.findings(text, CHRISTIAN, RULES) if f["art"] == "cta"]
     assert len(out) == 1
     assert "Kommentar" in out[0]["zitat"]
 
 
-def test_bridge_paragraph_in_ihr_form_passes():
+def test_bridge_paragraph_in_sie_form_passes():
     text = ("Vier Fristen bis Anfang 2027.\n\n"
-            "Wenn ihr für Q1 2027 plant, lohnt es sich, den Vorlauf einmal "
+            "Wenn Sie für Q1 2027 planen, lohnt es sich, den Vorlauf einmal "
             "gemeinsam durchzugehen.")
     assert "cta" not in _arten(cr.findings(text, CHRISTIAN, RULES))
 
@@ -157,7 +178,7 @@ def test_repeated_label_pattern_beyond_cap_is_a_struktur_finding():
             "Annahme: Die Prognose gilt als Planungsinstrument.\nPraxis: Wer sie nach außen trägt, haftet.\n\n"
             "Annahme: Abweichungen erklärt man mündlich.\nPraxis: Wer nachreicht, hat verloren.\n\n"
             "Annahme: Das braucht nur die Eigenverwaltung.\nPraxis: Jeder Prüfer fragt danach.\n\n"
-            "Habt ihr das hinterlegt, oder lebt das noch in Köpfen.")
+            "Haben Sie das hinterlegt, oder lebt das noch in Köpfen.")
     out = [f for f in cr.findings(text, CHRISTIAN, RULES) if f["art"] == "struktur"]
     assert len(out) == 1
     assert out[0]["zitat"].startswith("Annahme: Abweichungen")
@@ -167,14 +188,14 @@ def test_repeated_label_pattern_beyond_cap_is_a_struktur_finding():
 def test_two_pairs_and_numbered_lists_pass():
     text = ("Annahme: A.\nPraxis: B.\n\nAnnahme: C.\nPraxis: D.\n\n"
             "➊ Kontenrahmen ziehen\n➋ Zuordnen\n➌ Klären\n➍ Dokumentieren\n\n"
-            "Prüft, ob eure Zuordnung als Regel dokumentiert ist.")
+            "Prüfen Sie, ob Ihre Zuordnung als Regel dokumentiert ist.")
     assert "struktur" not in _arten(cr.findings(text, CHRISTIAN, RULES))
 
 
 # --- Form der Befunde ----------------------------------------------------------
 
 def test_findings_carry_the_reader_shape():
-    text = "Beim Einführungsprojekt.\n\nWie lange dauert das bei euch?"
+    text = "Beim Einführungsprojekt.\n\nWie lange dauert das bei Ihnen?"
     for f in cr.findings(text, ROBERT, RULES):
         assert set(f) == {"art", "zitat", "grund", "vorschlag"}
         assert f["zitat"] and f["zitat"] in text

@@ -70,6 +70,9 @@ TOKENS = {
     "DECISION_MAKERS_DE": "Revenue-Entscheider (Founder, CEO, CRO, CSO, VP/Head of Sales)",
     "FOCUS_TOPICS_DE": "Revenue-Relevanz: Pipeline, Umsatz, CAC, Sales-Cycle, Planbarkeit",
     "FIRST_PERSON_ROLE_DE": "du bist der Fractional CMO aus der Praxis",
+    "READER_ADDRESS_DE": ("Leichte, sparsame Direktansprache des Lesers "
+                          "(\"du\"/\"ihr\") ist erlaubt und erwuenscht, wo sie "
+                          "den Sog erhoeht"),
     "CONTEXT_TRANSFER_DE": "Auf den Kontext von B2B-Teams in DACH uebertragen (SaaS, Tech, etablierte Dienstleister), ohne den Raum explizit zu betonen",
     "LANGUAGE_BANS_DE": """- Begriff "Mittelstand" niemals verwenden (klingt altbacken, passt nicht zum ICP)
 - Das Wort "DACH" maximal EINMAL im gesamten Post - nie als Label wie "DACH-Mittelstand", "DACH-Raum", "DACH-Unternehmen"

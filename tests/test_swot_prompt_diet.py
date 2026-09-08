@@ -105,7 +105,9 @@ def test_closing_rule_bridge_and_single_cta():
     assert "Bruecke" in cfg.CLOSING_RULE_DE and "endet nie mit einer Frage" in cfg.CLOSING_RULE_DE
     assert cfg.CLOSING_RULE_DE in cfg.ACCOUNT_VOICES["LinkedIn Robert"]
     assert cfg.COPY_RULES["cta_bridge"] is True
-    assert cfg.COPY_RULES["address"] == "du"
+    # Richard 08.09.2026: SWOT-Content wird gesiezt.
+    assert cfg.COPY_RULES["address"] == "Sie"
+    assert "Sie-Form" in cfg.TOKENS["READER_ADDRESS_DE"]
     assert cfg.COPY_RULES["structure_max_repeat"] == 2
     assert cfg.STRUCTURE_REPLACEMENTS == [
         ("2-4 Annahme-gegen-Praxis-Paare", "zwei Annahme-gegen-Praxis-Paare, nie mehr")]

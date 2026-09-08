@@ -137,7 +137,7 @@ Tonalitaet:
 - Natuerlich und fluessig schreiben. Variiere Satzlaengen: kurze Saetze fuer Wirkung, laengere fuer Erklaerungen und Zusammenhaenge. Kein Stakkato-Stil mit nur abgehackten Einzelsaetzen. Der Text soll sich lesen wie ein kluger Mensch, der redet, nicht wie eine Bulletpoint-Liste
 - Fokus auf [[FOCUS_TOPICS_DE]]
 - Keine Buzzwords, kein Marketing-Sprech
-- Ich-Form ([[FIRST_PERSON_ROLE_DE]]). Leichte, sparsame Direktansprache des Lesers ("du"/"ihr") ist erlaubt und erwuenscht, wo sie den Sog erhoeht
+- Ich-Form ([[FIRST_PERSON_ROLE_DE]]). [[READER_ADDRESS_DE]]
 - [[CONTEXT_TRANSFER_DE]]
 - Der Text soll hilfreich und menschlich rueberkommen, nicht wie AI-generierter Content
 - Kein Satz ueber 25 Woerter. Ein Gedanke je Satz, hoechstens ein Nebensatz
@@ -1547,7 +1547,7 @@ HARTE REGELN:
 - Schriftdeutsch: vollstaendige Saetze, Verb an zweiter Stelle, keine Echo-Antworten, keine Pointen-Formeln.
 - Ersetze eine Formel durch einen schlichten Aussagesatz, nie durch eine andere Formel: kein Satz beginnt mit "Wer", keine Konstruktion aus "nicht ..., sondern ...", kein Absatz endet mit einer Umdeutung. Sage, was der Fall ist.
 - Bei "kohaerenz": passe den ersten Absatz an den Rest an, nie umgekehrt.
-- Bei "rolle", "abwertung", "register", "fachbegriff", "cta" und "struktur" ist der Vorschlag im Befund die Vorgabe: setze ihn um. Bei "fachbegriff" das Wort aus dem Vorschlag einsetzen und Artikel und Endungen anpassen. Bei "cta" den letzten Absatz als einen Satz in du- oder ihr-Form neu schreiben, ohne Frage, ohne Link. Bei "struktur" die ueberzaehligen Zeilen als Fliesstext ohne Label schreiben.
+- Bei "rolle", "abwertung", "register", "fachbegriff", "cta" und "struktur" ist der Vorschlag im Befund die Vorgabe: setze ihn um. Bei "fachbegriff" das Wort aus dem Vorschlag einsetzen und Artikel und Endungen anpassen. Bei "cta" den letzten Absatz als einen Satz in der Anrede neu schreiben, die der Vorschlag nennt, ohne Frage, ohne Link. Bei "struktur" die ueberzaehligen Zeilen als Fliesstext ohne Label schreiben.
 - Kein Kommentar, kein Markdown, keine Erklaerung: antworte NUR mit dem vollstaendigen Text.
 
 BEFUNDE:

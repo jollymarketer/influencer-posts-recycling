@@ -136,6 +136,10 @@ TOKENS = {
         "und siehst, wie Kunden ihr Zahlenwerk fuer Bank, Gesellschafter oder "
         "Pruefer aufbereiten"
     ),
+    # Richard 08.09.2026: SWOT-Content wird gesiezt. Geprueft in COPY_RULES
+    # ("address": "Sie") ueber tools/copy_rules._register.
+    "READER_ADDRESS_DE": ("Der Leser wird direkt angesprochen, durchgehend in "
+                          "der Sie-Form, nie mit du und nie mit ihr"),
     "CONTEXT_TRANSFER_DE": (
         "Auf den Alltag von Controlling und Rechnungswesen im Mittelstand "
         "uebertragen, ohne die Branche plakativ zu betonen. Gesetze, Normen "
@@ -177,7 +181,7 @@ TOKENS = {
 - Keine erfundenen Zahlen. Belegt sind ausschliesslich die Angaben aus dem KONTEXT
 - Nie in der Ich- oder Wir-Form als Teilnehmer eines Bankgespraechs, Gerichtstermins, einer Gesellschafterrunde oder eines Gremiums schreiben. SWOT ist Softwarehersteller, kein Interim-CFO und kein Berater am Tisch
 - Kunden, Referenzkunden und genannte Personen nie abwerten: den frueheren Zustand neutral beschreiben (Dauer, Aufwand, Ergebnis), nie als Fehler oder Unvermoegen
-- Ein Register je Beitrag: Alltagsdeutsch eines Fachmenschen, Anrede du oder ihr, keine Amtssprache und kein Nominalstil daneben
+- Ein Register je Beitrag: Alltagsdeutsch eines Fachmenschen, Anrede durchgehend Sie, nie du oder ihr, und daneben keine Amtssprache und kein Nominalstil
 - Fachwoerter, wie Kunden sie sagen: die Vorschau der Zahlungsfaehigkeit heisst Liquiditaetsplanung, auch als 13-Wochen- oder 12-Monats-Sicht
 - Ein Zweizeiler-Muster mit Label (Annahme/Praxis, Frage/Antwort) hoechstens zweimal je Beitrag""",
 
@@ -816,9 +820,9 @@ CONTENT_PLAN_DB_ID = "4e7b33b3-e1a3-4e3d-8024-011731d3b373"
 # der von SWOT abgenommene aus dem bisherigen FIRST_COMMENT_DE, nur die
 # Platzierung wechselt; ohne FIRST_COMMENT_DE laesst run_plan_fill die
 # Plan-Spalte "Erster Kommentar" unberuehrt.
-# Keine Anrede: der Beitrag spricht mit du/ihr, ein "Sie" hier braeche das
-# Register. Kein "Erstgespraech": das ist laut COPY_RULES Werners Rolle, die
-# Zeile haengt aber unter beiden Konten.
+# Keine Anrede in der Zeile selbst; der Beitrag siezt (Richard 08.09.2026,
+# kehrt die du/ihr-Regel desselben Tages um). Kein "Erstgespraech": das ist
+# laut COPY_RULES Werners Rolle, die Zeile haengt aber unter beiden Konten.
 CTA_DE = ("→ 30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
           "kostenfrei: https://www.swot.de/demo-buchen/")
 
@@ -835,7 +839,7 @@ CTA_DE = ("→ 30 Minuten mit unseren Planungs- und Konsolidierungsexperten, "
 # ("Offene Schleife ... streitbare Frage"), sonst staenden zwei Regeln im
 # selben Prompt gegeneinander. Geprueft von tools/copy_rules (cta).
 CLOSING_RULE_DE = (
-    "Der letzte Absatz ist eine Bruecke von einem Satz in du- oder ihr-Form: "
+    "Der letzte Absatz ist eine Bruecke von einem Satz in der Sie-Form: "
     "er nennt aus dem Thema den Anlass, das einmal gemeinsam durchzugehen, "
     "ohne Frage und ohne Floskel. Davor darf ein Satz die Regel oder Zahl "
     "festhalten. Der Beitrag endet nie mit einer Frage und nennt weder Link "
@@ -866,7 +870,7 @@ def _hersteller_position(situationen: str) -> str:
         "beim Kunden. Genau eine Beobachtung je Beitrag in der Ich-Form aus einer "
         f"konkreten Situation dort, und zwar nur aus diesen: {situationen}. Jedes "
         "Mal eine andere Situation mit anderen Worten, nie dieselbe Formel. Anrede "
-        "durchgehend du oder ihr, nie Sie. Am Schluss: " + CLOSING_RULE_DE
+        "des Lesers durchgehend Sie, nie du und nie ihr. Am Schluss: " + CLOSING_RULE_DE
     )
 
 
@@ -978,8 +982,9 @@ ACCOUNT_VOICES = {
 # - term_map: Fachbegriff aus dem VoC-Korpus. Auszaehlung 08.09.2026 ueber
 #   Anwenderberichte, Sales-Calls, Stellenanzeigen: Liquiditaetsplanung 36,
 #   Liquiditaetsprognose 1, Cashforecast 0.
-# - address du: ein Register, Sie-Form ist ein Bruch (Ingas CTA-Vorschlag
-#   stand in Sie-Form unter einem ihr-Text).
+# - address Sie: ein Register, du- oder ihr-Form ist der Bruch. Richard
+#   08.09.2026: SWOT-Content wird gesiezt. Kehrt die du-Regel vom selben Tag
+#   um, die aus den Bestandstexten abgeleitet war.
 # - cta_bridge: ein CTA je Beitrag, Schlussabsatz als Bruecke, nie Frage plus
 #   Terminzeile (siehe CLOSING_RULE_DE).
 # - structure_max_repeat: ein Label-Muster hoechstens zweimal.
@@ -1004,7 +1009,7 @@ COPY_RULES = {
                  "Cash-Forecast": "Liquiditätsplanung",
                  "Cashflow-Forecast": "Liquiditätsplanung",
                  "Liquiditätsprognose": "Liquiditätsplanung"},
-    "address": "du",
+    "address": "Sie",
     "cta_bridge": True,
     "structure_max_repeat": 2,
 }

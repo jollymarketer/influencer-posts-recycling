@@ -107,6 +107,9 @@ TOKENS = {
     "DECISION_MAKERS_DE": "Entscheider in Marketing, Lokalisierung und Technischer Dokumentation (Marketingleiter, Doku-Leiter, Localization Manager)",
     "FOCUS_TOPICS_DE": "Prozess- und Kosten-Relevanz: Durchlaufzeiten, versteckte DTP-Kosten, Terminologie-Qualität, Skalierbarkeit über Sprachen",
     "FIRST_PERSON_ROLE_DE": "du bist der Praktiker, der seit Jahren mehrsprachige Dokumentproduktion in der Industrie automatisiert",
+    "READER_ADDRESS_DE": ("Leichte, sparsame Direktansprache des Lesers "
+                          "(\"du\"/\"ihr\") ist erlaubt und erwuenscht, wo sie "
+                          "den Sog erhoeht"),
     "CONTEXT_TRANSFER_DE": "Auf den Kontext produzierender Unternehmen mit mehrsprachiger Dokumentation übertragen, ohne die Branche plakativ zu betonen",
     "LANGUAGE_BANS_DE": """- Niemals Preise, Lizenzkosten oder Budget-Größenordnungen nennen (auch keine ungefähren Zahlen)
 - InTO nie als Übersetzungstool, DeepL-Alternative oder Trados-Konkurrent bezeichnen
