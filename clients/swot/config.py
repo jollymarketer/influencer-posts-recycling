@@ -319,7 +319,15 @@ Keep the overall look clear, structured, premium, and brand-consistent.""",
 - No brand, tool or company logos anywhere, neither SWOT's own nor third
   parties'. No monograms, no signatures, no imprinted marks. Third-party names
   may appear as plain words inside headline text only.
-- Reserve a clean, empty bottom-right corner for a logo overlay added later.""",
+- Reserve a clean, empty bottom-right corner for a logo overlay added later.
+- Website motifs (swot.de, measured 09.09.2026, see Clients/SWOT/Branding/
+  swot-design-blueprint.md): large pale blue-grey circles (#D7DFEA) as
+  background shapes, a single diagonal yellow band, the two blue-greys of the
+  logo diamond (#D7DFEA, #B0BFD4) for surfaces and shadows, thin line icons,
+  chart fragments where grey means plan and yellow means actual. Yellow is a
+  band, circle, bar, line or one numeral, never a flooded surface. If people
+  appear they are photographic, warm office light, never illustrated.
+  Calm and structured, no neon, no 3D blobs, no startup glow.""",
     "INFOGRAPHIC_BRAND_RULES": """SWOT Controlling brand rules for diagrams and infographics:
 - Background: White (#FFFFFF) or very light cool grey (#F5F6F8). No gradients.
 - Labels and headings: Anthracite (#202020) or Navy (#182047), bold.
@@ -330,7 +338,10 @@ Keep the overall look clear, structured, premium, and brand-consistent.""",
 - At most 3 colors prominently in the same composition.
 - No logos of any kind, neither SWOT's own nor third parties'. Third-party
   names may appear as plain label text only.
-- Numbers and axis labels must stay legible at LinkedIn feed size.""",
+- Numbers and axis labels must stay legible at LinkedIn feed size.
+- Chart grammar of swot.de dashboards: grey areas or bars for plan or
+  context, yellow line, dot or single bar for the actual or highlighted
+  value; donuts from yellow plus two greys; thin line icons only.""",
 }
 
 # Content-Achsen (Entscheidung Richard 19.08.2026). Die Achse ist eine
