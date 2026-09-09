@@ -195,7 +195,7 @@ READER_PROMPT = """Du liest einen deutschen LinkedIn-Beitrag als strenger, aber 
 {voice_block}
 MATERIAL, das der Beitrag einlösen soll:
 {material}
-
+{facts_block}
 Neun Fragen. Jede Antwort ist entweder "nichts gefunden" oder ein Befund mit Zitat:
 1. schriftdeutsch: Gibt es einen Satz, der als geschriebenes Deutsch nicht korrekt ist? Nur: ein Aussagesatz mit dem Verb an erster Stelle, der weder Frage noch Befehl noch Bedingungssatz ist ("Stimmen sie nicht." als Antwort auf den Satz davor); fehlendes Subjekt oder Verb; ein Fragment, das der Leser als abgebrochenen Nebensatz liest. Kein Befund: uneingeleitete Bedingungssätze ("Stimmen Planung und Gliederung nicht überein, entsteht doppeltes Rechnen"), Ellipsen mit Modalverb ("wo er hin will"), bewusst kurze vollständige Sätze.
 2. kohaerenz: Behauptet der erste Absatz etwas, das der Rest widerlegt? Nur, wenn beide Stellen zusammen unvereinbar sind. Kein Befund: der Rest vertieft oder erweitert den Opener, nennt die Ursache hinter dem Symptom oder wechselt zur Lösung. Zitiere beide Stellen im Feld zitat, getrennt durch " | ", und nenne im Feld grund, warum sie einander ausschließen. Stimme und Register gehören zu Frage 7, nicht hierher.
@@ -217,6 +217,15 @@ TEXT:
 _READER_VOICE_BLOCK = """
 MASSSTAB für die Fragen 5 und 7 ist die Person, in deren Namen der Beitrag erscheint. So spricht und schreibt sie:
 {voice}
+"""
+
+# Belegte Fakten des Mandanten (Anwenderberichte, Normen, Fristen). Ohne
+# diesen Block liest der Leser jede belegte Zahl als ungedeckt: am 09.09.2026
+# verwarf er sieben Beitraege wegen "35 Prozent weniger Zeitaufwand" (steht im
+# Anwenderbericht) und wegen der IFRS-18-Geltung (steht im Fristen-Kalender).
+_READER_FACTS_BLOCK = """
+BELEGTE FAKTEN aus Anwenderberichten, Normen und Fristen. Diese Angaben sind geprüft: melde sie nie als deckung und nie als fachlogik, auch dann nicht, wenn sie nicht im MATERIAL stehen. Ein Befund entsteht nur, wenn der Text von einer dieser Angaben abweicht; dann zitiere die abweichende Stelle und nenne die richtige Fassung.
+{facts}
 """
 
 # Antwortformat als Schema fuer Structured Output (Sonde 28.08.2026: mit
@@ -249,14 +258,18 @@ READER_SCHEMA = {
 }
 
 
-def reader_prompt(text: str, material: str = "", voice: str = "") -> str:
+def reader_prompt(text: str, material: str = "", voice: str = "",
+                  facts: str = "") -> str:
     """Leser-Prompt: Text, Material (Thema und Kurzbeschreibung oder Quell-
-    Post) und das Stimmprofil als Massstab, wenn eines vorliegt."""
+    Post), das Stimmprofil als Massstab und die belegten Fakten des Mandanten
+    (VERIFIED_FACTS_DE), wenn eines davon vorliegt."""
     voice = (voice or "").strip()
+    facts = (facts or "").strip()
     return READER_PROMPT.format(
         text=text,
         material=(material or "").strip() or "(kein Material)",
         voice_block=_READER_VOICE_BLOCK.format(voice=voice) if voice else "",
+        facts_block=_READER_FACTS_BLOCK.format(facts=facts) if facts else "",
         max_findings=MAX_FINDINGS,
     )
 

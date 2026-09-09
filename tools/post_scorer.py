@@ -1620,7 +1620,8 @@ def _read_findings(text: str, voice: str = "", material: str = "") -> list[dict]
             output_config={"format": {"type": "json_schema",
                                       "schema": naturalness.READER_SCHEMA}},
             messages=[{"role": "user", "content": naturalness.reader_prompt(
-                text, material=material, voice=voice)}],
+                text, material=material, voice=voice,
+                facts=getattr(_cfg, "VERIFIED_FACTS_DE", ""))}],
         )
         raw = resp.content[0].text
     except Exception as e:

@@ -244,3 +244,15 @@ def test_hard_arten_are_sense_errors_plus_customer_rules():
     assert {"schriftdeutsch", "kohaerenz", "deckung", "fachlogik"} <= set(nat.HARD_ARTEN)
     assert {"schablone", "muendlich", "fremdstimme", "satzlaenge"}.isdisjoint(nat.HARD_ARTEN)
     assert set(nat.HARD_ARTEN) < set(nat.FINDING_ARTEN)
+
+
+def test_reader_prompt_carries_verified_facts_and_omits_the_block_without_them():
+    # Lauf 09.09.2026: ohne diesen Block meldete der Leser belegte Zahlen aus
+    # den Anwenderberichten als "deckung" und Fristen als "fachlogik".
+    p = nat.reader_prompt("Text.", material="Thema: X",
+                          facts="- Lebensmittelhersteller: 35% weniger Zeitaufwand")
+    assert "BELEGTE FAKTEN" in p
+    assert "35% weniger Zeitaufwand" in p
+    assert "nie als deckung und nie als fachlogik" in p
+    ohne = nat.reader_prompt("Text.", material="Thema: X")
+    assert "BELEGTE FAKTEN" not in ohne and "{facts_block}" not in ohne

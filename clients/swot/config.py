@@ -1070,3 +1070,22 @@ FRISTEN_KALENDER = [
     {"id": "avr_dd", "deadline": "2026-09-01",
      "label": "AVR.DD: Entgelterhoehung 3,0 Prozent zum 01.09.2026"},
 ]
+
+# Belegte Fakten fuer den Leser (tools/naturalness.reader_prompt). Ohne diesen
+# Block kennt der Leser nur Thema und Kurzbeschreibung: er meldete am
+# 09.09.2026 die 35 Prozent Planungszeit aus dem Anwenderbericht als "deckung"
+# und die IFRS-18-Geltung als "fachlogik" und verwarf damit sieben Zeilen in
+# Folge. Dieselbe Lehre steht schon am Label "erechnung" oben. Quelle bleiben
+# PROOF_ASSETS und FRISTEN_KALENDER, hier wird nichts zusaetzlich behauptet.
+def _verified_facts_de() -> str:
+    zahlen = "\n".join(f"- {a.get('company') or a['branche']}: {a['metric']}"
+                       for a in PROOF_ASSETS)
+    fristen = "\n".join(f"- {f['label']}" for f in FRISTEN_KALENDER)
+    return ("Zahlen und Ergebnisse aus den Anwenderberichten:\n" + zahlen +
+            "\n\nFristen und Normen:\n" + fristen +
+            "\n- IFRS 18 wurde im April 2024 veroeffentlicht und gilt fuer "
+            "Geschaeftsjahre ab dem 01.01.2027; das Vergleichsjahr 2026 laeuft "
+            "bereits")
+
+
+VERIFIED_FACTS_DE = _verified_facts_de()

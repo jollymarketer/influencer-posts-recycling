@@ -51,7 +51,9 @@ def read_with_model(text: str, material: str, voice: str):
         resp = client.messages.create(
             model="claude-sonnet-4-6", max_tokens=4096,
             output_config={"format": {"type": "json_schema", "schema": naturalness.READER_SCHEMA}},
-            messages=[{"role": "user", "content": naturalness.reader_prompt(text, material, voice)}],
+            messages=[{"role": "user", "content": naturalness.reader_prompt(
+                text, material, voice,
+                facts=getattr(load_client(), "VERIFIED_FACTS_DE", ""))}],
         )
         return naturalness.parse_findings(resp.content[0].text, text)
     except Exception as e:
