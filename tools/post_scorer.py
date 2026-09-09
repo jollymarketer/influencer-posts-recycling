@@ -595,8 +595,20 @@ _LENGTH_TARGET_EN = {
              "The first 200 characters must carry the core thesis completely. One "
              "thought, done; the artifact rule above shrinks to one sentence in the prose."),
 }
-# Harte Obergrenze je Band, gemessen von der Textwache (tools/text_gate).
+# Zielgrenze je Band, gemessen von der Textwache (tools/text_gate). Prompt,
+# Neulauf und Kuerzung arbeiten gegen diese Zahl.
 LENGTH_CAP = {"lang": 2100, "standard": 1800, "kurz": 1000}
+# Verworfen wird erst zehn Prozent darueber (Richard 09.09.2026): ein Text,
+# der nach zwei Kuerzungen 1.050 statt 1.000 Zeichen hat, ist besser als eine
+# leere Zeile im Redaktionsplan. Die Zahl im Prompt bleibt LENGTH_CAP, sonst
+# wandert das Band nach oben. Kulles Laengenkritik vom 24.08.2026 galt Posts
+# von 1.305 bis 2.527 Zeichen, nicht dieser Marge.
+LENGTH_TOLERANCE = 1.10
+
+
+def accept_cap(cap: int) -> int:
+    """Obergrenze, ab der die Textwache endgueltig verwirft."""
+    return int(cap * LENGTH_TOLERANCE)
 
 # Kurzform ersetzt die Format-Struktur, wenn das Band "kurz" ist: die
 # vierteiligen Strukturen tragen 500-900 Zeichen nicht.
@@ -1545,7 +1557,7 @@ def _finish_draft(de_draft: str, cap: int) -> str:
     hard = text_gate.hard_violations(de_draft, cap)
     if hard and len(hard) == 1 and len(de_draft) > cap:
         de_draft = _shorten(de_draft, cap)
-        hard = text_gate.hard_violations(de_draft, cap)
+    hard = text_gate.hard_violations(de_draft, accept_cap(cap))
     if hard:
         print("  Textwache: Text verworfen, " + "; ".join(hard), flush=True)
         return ""
@@ -1657,7 +1669,7 @@ def _fix_passages(text: str, findings: list[dict], cap: int) -> str:
     if not fixed or abs(len(fixed) - len(text)) > max(80, int(len(text) * 0.15)):
         print("  Reparatur verworfen (Laengen-Guard).", flush=True)
         return ""
-    hard = text_gate.hard_violations(fixed, cap)
+    hard = text_gate.hard_violations(fixed, accept_cap(cap))
     if hard:
         print("  Reparatur verworfen (Textwache): " + "; ".join(hard), flush=True)
         return ""

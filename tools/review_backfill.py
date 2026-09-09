@@ -106,13 +106,13 @@ def decide_row(row: dict, cfg, loop_fn) -> dict:
     Ueberlaenge oder CAPS im Bestand leeren die Zeile ohne Modellaufruf; der
     Normal-Lauf schreibt sie mit dem Cap neu."""
     from tools import text_gate
-    from tools.post_scorer import LENGTH_CAP, _append_cta
+    from tools.post_scorer import LENGTH_CAP, _append_cta, accept_cap
     cta = getattr(cfg, "CTA_DE", "")
     cap = LENGTH_CAP["lang"]
     text = strip_cta(row["text"], cta)
     base = {"page_id": row["page_id"], "titel": row["titel"], "kanal": row["kanal"],
             "datum": row["datum"]}
-    hard = text_gate.hard_violations(text, cap)
+    hard = text_gate.hard_violations(text, accept_cap(cap))
     if hard:
         return {**base, "aktion": "geleert", "text_neu": "", "grund": "; ".join(hard)}
     voice = getattr(cfg, "ACCOUNT_VOICES", {}).get(row["kanal"], "")

@@ -40,10 +40,22 @@ def test_finish_draft_shortens_instead_of_discarding():
     assert "Kuerze den folgenden LinkedIn-Beitrag auf hoechstens 1000 Zeichen" in prompts[0]
 
 
+def test_within_tolerance_is_kept_instead_of_discarded():
+    # Ziel bleibt 1000, verworfen wird erst ueber 1100 (Richard 09.09.2026).
+    knapp = "Der Vorlauf fehlt im Kalender. " * 34      # 1054 Zeichen
+    fake, prompts = _antworten([knapp, knapp])
+    with patch("tools.post_scorer.client") as c, \
+         patch.dict(ps._cfg.FEATURES, {"grammar_check": False}):
+        c.messages.create.side_effect = fake
+        out = ps._finish_draft(LANG, 1000)
+    assert 1000 < len(out) <= ps.accept_cap(1000)
+    assert len(prompts) == ps._SHORTEN_TRIES      # das Ziel bleibt 1000
+
+
 def test_finish_draft_tries_twice_then_discards():
-    # Zweiter Versuch bleibt ueber dem Band: die Zeile bleibt leer, wie bisher.
-    fast = "Der Vorlauf fehlt im Kalender. " * 37
-    immer_noch = "Der Vorlauf fehlt im Kalender. " * 35
+    # Beide Versuche bleiben ueber der Toleranzgrenze: die Zeile bleibt leer.
+    fast = "Der Vorlauf fehlt im Kalender. " * 38
+    immer_noch = "Der Vorlauf fehlt im Kalender. " * 37
     fake, prompts = _antworten([fast, immer_noch])
     with patch("tools.post_scorer.client") as c, \
          patch.dict(ps._cfg.FEATURES, {"grammar_check": False}):

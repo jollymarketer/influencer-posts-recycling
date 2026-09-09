@@ -129,11 +129,16 @@ def test_decide_row_repaired_text_gets_cta_back():
 def test_decide_row_cleared_on_residue_or_hard_violation():
     out = rb.decide_row(_row2("Kaputt.\n\n" + CTA), _cfg(), lambda *a: "")
     assert out["aktion"] == "geleert" and out["text_neu"] == "" and "Restbefund" in out["grund"]
-    long = "x" * 2200
+    # Ueber der Toleranz (2100 plus zehn Prozent): ohne Modellaufruf geleert.
+    long = "x" * 2400
     calls = []
     out = rb.decide_row(_row2(long), _cfg(), lambda *a: calls.append(1) or long)
     assert out["aktion"] == "geleert" and "Zeichen" in out["grund"]
     assert calls == []
+    # Innerhalb der Toleranz laeuft der Bestand normal durch den Leser.
+    knapp = "x" * 2200
+    out = rb.decide_row(_row2(knapp), _cfg(), lambda *a: calls.append(1) or knapp)
+    assert out["aktion"] != "geleert" and calls == [1]
 
 
 def test_decide_row_lets_a_reader_outage_through():
