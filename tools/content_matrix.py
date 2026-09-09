@@ -228,12 +228,24 @@ _FIGURE_RE = re.compile(
 )
 
 
+# Gleiche Zahl, andere Schreibweise: das Asset sagt "35%", der Beitrag
+# schreibt "35 Prozent" aus, wie es sich in deutschem Fliesstext gehoert.
+# Ohne diese Vereinheitlichung hielt der Guard beide fuer verschiedene Zahlen
+# und uebersprang am 09.09.2026 drei Plan-Zeilen (Asset
+# lebensmittelhersteller-vertriebsplanung).
+_FIGURE_UNITS = (("prozent", "%"), ("percent", "%"),
+                 ("€", "eur"), ("$", "usd"), ("dollar", "usd"))
+
+
 def extract_figures(text: str) -> set:
     """Alle Einheiten-Zahlen eines Texts, normalisiert (lowercase, ohne
-    Leerzeichen, Komma -> Punkt)."""
+    Leerzeichen, Komma -> Punkt, Einheit auf eine Schreibweise)."""
     out = set()
     for m in _FIGURE_RE.finditer(text or ""):
-        out.add(re.sub(r"\s+", "", m.group(0)).replace(",", ".").lower())
+        fig = re.sub(r"\s+", "", m.group(0)).replace(",", ".").lower()
+        for wort, zeichen in _FIGURE_UNITS:
+            fig = fig.replace(wort, zeichen)
+        out.add(fig)
     return out
 
 

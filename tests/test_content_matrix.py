@@ -253,7 +253,19 @@ def test_extract_figures_ignores_words_containing_currency_tokens():
 
 
 def test_extract_figures_currency_and_multiplier_variants():
+    # Einheiten liegen seit 09.09.2026 in einer Schreibweise vor: Euro als
+    # "eur", Prozent als "%". Vielfache bleiben, wie sie geschrieben stehen.
     figs = cm.extract_figures("Kostet 40 \u20ac, ersparte 5-fach Aufwand, 69 Prozent weniger.")
-    assert "40\u20ac" in figs
+    assert "40eur" in figs
     assert "5-fach" in figs
-    assert "69prozent" in figs
+    assert "69%" in figs
+
+
+def test_extract_figures_unifies_percent_and_currency_spellings():
+    # Lauf 09.09.2026: Asset sagt "35%", der Beitrag schreibt "35 Prozent"
+    # aus; der Guard uebersprang drei Plan-Zeilen wegen der Schreibweise.
+    assert cm.extract_figures("35 Prozent weniger") == cm.extract_figures("35% weniger")
+    assert cm.extract_figures("40.000 EUR Budget") == cm.extract_figures("40.000 € Budget")
+    asset = {"metric": "35% weniger Zeitaufwand für den Planungsprozess"}
+    assert cm.figures_ok("Der Planungsprozess wurde um 35 Prozent entlastet.", asset)
+    assert not cm.figures_ok("Der Planungsprozess wurde um 45 Prozent entlastet.", asset)
