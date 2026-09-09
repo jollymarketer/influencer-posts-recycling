@@ -977,8 +977,11 @@ ACCOUNT_VOICES = {
 # von Inga Baumert und Muhammed Doganguezel (01. bis 07.09.2026):
 # - role_frames: Erzaehlsituation muss zur echten Rolle passen (Werner
 #   fuehrt keine Einfuehrungsprojekte). Sprechername wie in ACCOUNT_VOICES.
-# - disparagement: kein Kunde wird abgewertet, benannt oder anonym
-#   ("vorher falsch gebaut" neben Moebes/Plickert; "aber schlechter").
+# - disparagement: kein Kunde wird abgewertet ("vorher falsch gebaut" neben
+#   Moebes/Plickert; "aber schlechter"). Seit 09.09.2026 haengt die Haerte am
+#   Adressaten: mit Name oder Rolle im Satz verwirft der Befund den Text, ohne
+#   Adressaten bleibt er als "abwertung_anonym" weich stehen. Ein Missstand
+#   ohne Adressat ist der Painpoint, den der Beitrag zeigen soll (Richard).
 # - term_map: Fachbegriff aus dem VoC-Korpus. Auszaehlung 08.09.2026 ueber
 #   Anwenderberichte, Sales-Calls, Stellenanzeigen: Liquiditaetsplanung 36,
 #   Liquiditaetsprognose 1, Cashforecast 0.

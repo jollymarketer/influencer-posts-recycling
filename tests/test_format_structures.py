@@ -181,10 +181,22 @@ def test_avoid_phrases_land_in_prompt():
 
 
 def test_kurz_band_caps_at_1000_chars():
+    # Neulauf, dann zwei Kuerzungsversuche (Richard 09.09.2026); bleibt der
+    # Text ueber dem Band, wird er weiterhin verworfen.
     long_body = "===POST===\n" + ("Ein Satz mit Inhalt. " * 60) + "\n===SOUNDBYTE===\nx"
-    de, sent = _gen_with_responses([long_body, long_body], band="kurz")
+    zu_lang = "Ein Satz mit Inhalt. " * 55
+    de, sent = _gen_with_responses([long_body, long_body, zu_lang, zu_lang], band="kurz")
     assert de == ""
     assert "hoechstens 1000" in sent[1]
+    assert sent[2].startswith("Kuerze den folgenden LinkedIn-Beitrag")
+
+
+def test_kurz_band_shortens_instead_of_discarding():
+    long_body = "===POST===\n" + ("Ein Satz mit Inhalt. " * 60) + "\n===SOUNDBYTE===\nx"
+    kurz = "Ein Satz mit Inhalt. " * 40
+    de, sent = _gen_with_responses([long_body, long_body, kurz], band="kurz")
+    assert de.startswith("Ein Satz mit Inhalt.")
+    assert len(de) <= 1000
 
 
 def test_comparison_injects_decision_structure():

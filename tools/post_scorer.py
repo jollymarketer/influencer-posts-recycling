@@ -1503,11 +1503,49 @@ def _generate_de(prompt: str) -> dict:
     return _parse_generation_response(resp.content[0].text.strip())
 
 
+# Kuerzen statt verwerfen (Richard 09.09.2026): drei der sieben leeren Zeilen
+# des Sie-Umstellungslaufs scheiterten allein an 5 bis 9 Prozent Ueberlaenge.
+# Ein Neulauf schreibt den Text neu und landet wieder daneben; Streichen ist
+# die leichtere Aufgabe und haelt den schon gepruefen Inhalt.
+_SHORTEN_PROMPT = """Kuerze den folgenden LinkedIn-Beitrag auf hoechstens {cap} Zeichen. Er hat {ist} Zeichen.
+
+Kuerzen heisst streichen, nicht neu schreiben: jeder Satz, der bleibt, bleibt woertlich stehen. Streiche zuerst Wiederholungen und Nebenbeobachtungen, danach ganze Saetze aus der Mitte. Nie streichen: die These im ersten Absatz, Zahlen, Fristen, Normen, Namen und den letzten Absatz.
+Antworte NUR mit dem gekuerzten Beitrag, ohne Kommentar und ohne Marker.
+
+BEITRAG:
+{text}"""
+_SHORTEN_TRIES = 2
+
+
+def _shorten(text: str, cap: int) -> str:
+    """Streicht einen zu langen Entwurf auf das Laengenband herunter. Gibt den
+    kuerzesten erreichten Stand zurueck, auch wenn er ueber cap bleibt: darueber
+    entscheidet die Textwache danach."""
+    for _ in range(_SHORTEN_TRIES):
+        resp = client.messages.create(
+            model="claude-sonnet-4-6", max_tokens=2048,
+            messages=[{"role": "user", "content": _SHORTEN_PROMPT.format(
+                cap=cap, ist=len(text), text=text)}],
+        )
+        neu = sanitize_generated_text(resp.content[0].text.strip())
+        if not neu or len(neu) >= len(text):
+            break
+        print(f"  Textwache: gekuerzt auf {len(neu)} Zeichen, Ziel {cap}", flush=True)
+        text = neu
+        if len(text) <= cap:
+            break
+    return text
+
+
 def _finish_draft(de_draft: str, cap: int) -> str:
     """Grammatik plus Umlaut-Korrektur, dann der harte Befund der Textwache.
+    Ist Ueberlaenge der einzige harte Befund, wird erst gekuerzt (_shorten).
     Gibt "" zurueck, wenn der Text verworfen wird."""
     de_draft = grammar_check(de_draft, umlaut_words=text_gate.umlaut_candidates(de_draft))
     hard = text_gate.hard_violations(de_draft, cap)
+    if hard and len(hard) == 1 and len(de_draft) > cap:
+        de_draft = _shorten(de_draft, cap)
+        hard = text_gate.hard_violations(de_draft, cap)
     if hard:
         print("  Textwache: Text verworfen, " + "; ".join(hard), flush=True)
         return ""
@@ -1547,7 +1585,7 @@ HARTE REGELN:
 - Schriftdeutsch: vollstaendige Saetze, Verb an zweiter Stelle, keine Echo-Antworten, keine Pointen-Formeln.
 - Ersetze eine Formel durch einen schlichten Aussagesatz, nie durch eine andere Formel: kein Satz beginnt mit "Wer", keine Konstruktion aus "nicht ..., sondern ...", kein Absatz endet mit einer Umdeutung. Sage, was der Fall ist.
 - Bei "kohaerenz": passe den ersten Absatz an den Rest an, nie umgekehrt.
-- Bei "rolle", "abwertung", "register", "fachbegriff", "cta" und "struktur" ist der Vorschlag im Befund die Vorgabe: setze ihn um. Bei "fachbegriff" das Wort aus dem Vorschlag einsetzen und Artikel und Endungen anpassen. Bei "cta" den letzten Absatz als einen Satz in der Anrede neu schreiben, die der Vorschlag nennt, ohne Frage, ohne Link. Bei "struktur" die ueberzaehligen Zeilen als Fliesstext ohne Label schreiben.
+- Bei "rolle", "abwertung", "abwertung_anonym", "register", "fachbegriff", "cta" und "struktur" ist der Vorschlag im Befund die Vorgabe: setze ihn um. Bei "fachbegriff" das Wort aus dem Vorschlag einsetzen und Artikel und Endungen anpassen. Bei "cta" den letzten Absatz als einen Satz in der Anrede neu schreiben, die der Vorschlag nennt, ohne Frage, ohne Link. Bei "struktur" die ueberzaehligen Zeilen als Fliesstext ohne Label schreiben.
 - Kein Kommentar, kein Markdown, keine Erklaerung: antworte NUR mit dem vollstaendigen Text.
 
 BEFUNDE:

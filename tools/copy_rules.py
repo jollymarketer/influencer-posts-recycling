@@ -19,6 +19,13 @@ Schluessel von COPY_RULES, alle optional:
   "Robert selbst fuehrt keine Einfuehrungsprojekte").
 - disparagement: [regex, ...]. Kunde oder frueherer Zustand abgewertet
   (Inga 07.09.2026 zu "vorher falsch gebaut" neben einem Kundennamen).
+  Die Haerte haengt am Adressaten, nicht am Wort: steht im selben Satz ein
+  Name, eine Rolle oder "der Kunde", ist es "abwertung" und verwirft den
+  Text; ohne Adressaten ist es "abwertung_anonym", ein weicher Befund mit
+  Vorschlag (Richard 09.09.2026: ein Missstand ohne Adressat ist der
+  Painpoint, den der Beitrag zeigen soll).
+- disparagement_subjects: [regex, ...]. Zusaetzliche Adressaten des
+  Mandanten, etwa die Namen der Referenzkunden aus den Anwenderberichten.
 - term_map: {Begriff: Ersatz}. Fachwort nicht aus dem VoC-Korpus; das ganze
   Kompositum wird zitiert und mit Ersatz vorgeschlagen.
 - address: "du" oder "Sie". Die jeweils andere Anrede mitten im Satz ist ein
@@ -43,6 +50,15 @@ _DU = re.compile(r"\b(?:[Dd]u|[Dd]ich|[Dd]ir|[Dd]ein\w*|[Ee]uch|[Ee]uer|[Ee]ure\
                  r"|\bihr\b(?!\s+[A-ZÄÖÜ])")
 _LINK_HINT = re.compile(r"im (?:ersten )?Kommentar|Link zum Termin|https?://|Termin buchen", re.I)
 QUOTE_CAP = 200
+# Adressaten einer Abwertung: erst wenn im selben Satz jemand steht, dem das
+# Urteil gilt, ist der Befund hart. Namen der Referenzkunden kommen je
+# Mandant ueber COPY_RULES["disparagement_subjects"] dazu.
+_ZUSCHREIBUNG = (
+    r"\b(?:Kunde|Kunden|Kundin|Mandant\w*|Referenzkunde\w*|Anwender\w*)\b",
+    r"\b(?:Gesch(?:ä|ae)ftsf(?:ü|ue)hr\w*|Controller\w*|Leiter\w*|Leitung|"
+    r"Kolleg\w*|Buchhalt\w*|Team|Gruppe|Mitarbeiter\w*|Vorstand|Pr(?:ü|ue)fer\w*)\b",
+    r"\b[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?\s+[A-ZÄÖÜ][a-zäöüß]{2,}\b",
+)
 
 
 def _sentence_with(text: str, pos: int) -> str:
@@ -54,6 +70,14 @@ def _sentence_with(text: str, pos: int) -> str:
         else:
             return text[start:m.start()].strip()
     return text[start:].strip()
+
+
+def _paragraph_with(text: str, pos: int) -> str:
+    """Absatz, der die Position pos enthaelt."""
+    start = text.rfind("\n\n", 0, pos)
+    start = 0 if start < 0 else start + 2
+    ende = text.find("\n\n", pos)
+    return text[start:ende if ende >= 0 else len(text)].strip()
 
 
 def _finding(art: str, zitat: str, grund: str, vorschlag: str) -> dict:
@@ -77,16 +101,24 @@ def _role(text: str, voice: str, frames: dict) -> list[dict]:
     return out
 
 
-def _disparagement(text: str, patterns: list) -> list[dict]:
+def _disparagement(text: str, patterns: list, subjects: list | None = None) -> list[dict]:
     out = []
+    adressat = list(_ZUSCHREIBUNG) + list(subjects or [])
     for rx in patterns or []:
         m = re.search(rx, text, re.I)
-        if m:
-            out.append(_finding(
-                "abwertung", m.group(0),
-                "Kunde oder frueherer Zustand wird abgewertet",
-                "früheren Zustand neutral beschreiben (Dauer, Aufwand, Ergebnis), "
-                "ohne Urteil über Person oder Verfahren"))
+        if not m:
+            continue
+        # Absatz, nicht Satz: Inga Baumerts Fundstelle nennt den Kunden im
+        # ersten Satz und faellt das Urteil im zweiten ("Moebes ... weil das
+        # Verfahren vorher falsch gebaut war").
+        absatz = _paragraph_with(text, m.start())
+        zugeschrieben = any(re.search(a, absatz) for a in adressat)
+        out.append(_finding(
+            "abwertung" if zugeschrieben else "abwertung_anonym", m.group(0),
+            "Kunde oder frueherer Zustand wird abgewertet" if zugeschrieben else
+            "Urteil ueber einen Zustand, den der Satz niemandem zuschreibt",
+            "früheren Zustand neutral beschreiben (Dauer, Aufwand, Ergebnis), "
+            "ohne Urteil über Person oder Verfahren"))
     return out
 
 
@@ -172,7 +204,8 @@ def findings(text: str, voice: str = "", rules: dict | None = None) -> list[dict
         return []
     out = []
     out += _role(text, voice, rules.get("role_frames"))
-    out += _disparagement(text, rules.get("disparagement"))
+    out += _disparagement(text, rules.get("disparagement"),
+                          rules.get("disparagement_subjects"))
     out += _terms(text, rules.get("term_map"))
     address = rules.get("address")
     if address in ("du", "Sie"):

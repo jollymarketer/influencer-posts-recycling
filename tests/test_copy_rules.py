@@ -77,6 +77,33 @@ def test_disparagement_pattern_is_a_finding_with_neutral_suggestion():
     assert "neutral" in out[0]["vorschlag"]
 
 
+def test_disparagement_without_a_subject_stays_soft():
+    # Richard 09.09.2026: ein Missstand ohne Adressaten ist der Painpoint des
+    # Beitrags. Fundtext aus dem Nachfuell-Lauf 08.09.2026.
+    text = ("Zwischen den Systemen lag eine Tabelle, niemand wusste, wer sie "
+            "pflegt.\n\nPrüfen Sie, wo Ihre Zuordnung liegt.")
+    out = [f for f in cr.findings(text, ROBERT, RULES)
+           if f["art"].startswith("abwertung")]
+    assert [f["art"] for f in out] == ["abwertung_anonym"]
+    assert "niemandem zuschreibt" in out[0]["grund"]
+
+
+def test_same_wording_with_a_named_subject_stays_hard():
+    text = ("Hans-Joachim Möbes hatte das Verfahren falsch gebaut.\n\n"
+            "Prüfen Sie, wo Ihre Zuordnung liegt.")
+    out = [f for f in cr.findings(text, ROBERT, RULES)
+           if f["art"].startswith("abwertung")]
+    assert [f["art"] for f in out] == ["abwertung"]
+
+
+def test_a_role_in_the_sentence_is_a_subject_too():
+    text = ("Der Controller hatte das Mapping falsch gebaut.\n\n"
+            "Prüfen Sie, wo Ihre Zuordnung liegt.")
+    out = [f for f in cr.findings(text, ROBERT, RULES)
+           if f["art"].startswith("abwertung")]
+    assert [f["art"] for f in out] == ["abwertung"]
+
+
 # --- Fachbegriff aus dem VoC-Korpus ------------------------------------------
 
 def test_term_map_quotes_the_whole_compound_and_proposes_replacement():
