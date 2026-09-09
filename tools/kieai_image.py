@@ -449,6 +449,42 @@ def _kie_request_with_retry(method: str, url: str, **kwargs) -> requests.Respons
     raise RuntimeError("kie.ai Request fehlgeschlagen nach Retries")
 
 
+# kie.ai meldet "success", waehrend die Datei auf tempfile.aiquickdraw.com noch
+# unvollstaendig ist (09.09.2026, Sonocrete: 1.254x1.254 px, untere Haelfte
+# schwarz, kein IEND-Chunk). Anthropic Vision antwortet darauf mit 400 "Could
+# not process image", was wie ein API-Fehler aussah, aber ein halber Download
+# war. Deshalb nach dem Laden vollstaendig dekodieren; unvollstaendig heisst:
+# kurz warten, neu laden, danach den Render als Job-Fehler verwerfen.
+DOWNLOAD_MAX_ATTEMPTS = 4
+DOWNLOAD_RETRY_SECONDS = 8
+
+
+def _png_complete(image_bytes: bytes) -> bool:
+    try:
+        im = Image.open(io.BytesIO(image_bytes))
+        im.load()
+    except Exception:
+        return False
+    return b"IEND" in image_bytes[-64:]
+
+
+def _download_complete_image(image_url: str) -> bytes:
+    last = b""
+    for attempt in range(1, DOWNLOAD_MAX_ATTEMPTS + 1):
+        last = requests.get(image_url, timeout=30).content
+        if _png_complete(last):
+            return last
+        print(
+            f"  kie.ai: Bilddatei unvollstaendig ({len(last)} Bytes, Versuch "
+            f"{attempt}/{DOWNLOAD_MAX_ATTEMPTS}), warte {DOWNLOAD_RETRY_SECONDS}s ...",
+            flush=True,
+        )
+        time.sleep(DOWNLOAD_RETRY_SECONDS)
+    raise RuntimeError(
+        f"kie.ai: Bilddatei bleibt unvollstaendig ({len(last)} Bytes): {image_url}"
+    )
+
+
 def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model: str = DEFAULT_MODEL) -> str:
     """Eine vollstaendige kie.ai-Generierung: createTask + Polling + Upload. Raises RuntimeError bei Fehler."""
     headers = {
@@ -513,7 +549,7 @@ def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model
 
             # Pflichttext pruefen, BEVOR Wipe und Logo laufen: ein Mismatch
             # verwirft den Render (TextMismatch -> neuer Versuch in generate_image).
-            img_bytes = requests.get(image_url, timeout=30).content
+            img_bytes = _download_complete_image(image_url)
             _verify_rendered_text(img_bytes, required_text_from_prompt(prompt))
 
             # Logo einblenden — vorher halluzinierte Marks entfernen.
