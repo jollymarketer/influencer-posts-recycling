@@ -65,6 +65,7 @@ from tools.content_matrix import (
 from tools.image_archetypes import (
     select_archetype,
     build_archetype_prompt,
+    plan_visual,
     skeleton_signals,
 )
 from tools.comment_drafts import run_comment_drafts
@@ -655,9 +656,13 @@ def draft_candidate(cfg, winner: dict, persona_id: str, box: tuple, recents: dic
         post_format=post_format, infographic_type=infographic_type,
         layers_count=sig["layers_count"], has_metaphor=sig["has_metaphor"],
         has_stat=sig["has_stat"], recent_archetypes=recents["archetypes"])
+    image_language = getattr(cfg, "IMAGE_LANGUAGE", "English")
+    # Szene + Kurz-Headline (Sonnet) vor dem Prompt; {} bei Ausfall.
+    visual = plan_visual(chosen_archetype, soundbyte=sound_byte, kontext=kontext,
+                         skeleton=skeleton, language=image_language)
     gen_archetype, gen_prompt, gen_ratio, gen_strip = build_archetype_prompt(
         chosen_archetype, soundbyte=sound_byte, kontext=kontext, skeleton=skeleton,
-        language=getattr(cfg, "IMAGE_LANGUAGE", "English"))
+        language=image_language, visual=visual)
 
     return {
         "linkedin_draft": linkedin_draft,

@@ -175,6 +175,7 @@ def test_two_magnet_slots_in_one_run_take_different_lead_magnets():
     arch = MagicMock(return_value=("editorial_cover", "prompt", "1:1", False))
     drafts = []
     with patch.object(run_slate, "generate_post_and_image_prompt", gen), \
+         patch.object(run_slate, "plan_visual", return_value={}), \
          patch.object(run_slate, "build_archetype_prompt", arch):
         for url in ("u1", "u2"):
             d = run_slate.draft_candidate(_ASSET_CFG, {"post_url": url}, "kaeufer",

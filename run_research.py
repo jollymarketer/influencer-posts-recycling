@@ -70,6 +70,7 @@ from tools.content_matrix import (
 from tools.image_archetypes import (
     select_archetype,
     build_archetype_prompt,
+    plan_visual,
     skeleton_signals,
     ARCHETYPES,
 )
@@ -383,12 +384,17 @@ def run_daily():
         has_stat=sig["has_stat"],
         recent_archetypes=recent_archetypes,
     )
+    image_language = getattr(_cfg, "IMAGE_LANGUAGE", "English")
+    # Szene + Kurz-Headline (Sonnet) vor dem Prompt; {} bei Ausfall.
+    visual = plan_visual(chosen_archetype, soundbyte=sound_byte, kontext=kontext,
+                         skeleton=infographic_skeleton, language=image_language)
     gen_archetype, gen_prompt, gen_ratio, gen_strip = build_archetype_prompt(
         chosen_archetype,
         soundbyte=sound_byte,
         kontext=kontext,
         skeleton=infographic_skeleton,
-        language=getattr(_cfg, "IMAGE_LANGUAGE", "English"),
+        language=image_language,
+        visual=visual,
     )
     gen_label = ARCHETYPES[gen_archetype]["label"]
     if gen_archetype != chosen_archetype:

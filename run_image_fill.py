@@ -33,6 +33,7 @@ from clients import load_client
 from run_plan_fill import _rt, _sel, _title, read_plan
 from tools.image_archetypes import (
     build_archetype_prompt,
+    plan_visual,
     select_archetype,
     skeleton_signals,
 )
@@ -104,7 +105,7 @@ def run(write: bool = False, limit: int = 0, cfg=None) -> dict:
     print(f"Zeilen mit Status '{STATUS_QUELLE}': {len(kandidaten)}")
 
     language = getattr(cfg, "IMAGE_LANGUAGE", "German")
-    generiert, nachgezogen = 0, 0
+    generiert, nachgezogen, fehler = 0, 0, 0
     recent_archetypes: dict[str, list] = {}
     for k in kandidaten:
         if limit and generiert >= limit:
@@ -121,19 +122,30 @@ def run(write: bool = False, limit: int = 0, cfg=None) -> dict:
         sig = skeleton_signals(k["skeleton"], k["soundbyte"])
         archetype = select_archetype(k["format"], ityp,
                                      recent_archetypes=list(recent), **sig)
+        # Szene + Kurz-Headline (Sonnet) nur im Schreiblauf, der Trockenlauf
+        # bleibt ohne API-Aufruf.
+        visual = plan_visual(archetype, soundbyte=k["soundbyte"], kontext=k["kurz"],
+                             skeleton=k["skeleton"], language=language) if write else {}
         eff, prompt, ratio, strip = build_archetype_prompt(
             archetype, soundbyte=k["soundbyte"], kontext=k["kurz"],
-            skeleton=k["skeleton"], language=language)
+            skeleton=k["skeleton"], language=language, visual=visual)
         print(f"  {k['kanal']:22s} {eff:22s} {k['titel'][:50]}", flush=True)
         recent.insert(0, eff)
         if not write:
             continue
-        url = generate_image(prompt, aspect_ratio=ratio, strip_marks=strip)
+        # Fehler je Zeile (z.B. Text-Readback nach TEXT_MAX_ATTEMPTS): Zeile
+        # bleibt auf "Text freigegeben", der Lauf geht weiter.
+        try:
+            url = generate_image(prompt, aspect_ratio=ratio, strip_marks=strip)
+        except Exception as e:
+            print(f"    FEHLER, Zeile bleibt ohne Bild: {e}", file=sys.stderr, flush=True)
+            fehler += 1
+            continue
         _write_image(k["page_id"], url)
         generiert += 1
         print(f"    OK -> {url}", flush=True)
     return {"kandidaten": len(kandidaten), "generiert": generiert,
-            "status_nachgezogen": nachgezogen}
+            "status_nachgezogen": nachgezogen, "fehler": fehler}
 
 
 def main() -> int:
@@ -146,7 +158,7 @@ def main() -> int:
 
     r = run(write=args.write, limit=args.limit)
     print(f"\nKandidaten {r['kandidaten']} | generiert {r['generiert']} | "
-          f"Status nachgezogen {r['status_nachgezogen']}")
+          f"Status nachgezogen {r['status_nachgezogen']} | Fehler {r['fehler']}")
     if not args.write:
         print("Trockenlauf, nichts generiert. Mit --write ausfuehren.")
     return 0

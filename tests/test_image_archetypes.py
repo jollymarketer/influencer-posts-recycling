@@ -194,3 +194,111 @@ def test_magnet_with_structural_skeleton_prefers_infographic():
         "Magnet", infographic_type="", layers_count=3,
         has_metaphor=False, has_stat=False,
     ) == "structured_infographic"
+
+
+# --- Pflichttext-Marker (Readback, Punkt 3) -----------------------------------
+
+from tools.kieai_image import required_text_from_prompt  # noqa: E402
+
+SB_DE = "Planung ist kein Ritual, sondern Steuerung"
+
+
+def test_statement_card_marks_full_soundbyte_as_required_text():
+    _, prompt, _, _ = ia.build_archetype_prompt("statement_card", soundbyte=SB_DE, language="German")
+    assert required_text_from_prompt(prompt) == [SB_DE]
+
+
+def test_stat_hero_marks_the_number_as_required_text():
+    _, prompt, _, _ = ia.build_archetype_prompt(
+        "stat_hero", soundbyte="73% der Plaene sind im Maerz tot", language="German")
+    assert "73%" in required_text_from_prompt(prompt)
+
+
+def test_stat_hero_marks_planned_headline_as_label():
+    _, prompt, _, _ = ia.build_archetype_prompt(
+        "stat_hero", soundbyte="73% der Plaene sind im Maerz tot", language="German",
+        visual={"scene": "", "headline": "Plaene sterben im Maerz"})
+    assert required_text_from_prompt(prompt) == ["73%", "Plaene sterben im Maerz"]
+
+
+def test_editorial_cover_without_plan_has_no_required_text():
+    _, prompt, _, _ = ia.build_archetype_prompt("editorial_cover", soundbyte=SB_DE, language="German")
+    assert required_text_from_prompt(prompt) == []
+
+
+def test_editorial_cover_with_plan_marks_headline_and_embeds_scene():
+    visual = {"scene": "A brass compass on slate, raking light from the left.",
+              "headline": "Steuern statt Ritual"}
+    _, prompt, _, _ = ia.build_archetype_prompt(
+        "editorial_cover", soundbyte=SB_DE, language="German", visual=visual)
+    assert required_text_from_prompt(prompt) == ["Steuern statt Ritual"]
+    assert visual["scene"] in prompt
+    # Die offene Richtungsliste weicht der konkreten Szene.
+    assert "pick the single strongest visual direction" not in prompt
+
+
+def test_metaphor_object_and_isometric_and_contrast_embed_scene():
+    visual = {"scene": "One domino row on a navy ground.", "headline": "Kaskade stoppen"}
+    for key in ("metaphor_object", "isometric_scene", "two_panel_contrast"):
+        _, prompt, _, _ = ia.build_archetype_prompt(
+            key, soundbyte=SB_DE, language="German", visual=visual,
+            skeleton="METAPHER: domino\nEBENEN:\nAlt: a, b\nNeu: c, d")
+        assert visual["scene"] in prompt, key
+
+
+def test_metaphor_object_marks_headline_only_when_planned():
+    _, without, _, _ = ia.build_archetype_prompt("metaphor_object", soundbyte=SB_DE, language="German")
+    assert required_text_from_prompt(without) == []
+    _, with_plan, _, _ = ia.build_archetype_prompt(
+        "metaphor_object", soundbyte=SB_DE, language="German",
+        visual={"scene": "x", "headline": "Kaskade stoppen"})
+    assert required_text_from_prompt(with_plan) == ["Kaskade stoppen"]
+
+
+def test_overlong_planned_headline_is_dropped():
+    visual = {"scene": "x", "headline": "eins zwei drei vier fuenf sechs sieben"}
+    _, prompt, _, _ = ia.build_archetype_prompt(
+        "editorial_cover", soundbyte=SB_DE, language="German", visual=visual)
+    assert required_text_from_prompt(prompt) == []
+
+
+# --- plan_visual (Sonnet-Schritt, Punkt 2 + 4) ---------------------------------
+
+from unittest.mock import MagicMock, patch  # noqa: E402
+
+
+def _fake_client(text: str):
+    client = MagicMock()
+    client.messages.create.return_value = MagicMock(content=[MagicMock(text=text)])
+    return client
+
+
+def test_plan_visual_parses_json_with_code_fence():
+    raw = '```json\n{"scene": "A brass compass on slate.", "headline": "Steuern statt Ritual"}\n```'
+    with patch.object(ia.anthropic_auth, "anthropic_client", return_value=_fake_client(raw)):
+        out = ia.plan_visual("editorial_cover", soundbyte=SB_DE, kontext="", skeleton="", language="German")
+    assert out == {"scene": "A brass compass on slate.", "headline": "Steuern statt Ritual"}
+
+
+def test_plan_visual_skips_archetypes_without_scene_or_headline():
+    with patch.object(ia.anthropic_auth, "anthropic_client") as mk:
+        assert ia.plan_visual("statement_card", soundbyte=SB_DE) == {}
+        assert ia.plan_visual("structured_infographic", soundbyte=SB_DE) == {}
+    mk.assert_not_called()
+
+
+def test_plan_visual_returns_empty_on_failure():
+    with patch.object(ia.anthropic_auth, "anthropic_client", side_effect=ValueError("kein Key")):
+        assert ia.plan_visual("editorial_cover", soundbyte=SB_DE, language="German") == {}
+    with patch.object(ia.anthropic_auth, "anthropic_client", return_value=_fake_client("kein json")):
+        assert ia.plan_visual("editorial_cover", soundbyte=SB_DE, language="German") == {}
+
+
+def test_plan_visual_prompt_carries_message_metaphor_and_brand_rules():
+    client = _fake_client('{"scene": "s", "headline": "h"}')
+    with patch.object(ia.anthropic_auth, "anthropic_client", return_value=client):
+        ia.plan_visual("metaphor_object", soundbyte=SB_DE, language="German",
+                       skeleton="METAPHER: eine Bruecke\nEBENEN:\nA: x")
+    sent = client.messages.create.call_args.kwargs["messages"][0]["content"]
+    assert SB_DE in sent and "eine Bruecke" in sent and "German" in sent
+    assert ia._BRAND_RULES.splitlines()[0] in sent

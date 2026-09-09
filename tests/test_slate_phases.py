@@ -214,6 +214,7 @@ def test_single_format_box_breaks_clump_after_two_in_a_row():
          patch.object(run_slate, "skeleton_signals",
                       return_value={"layers_count": 0, "has_metaphor": False, "has_stat": False}), \
          patch.object(run_slate, "select_archetype", return_value="stat_hero"), \
+         patch.object(run_slate, "plan_visual", return_value={}), \
          patch.object(run_slate, "build_archetype_prompt",
                       return_value=("stat_hero", "prompt", "1:1", True)):
         result = run_slate.draft_candidate(CFG, winner, "kaeufer",
@@ -238,6 +239,7 @@ def test_single_format_box_respected_when_not_clumped():
          patch.object(run_slate, "skeleton_signals",
                       return_value={"layers_count": 0, "has_metaphor": False, "has_stat": False}), \
          patch.object(run_slate, "select_archetype", return_value="stat_hero"), \
+         patch.object(run_slate, "plan_visual", return_value={}), \
          patch.object(run_slate, "build_archetype_prompt",
                       return_value=("stat_hero", "prompt", "1:1", True)):
         result = run_slate.draft_candidate(CFG, winner, "kaeufer",

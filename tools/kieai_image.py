@@ -8,8 +8,10 @@ import base64
 import io
 import json
 import os
+import re
 import sys
 import time
+import unicodedata
 
 import anthropic
 import requests
@@ -106,6 +108,82 @@ Return STRICT JSON only — no prose, no markdown fences:
 Coordinates are normalized: (0,0) = top-left, (1,1) = bottom-right. Each box is the tight bounding box around the mark.
 
 If no brand marks are present, return: {"marks": []}"""
+
+# Text-Readback (Richard 09.09.2026, Prompt-Bewertung Punkt 3): Text im Bild war
+# das Hauptrisiko ohne Absicherung, die Vision-Stufe oben prueft nur Logos.
+# Der Soll-Text steht als Marker IM Prompt (image_archetypes.render_text_line),
+# damit auch der Repair-Pfad, der den Prompt aus Notion liest, ohne Zusatzdaten
+# pruefen kann. Nach dem Render transkribiert Claude Vision den Bildtext; ein
+# Mismatch loest einen neuen Render mit Hinweis aus, nach TEXT_MAX_ATTEMPTS
+# bricht der Job ab (fail-closed, beim Aufrufer Status "Image Failed").
+RENDER_TEXT_MARKER = "Render exactly this text (verbatim, every letter, umlauts included):"
+_RENDER_TEXT_RE = re.compile(re.escape(RENDER_TEXT_MARKER) + r'\s*"([^"\n]+)"')
+TEXT_MAX_ATTEMPTS = 3
+TEXT_RETRY_NOTE = """
+
+IMPORTANT: the previous render misspelled the required text. Render every letter of the quoted text exactly as given, in one clean line or two, large enough to be unmistakable. Do not paraphrase, do not drop words, do not invent extra words."""
+
+VISION_READ_PROMPT = """Transcribe every piece of text visible in this image, exactly as written: keep the original spelling, capitalization, umlauts, digits and punctuation. Read it in visual order, one text element per line. Return the transcription only, no commentary. If the image contains no text, return an empty response."""
+
+
+class TextMismatch(RuntimeError):
+    """Der gerenderte Bildtext weicht vom Soll-Text im Prompt ab."""
+
+
+def render_text_line(text: str) -> str:
+    """Prompt-Zeile, die einen Pflichttext markiert; Gegenstueck zum Parser."""
+    clean = " ".join(text.replace('"', "").split())
+    return f'{RENDER_TEXT_MARKER} "{clean}"'
+
+
+def required_text_from_prompt(prompt: str) -> list[str]:
+    """Alle Pflichttexte aus dem Prompt, in Reihenfolge."""
+    return [m.group(1).strip() for m in _RENDER_TEXT_RE.finditer(prompt or "")]
+
+
+def _normalize_text(text: str) -> str:
+    """Vergleichsform: NFKC (zerlegte Umlaute zusammensetzen), Kleinschreibung,
+    nur Buchstaben und Ziffern. Umlaute bleiben eigene Zeichen, 'a' statt 'ä'
+    ist ein Fehler."""
+    composed = unicodedata.normalize("NFKC", text or "")
+    return "".join(ch for ch in composed.lower() if ch.isalnum())
+
+
+def text_matches(expected: str, transcript: str) -> bool:
+    return _normalize_text(expected) in _normalize_text(transcript)
+
+
+def _read_image_text(image_bytes: bytes) -> str:
+    """Claude Vision transkribiert den sichtbaren Bildtext. Raises bei
+    fehlendem Key oder API-Fehler: ohne Lesung keine Freigabe."""
+    client = anthropic.Anthropic(api_key=anthropic_auth.get_key())
+    b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+    resp = client.messages.create(
+        model=VISION_MODEL,
+        max_tokens=512,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image",
+                 "source": {"type": "base64", "media_type": "image/png", "data": b64}},
+                {"type": "text", "text": VISION_READ_PROMPT},
+            ],
+        }],
+    )
+    return resp.content[0].text.strip()
+
+
+def _verify_rendered_text(image_bytes: bytes, expected: list[str]) -> None:
+    """Prueft jeden Pflichttext gegen die Vision-Transkription.
+    Raises TextMismatch beim ersten fehlenden Text."""
+    if not expected:
+        return
+    transcript = _read_image_text(image_bytes)
+    for text in expected:
+        if not text_matches(text, transcript):
+            raise TextMismatch(
+                f"Text im Bild weicht ab. Erwartet: '{text}'. Gelesen: '{transcript}'")
+    print(f"  Text-Readback OK ({len(expected)} Pflichttext(e))", flush=True)
 
 
 def _sample_clean_background_color(image: Image.Image) -> tuple:
@@ -433,12 +511,16 @@ def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model
             image_url = urls[0]
             print(f"  kie.ai: FERTIG -> {image_url}", flush=True)
 
+            # Pflichttext pruefen, BEVOR Wipe und Logo laufen: ein Mismatch
+            # verwirft den Render (TextMismatch -> neuer Versuch in generate_image).
+            img_bytes = requests.get(image_url, timeout=30).content
+            _verify_rendered_text(img_bytes, required_text_from_prompt(prompt))
+
             # Logo einblenden — vorher halluzinierte Marks entfernen.
             # Bei Infografiken (strip_marks=False) bleibt der Wipe aus: er wuerde
             # gewollte Tool-Logos und untere Infografik-Ebenen wegradieren.
             final_bytes = None
             try:
-                img_bytes = requests.get(image_url, timeout=30).content
                 cleaned_bytes = _strip_hallucinated_brand_marks(img_bytes) if strip_marks else img_bytes
                 final_bytes = _overlay_logo(cleaned_bytes)
                 os.makedirs(".tmp", exist_ok=True)
@@ -450,7 +532,7 @@ def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model
                 print(f"  Logo-Overlay fehlgeschlagen: {e}", flush=True)
 
             # Permanenten Upload versuchen (mit Logo falls verfuegbar)
-            upload_bytes = final_bytes if final_bytes is not None else requests.get(image_url, timeout=30).content
+            upload_bytes = final_bytes if final_bytes is not None else img_bytes
             filename = f"generated_{task_id[:8]}.png"
 
             # Versuch 1: GitHub (public repo -> raw.githubusercontent.com).
@@ -513,27 +595,42 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2", strip_marks: bool = T
         URL des fertigen Bildes
 
     Raises:
-        RuntimeError: Wenn nach allen Versuchen keine Generierung gelingt.
+        RuntimeError: Wenn nach allen Versuchen keine Generierung gelingt,
+            auch wenn der Pflichttext (Marker im Prompt) nach TEXT_MAX_ATTEMPTS
+            Rendern nicht stimmt.
     """
     last_exc: Exception | None = None
-    for attempt in range(1, JOB_MAX_ATTEMPTS + 1):
+    job_errors = text_errors = 0
+    current_prompt = prompt
+    while True:
         try:
-            return _run_kie_job(prompt, aspect_ratio, strip_marks=strip_marks, model=model)
+            return _run_kie_job(current_prompt, aspect_ratio, strip_marks=strip_marks, model=model)
+        except TextMismatch as e:
+            last_exc = e
+            text_errors += 1
+            print(f"  Text-Readback (Versuch {text_errors}/{TEXT_MAX_ATTEMPTS}): {e}", flush=True)
+            if text_errors >= TEXT_MAX_ATTEMPTS:
+                break
+            if TEXT_RETRY_NOTE not in current_prompt:
+                current_prompt = prompt + TEXT_RETRY_NOTE
         except Exception as e:
             last_exc = e
+            job_errors += 1
             print(
-                f"  kie.ai Job-Fehler (Versuch {attempt}/{JOB_MAX_ATTEMPTS}): {e}",
+                f"  kie.ai Job-Fehler (Versuch {job_errors}/{JOB_MAX_ATTEMPTS}): {e}",
                 flush=True,
             )
-            if attempt < JOB_MAX_ATTEMPTS:
-                print(
-                    f"  Warte {JOB_RETRY_BACKOFF_SECONDS}s vor neuem Versuch ...",
-                    flush=True,
-                )
-                time.sleep(JOB_RETRY_BACKOFF_SECONDS)
+            if job_errors >= JOB_MAX_ATTEMPTS:
+                break
+            print(
+                f"  Warte {JOB_RETRY_BACKOFF_SECONDS}s vor neuem Versuch ...",
+                flush=True,
+            )
+            time.sleep(JOB_RETRY_BACKOFF_SECONDS)
     assert last_exc is not None
     raise RuntimeError(
-        f"kie.ai endgueltig fehlgeschlagen nach {JOB_MAX_ATTEMPTS} Versuchen: {last_exc}"
+        f"kie.ai endgueltig fehlgeschlagen ({job_errors} Job-Fehler, "
+        f"{text_errors} Text-Mismatches): {last_exc}"
     ) from last_exc
 
 
