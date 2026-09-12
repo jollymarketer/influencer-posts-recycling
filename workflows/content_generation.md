@@ -117,7 +117,7 @@ The headline is the only text or graphic element in the image apart from the dep
 from tools.kieai_image import generate_image
 image_url = generate_image(image_prompt)
 ```
-→ Modell: **gpt-image-2-text-to-image** via kie.ai API (3:2 default)
+→ Modell: **gpt-image-2-5-flare-text-to-image** via kie.ai API (3:2 default)
 → Polling läuft automatisch alle 10 Sekunden
 
 ### Schritt 5: Notion updaten
@@ -170,6 +170,13 @@ Make-Mapping kann damit keine Original-Autoren mehr leaken.
 Pin-Tests: `tests/test_notion_db_title.py`.
 
 ## Self-Improvement Log
+
+### 2026-09-12 — Pipeline-Default auf gpt-image-2.5 Flare
+
+- Umstellung: `DEFAULT_MODEL` in `tools/kieai_image.py` von `gpt-image-2-text-to-image` auf `gpt-image-2-5-flare-text-to-image`.
+- kie.ai fuehrt kein Modell "gpt-image-2.5", sondern zwei Varianten: `gpt-image-2-5-flare-text-to-image` und `gpt-image-2-5-sunburst-text-to-image`. Flare ist die von kie.ai als Standard beschriebene Variante.
+- Payload-Aenderung: Die 2.5-Input-Spec kennt nur `prompt`, `aspect_ratio`, `resolution` (1K/2K/4K), `background`. `nsfw_checker` wird daher nur noch fuer Modelle ausserhalb der 2.5-Familie mitgeschickt (gpt-image-2, `google/nano-banana`). `resolution` bleibt ungesetzt, es gilt der kie.ai-Default.
+- `aspect_ratio` 3:2 bleibt unveraendert gueltig.
 
 ### 2026-08-27 — Derselbe DE-Post sechsmal gepostet, EN seit 09.07. still
 

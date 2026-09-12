@@ -1,5 +1,5 @@
 """
-kie.ai Bildgenerierung — gpt-image-2-text-to-image
+kie.ai Bildgenerierung — gpt-image-2-5-flare-text-to-image
 API: https://api.kie.ai
 Polling alle 10 Sekunden bis Bild fertig oder Timeout (15 Min).
 """
@@ -44,8 +44,8 @@ def _api_key(cfg=None) -> str:
     return key
 # Default-Modell des Daily-Pipelines. Ueber den model-Parameter von generate_image
 # pro Aufruf ueberschreibbar (z.B. "google/nano-banana" als Fallback, wenn kie.ai
-# gpt-image-2 serverseitig stoert) — ohne den Pipeline-Default zu aendern.
-DEFAULT_MODEL = "gpt-image-2-text-to-image"
+# gpt-image-2.5 serverseitig stoert) — ohne den Pipeline-Default zu aendern.
+DEFAULT_MODEL = "gpt-image-2-5-flare-text-to-image"
 POLL_INTERVAL_SECONDS = 10
 # 2026-05-18: kie.ai gpt-image-2 hat einen Tag mit ~16 Min Generierungszeit erlebt.
 # 25 Min Headroom verhindert Single-Run-Timeouts ohne den Cron unverhaeltnismaessig
@@ -494,13 +494,19 @@ def _run_kie_job(prompt: str, aspect_ratio: str, strip_marks: bool = True, model
 
     # Schritt 1: Job starten
     print(f"  kie.ai: Starte Bildgenerierung ({model}) ...", flush=True)
+    model_input = {
+        "prompt": prompt,
+        "aspect_ratio": aspect_ratio,
+    }
+    # nsfw_checker kennt die gpt-image-2.5-Familie nicht mehr (Input-Spec 2.5:
+    # prompt, aspect_ratio, resolution, background). Nur fuer die Modelle
+    # mitschicken, die den Parameter noch fuehren (gpt-image-2, nano-banana).
+    if not model.startswith("gpt-image-2-5"):
+        model_input["nsfw_checker"] = False
+
     create_payload = {
         "model": model,
-        "input": {
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "nsfw_checker": False,
-        },
+        "input": model_input,
     }
 
     resp = _kie_request_with_retry(
@@ -623,7 +629,7 @@ def generate_image(prompt: str, aspect_ratio: str = "3:2", strip_marks: bool = T
         strip_marks: Wenn True (Editorial-Poster), werden halluzinierte Marken-Marks
             via Bottom-Left-Wipe + Vision-Detect entfernt. Bei Infografiken auf False
             setzen — sonst werden gewollte Tool-Logos und untere Ebenen zerstoert.
-        model: kie.ai-Modell-ID (Standard: gpt-image-2-text-to-image). Pro Aufruf
+        model: kie.ai-Modell-ID (Standard: gpt-image-2-5-flare-text-to-image). Pro Aufruf
             ueberschreibbar, z.B. "google/nano-banana", ohne den Pipeline-Default
             zu aendern.
 
