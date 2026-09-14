@@ -13,7 +13,7 @@ import unicodedata
 from dotenv import load_dotenv
 
 from clients import apply_tokens, load_client
-from tools import naturalness, text_gate
+from tools import hooks, naturalness, text_gate
 from tools.anthropic_auth import LazyAnthropic
 
 load_dotenv()
@@ -697,7 +697,8 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
                     persona_tokens_de: dict | None = None,
                     de_template: str | None = None,
                     band: str | None = None,
-                    avoid_phrases: list[str] | None = None) -> tuple[str, str]:
+                    avoid_phrases: list[str] | None = None,
+                    hook_id: str = "") -> tuple[str, str]:
     """Pure builder: returns (de_prompt, en_prompt) with the format structure,
     the infographic anti-repeat line, and optional persona/asset blocks
     injected. persona_voice_de overrides the DE author voice (Persona-Split);
@@ -709,7 +710,9 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
     gleicher Slot-Satz, anderes Framing); None bleibt DACH_POST_PROMPT.
     band "kurz" ersetzt Struktur und Laengenziel durch die Kurzform.
     avoid_phrases sind die im Lauf schon verbrauchten Formulierungen
-    (tools/naturalness.phrases), sie werden dem DE-Prompt angehaengt."""
+    (tools/naturalness.phrases), sie werden dem DE-Prompt angehaengt.
+    hook_id waehlt die Hook-Formel (tools/hooks), sie ersetzt Zeile 1 der
+    Struktur in beiden Sprachen; leer laesst die Formatzeile stehen."""
     b = length_band(post_format, band)
     if b == "kurz":
         structures = KURZ_STRUCTURE
@@ -720,7 +723,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
-        structure_block=_client_structure(structures["de"]),
+        structure_block=_client_structure(hooks.inject_hook(structures["de"], hook_id, "de")),
         recent_types_line=de_recent,
         persona_block=persona_de,
         assets_block=assets_de,
@@ -732,7 +735,7 @@ def _format_prompts(post: dict, post_format: str = "Opinion",
         context=CLIENT_CONTEXT,
         influencer=post["influencer"],
         post_text=post["post_text"][:3000],
-        structure_block=structures["en"],
+        structure_block=hooks.inject_hook(structures["en"], hook_id, "en"),
         recent_types_line=en_recent,
         persona_block=persona_en,
         assets_block=assets_en,
@@ -1815,7 +1818,8 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
                                    persona_id: str = "",
                                    de_template: str | None = None,
                                    band: str | None = None,
-                                   avoid_phrases: list[str] | None = None) -> tuple[str, str, str, str, str, str]:
+                                   avoid_phrases: list[str] | None = None,
+                                   hook_id: str = "") -> tuple[str, str, str, str, str, str]:
     """Generiert DE-Post (DACH-Prompt) + nativen EN-Post (EN-Prompt).
     Mit FEATURES["en_draft"]=False (lisocon, GTM-Call 2026-07-09) entfaellt der
     EN-Call komplett; Soundbyte/Kontext/Infografik-Skelett kommen dann aus
@@ -1851,6 +1855,7 @@ def generate_post_and_image_prompt(post: dict, post_format: str = "Opinion",
         persona_voice_de=persona_voice_de,
         persona_tokens_de=persona_tokens_de,
         de_template=de_template, band=band, avoid_phrases=avoid_phrases,
+        hook_id=hook_id,
     )
     cap = LENGTH_CAP[length_band(post_format, band)]
 
