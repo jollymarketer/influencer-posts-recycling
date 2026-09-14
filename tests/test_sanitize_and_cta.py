@@ -132,3 +132,26 @@ def test_lisocon_magnet_ctas_are_the_client_wording():
 def test_sanitize_no_box_chars_untouched():
     text = "Normaler Text mit Zahlen 10-20 und - Bullet.\n\nZweiter Absatz."
     assert sanitize_generated_text(text) == text
+
+
+# Unsichtbare Zeichen und Typografie (Repo-Vergleich linkedin-agent-skill,
+# 14.09.2026, humanize.py): Zero-Width, BOM, weiches Trennzeichen und
+# Unicode-Tag-Zeichen sind ein maschinelles Wasserzeichen ohne Nutzen.
+
+def test_sanitize_strips_invisible_format_characters():
+    raw = "Fore­cast​ steht﻿.‎ Tag\U000e0041"
+    assert sanitize_generated_text(raw) == "Forecast steht. Tag"
+
+
+def test_sanitize_keeps_zwj_inside_emoji_sequences():
+    seq = "Team \U0001f468‍\U0001f4bb bleibt."
+    assert sanitize_generated_text(seq) == seq
+
+
+def test_sanitize_normalises_protected_spaces_and_ellipsis():
+    assert sanitize_generated_text("10 Prozent mehr… fertig") == "10 Prozent mehr... fertig"
+
+
+def test_sanitize_keeps_german_quotes():
+    text = "Er sagte „Stimmt nicht“ und ging."
+    assert sanitize_generated_text(text) == text

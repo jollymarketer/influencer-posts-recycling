@@ -8,6 +8,7 @@ import json
 import math
 import os
 import re
+import unicodedata
 
 from dotenv import load_dotenv
 
@@ -1375,6 +1376,22 @@ Vermeide Themen-Wiederholungen. Bevorzuge Posts die thematisch neue Perspektiven
     return sorted(scored, key=lambda x: x["score"], reverse=True)
 
 
+_PROTECTED_SPACES = re.compile("[      ]")
+
+
+def _strip_invisible(text: str) -> str:
+    """Alle Zeichen der Kategorie Cf raus, ausser dem Zero-Width-Joiner
+    zwischen zwei Emoji (sonst zerfaellt eine Emoji-Sequenz in Einzelbilder)."""
+    out = []
+    for i, c in enumerate(text):
+        if unicodedata.category(c) == "Cf":
+            if not (c == "‍" and 0 < i < len(text) - 1
+                    and ord(text[i - 1]) >= 0x2600 and ord(text[i + 1]) >= 0x2600):
+                continue
+        out.append(c)
+    return "".join(out)
+
+
 def sanitize_generated_text(text: str) -> str:
     """Deterministische Nachbereitung der LLM-Drafts (Kundenfeedback lisocon 2026-07-08).
     Prompt-Verbote allein halten nicht zuverlaessig:
@@ -1384,7 +1401,15 @@ def sanitize_generated_text(text: str) -> str:
     - Box-Drawing-Zeichen (ASCII-Boxen): LinkedIn rendert proportional, die
       Box zerbricht beim Posten (Kundenfeedback lisocon 2026-07-17). Zeichen
       werden gestrippt, der Merksatz-Text bleibt stehen.
+    - Unsichtbare Formatzeichen (Unicode-Kategorie Cf: Zero-Width, BOM,
+      weiches Trennzeichen, Tag-Zeichen) sind ein maschinelles Wasserzeichen
+      ohne Nutzen und fallen weg; der Zero-Width-Joiner bleibt nur innerhalb
+      einer Emoji-Sequenz. Geschuetzte Leerzeichen werden Leerzeichen, die
+      Auslassungspunkte drei Punkte. Deutsche Anfuehrungszeichen bleiben.
+      (Repo-Vergleich linkedin-agent-skill, 14.09.2026)
     """
+    text = _strip_invisible(text)
+    text = _PROTECTED_SPACES.sub(" ", text).replace("…", "...")
     text = text.replace("**", "")
     text = re.sub(r"(?m)^([ \t]*)[—–][ \t]+", r"\1- ", text)
     text = re.sub(r"(?<=\d)[ \t]*[—–][ \t]*(?=\d)", "-", text)

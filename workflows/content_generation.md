@@ -171,6 +171,16 @@ Pin-Tests: `tests/test_notion_db_title.py`.
 
 ## Self-Improvement Log
 
+### 2026-09-14 — Uebernahme aus Jakeschincariol/linkedin-agent-skill
+
+- Repo-Vergleich (Richard, 14.09.2026): das Repo ist ein englisches Prompt-Kit ohne API. Uebernommen wurden nur sprachneutrale Masse und deutsch nachgebaute Muster, nicht das Slop-Lexikon und nicht der VOICE-Score (beide nur englisch).
+- `tools/text_gate.shape_notes`: Satzlaengen-Streuung (Variationskoeffizient unter 0.35 ab vier Saetzen), gleich lange Listenpunkte (ab drei, Stdabw unter 1.6), Dreier-Parallelismus aus Kleinwoertern, Pointen-Frage als Einzeiler. Laeuft in `violations()`, also im einen Neulauf-Hinweis fuer alle Mandanten. Weich, verwirft nichts. Kalibriert an Kulles Schreibproben (`clients/swot/voices/kulle.md`), die ohne Befund durchgehen.
+- `sanitize_generated_text`: unsichtbare Formatzeichen (Unicode Cf) raus, ZWJ in Emoji-Sequenzen bleibt, geschuetzte Leerzeichen und Auslassungspunkte normalisiert. Deutsche Anfuehrungszeichen bleiben.
+- `tools/comment_drafts`: neun Kommentar-Typen im Prompt, Kopfzeile `TYP:` im Output, Typ im Notion-Titel, der zuletzt vergebene Typ wird im Lauf gemieden. ABM-Pfad unveraendert.
+- Nicht uebernommen: "nicht nur X, sondern auch Y" (im Deutschen normal), Curly Quotes zu geraden (deutsche Typografie), Pillar-Mix (Matrix ist strenger), Timing-Defaults (unbelegt).
+- Offen: Hook-Katalog (21 Formeln mit Falle je Formel) und Audit auf Engagement-Rate und Reach-Multiple aus dem nativen Analytics-Export. Beides nur zusammen sinnvoll (Hook-ID ist der Join-Schluessel), eigenes Brainstorming.
+- Messlücke: die Verwerfquote je Mandant steht nur in den Railway-Logs, lokal liegt keine Baseline. Vor einem Urteil ueber die neuen Hinweise die Neulauf-Zeilen "Textwache: Neulauf wegen" in den Railway-Logs einer Woche zaehlen.
+
 ### 2026-09-12 — Pipeline-Default auf gpt-image-2.5 Flare
 
 - Umstellung: `DEFAULT_MODEL` in `tools/kieai_image.py` von `gpt-image-2-text-to-image` auf `gpt-image-2-5-flare-text-to-image`.

@@ -54,25 +54,43 @@ AUFGABE
 Schreibe genau EINEN Kommentar, den {influencer} und seine Leser als echten
 fachlichen Beitrag lesen, nicht als getarnte Werbung.
 
+KOMMENTAR-TYPEN
+Wähle den Typ, der zu diesem Post passt. Nie aus Gewohnheit Typ 1.
+1. Das Datum: eine eigene Beobachtung, die den Punkt des Posts stützt oder relativiert.
+2. Fehlender Fall: die Grenze der Aussage benennen. "Das gilt, bis ... Dann ..."
+3. Widerspruch mit Substanz: erst der Teil, der stimmt, dann die Gabelung.
+4. Eine Zeile weiterbauen: eine Zeile des Posts wörtlich aufgreifen und daran weiterdenken.
+5. Die echte Frage: eine Frage, deren Antwort den Autor weiterbringt. Nie "würde mich interessieren".
+6. Der Beleg: du hast das selbst erlebt; zwei Sätze, was dabei passiert ist, ohne Firma und ohne Zahl.
+7. Die Korrektur: ein sachlicher Fehler im Post. Richtig, kurz, freundlich, nur wenn du sicher bist.
+8. Der Reframe: "Anders gelesen:" derselbe Sachverhalt aus einer anderen Perspektive.
+9. Der Einzeiler: unter zwölf Wörtern, treffend oder witzig.{avoid}
+
 HARTE REGELN
-- 2 bis 4 Saetze, nie laenger. Kein Absatz-Geschreibsel, keine Listen, keine Emojis.
+- 2 bis 4 Saetze, nie laenger. Kein Absatz-Geschreibsel, keine Listen, keine Emojis,
+  kein Emoji als erstes Zeichen.
 - Sprache: exakt die Sprache des Posts oben. Englischer Post, englischer Kommentar.
 - Ein eigener konkreter Gedanke aus der Praxis, den der Post NICHT enthaelt.
-  Zustimmung allein ist wertlos, Widerspruch ohne Substanz auch.
+  Zustimmung allein ist wertlos, Widerspruch ohne Substanz auch. Den Post nie
+  nacherzaehlen. Ein Gedanke, nicht zwei.
 - Niemals das eigene Produkt, den Firmennamen, eine Kundenreferenz, eine Zahl
   oder einen Link nennen. Kein Pitch, kein Angebot, kein Hinweis auf die eigene
   Website. Kein "bei uns sehen wir das so".
-- Keine Floskeln: kein "Great post", kein "Couldn't agree more", kein "Danke fuers
-  Teilen", keine Frage nur um der Frage willen.
+- Keine Floskeln als Einstieg: kein "Great post", "Love this", "Couldn't agree more",
+  "Toller Beitrag", "Danke fürs Teilen", "Sehe ich genauso", "Absolut", "Spannend",
+  kein Vorname mit Ausrufezeichen. Keine Frage nur um der Frage willen.
 - Keine Gedankenstriche als Satzzeichen.
 - Wenn eine Frage am Ende steht, dann eine, die den Autor wirklich weiterbringt.
 - Antworte NUR mit dem Kommentartext. Keine Anrede, keine Signatur, keine
   Erklaerung, kein Markdown.
 
-DAZU EINE UEBERSCHRIFT
-Gib in der ersten Zeile "ANSATZ: " plus 5 bis 10 Woerter aus, die den Winkel des
-Kommentars beschreiben (interne Notiz, wird nicht gepostet). Danach eine
-Leerzeile, dann der Kommentar."""
+DAZU ZWEI KOPFZEILEN (interne Notiz, wird nicht gepostet)
+Erste Zeile "TYP: " plus Nummer und Name des gewählten Typs, zum Beispiel
+"TYP: 6 Der Beleg". Zweite Zeile "ANSATZ: " plus 5 bis 10 Woerter, die den
+Winkel des Kommentars beschreiben. Danach eine Leerzeile, dann der Kommentar."""
+
+_AVOID_NOTE = ("\n\nNICHT diesen Typ, in diesem Lauf schon verwendet: {types}. "
+               "Ein Kommentar-Lauf mit lauter gleichen Typen liest sich als Serie.")
 
 
 def rotate_profiles(influencers: list, per_day: int, day_index: int) -> list:
@@ -182,27 +200,41 @@ def _voice(cfg, poster: str) -> str:
     return cfg.TOKENS.get("PERSONA_DE", "")
 
 
-def draft_comment(cfg, post: dict, poster: str) -> dict | None:
-    """Ein LLM-Call pro Kommentar. Rueckgabe None bei leerer Antwort."""
+def _split_header(raw: str) -> tuple[str, str, str]:
+    """Kopfzeilen TYP und ANSATZ (beliebige Reihenfolge, beide optional) vom
+    Kommentartext trennen. Fehlen sie, ist alles Kommentar."""
+    typ, angle, lines = "", "", raw.strip().splitlines()
+    while lines and lines[0].strip().upper().startswith(("TYP:", "ANSATZ:")):
+        key, _, val = lines.pop(0).strip().partition(":")
+        if key.strip().upper() == "TYP":
+            typ = val.strip()
+        else:
+            angle = val.strip()
+    return typ, angle, "\n".join(lines).strip()
+
+
+def draft_comment(cfg, post: dict, poster: str,
+                  avoid_types: list[str] | None = None) -> dict | None:
+    """Ein LLM-Call pro Kommentar. Rueckgabe None bei leerer Antwort.
+    avoid_types: Kommentar-Typen, die dieser Lauf schon vergeben hat (die
+    Callsite reicht den letzten durch, damit keine Serie entsteht)."""
     prompt = COMMENT_PROMPT.format(
         voice=_voice(cfg, poster),
         context=cfg.CONTEXT.strip(),
         influencer=post.get("influencer", "der Autor"),
         post_text=post["post_text"][:4000],
+        avoid=_AVOID_NOTE.format(types=", ".join(avoid_types)) if avoid_types else "",
     )
     resp = _llm.messages.create(model=COMMENT_MODEL, max_tokens=600,
                                 messages=[{"role": "user", "content": prompt}])
-    raw = resp.content[0].text.strip()
-    angle, comment = "", raw
-    if raw.upper().startswith("ANSATZ:"):
-        head, _, rest = raw.partition("\n")
-        angle = head.split(":", 1)[1].strip()
-        comment = rest.strip()
+    typ, angle, comment = _split_header(resp.content[0].text)
     if not comment:
         return None
+    label = f"Kommentar {poster} [{typ}]" if typ else f"Kommentar {poster}"
     return {
-        "title": f"Kommentar {poster}: {angle or post.get('influencer', '')}"[:250],
+        "title": f"{label}: {angle or post.get('influencer', '')}"[:250],
         "comment": comment,
+        "typ": typ,
         "poster": poster,
         "target_url": post["post_url"],
         "influencer": post.get("influencer", ""),
@@ -272,13 +304,15 @@ def run_comment_drafts(cfg=None, now=None) -> int:
     posters = poster_rotation(
         settings.get("posters") or [getattr(cfg, "POSTER_DEFAULT", "")], days, now)
     per_poster = settings.get("drafts_per_poster", 3)
-    written = 0
+    written, used_types = 0, []
     for poster, post in assign_posts(posts, posters, per_poster,
                                      total=settings.get("drafts_total")):
         try:
-            draft = draft_comment(cfg, post, poster)
+            draft = draft_comment(cfg, post, poster, avoid_types=used_types[-1:])
             if not draft:
                 continue
+            if draft.get("typ"):
+                used_types.append(draft["typ"])
             create_comment_entry(draft)
         except Exception as e:
             print(f"    FEHLER - Kommentar zu {post['post_url'][:60]}: {e}",

@@ -12,6 +12,7 @@ sanitize_generated_text). Diese Wache misst deterministisch; die Callsite
 entscheidet ueber Neulauf oder Verwerfen. Kein Modellaufruf, kein Netz.
 """
 import re
+from statistics import mean, pstdev
 
 # Abkuerzungen ab vier Buchstaben, die in Grossbuchstaben stehen duerfen.
 # Kuerzere (GuV, ERP, BWA) und gemischte (StaRUG, IFRS 18) trifft das Muster
@@ -79,9 +80,76 @@ def hard_violations(text: str, max_chars: int) -> list[str]:
 
 
 def violations(text: str, max_chars: int) -> list[str]:
-    """Alle Verstoesse fuer den Neulauf-Hinweis: harte plus Umlaut-Kandidaten."""
+    """Alle Verstoesse fuer den Neulauf-Hinweis: harte plus Umlaut-Kandidaten
+    plus Rhythmus und Strukturformeln (shape_notes)."""
     out = hard_violations(text, max_chars)
     uml = umlaut_candidates(text)
     if uml:
         out.append("ae/oe/ue statt Umlaut: " + ", ".join(uml[:6]))
+    out.extend(shape_notes(text))
+    return out
+
+
+# Rhythmus und Strukturformeln (Repo-Vergleich Jakeschincariol/linkedin-agent-
+# skill, 14.09.2026). Die Masse stammen aus dessen detect.py und sind
+# sprachneutral: Variationskoeffizient der Satzlaengen (Maschine um 0.22,
+# Mensch um 0.70, Flag unter 0.35) und gleich lange Listenpunkte (Stdabw der
+# Wortzahl unter 1.6). Die zwei Strukturmuster sind deutsch nachgebaut: der
+# Dreier-Parallelismus nur aus Kleinwoertern (Adjektive, Verben), damit eine
+# Aufzaehlung von Substantiven wie "Excel, Word und PowerPoint" nicht trifft,
+# und die Pointen-Frage als eigene Zeile ("Das Ergebnis?"). Alles weich: der
+# Befund geht in den einen Neulauf-Hinweis, verworfen wird deswegen nichts.
+# Bei SWOT fragt der Leser (naturalness, Frage 5) dieselben Formeln danach
+# noch einmal ab; bei Jolly und lisocon ist dieser Hinweis der einzige Fang.
+MIN_SENTENCE_CV = 0.35
+MIN_SENTENCES = 4
+BULLET_STDEV_MIN = 1.6
+MIN_BULLETS = 3
+
+_BULLET = re.compile(r"(?m)^[ \t]*(?:[-•*]|\d+[.)])[ \t]+(.+)$")
+_TRIAD = re.compile(r"\b[a-zäöüß]+, [a-zäöüß]+ und [a-zäöüß]+[.!]")
+_POINTE_FRAGE = re.compile(r"(?m)^[ \t]*(?:Das|Der|Die|Mein|Meine|Unser|Unsere) \w+\?[ \t]*$")
+
+
+def _word_counts(parts: list[str]) -> list[int]:
+    return [n for n in (len(p.split()) for p in parts) if n > 0]
+
+
+def sentence_length_cv(text: str) -> float | None:
+    """Variationskoeffizient der Satzlaengen in Woertern. None unter
+    MIN_SENTENCES Saetzen; Zeilenumbruch zaehlt wie in long_sentences als
+    Satzende."""
+    lengths = _word_counts(re.split(r"(?<=[.!?])\s+|\n+", text))
+    if len(lengths) < MIN_SENTENCES:
+        return None
+    return pstdev(lengths) / mean(lengths)
+
+
+def uniform_bullets(text: str) -> list[str]:
+    """Listenpunkte, wenn ab MIN_BULLETS Punkten alle fast gleich lang sind."""
+    items = [m.group(1).strip() for m in _BULLET.finditer(text)]
+    if len(items) < MIN_BULLETS:
+        return []
+    return items if pstdev(_word_counts(items)) < BULLET_STDEV_MIN else []
+
+
+def shape_notes(text: str) -> list[str]:
+    """Weiche Befunde zu Rhythmus und Strukturformeln, Klartext fuer den
+    Neulauf-Hinweis."""
+    out = []
+    cv = sentence_length_cv(text)
+    if cv is not None and cv < MIN_SENTENCE_CV:
+        out.append(f"Satzlaengen zu gleichfoermig (Streuung {cv:.2f}): "
+                   "kurze und lange Saetze mischen")
+    bullets = uniform_bullets(text)
+    if bullets:
+        out.append("Listenpunkte alle gleich lang, unterschiedlich lang machen: "
+                   + " | ".join(b[:40] for b in bullets[:3]))
+    m = _TRIAD.search(text)
+    if m:
+        out.append(f"Dreier-Parallelismus, ein Element streichen: \"{m.group(0)}\"")
+    m = _POINTE_FRAGE.search(text)
+    if m:
+        out.append("Pointen-Frage als Einzeiler, als Aussage in den Absatz ziehen: "
+                   f"\"{m.group(0).strip()}\"")
     return out
