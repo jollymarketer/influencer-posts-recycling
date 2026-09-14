@@ -93,7 +93,9 @@ stumpf. `rescore_floor: 0` schaltet die Sparlogik ab.
 ## Email-Reminder (Scheduled Agent)
 
 ### Trigger
-- Täglich 07:30 Canary-Zeit (06:30 UTC) via Scheduled Agent
+- Werktags 07:30 UTC (09:30 Berlin) via Scheduled Agent, Cron `30 7 * * 1-5`
+- Seit 14.09.2026 eine Mail für beides: Posts mit Status "Ready to Review" und die
+  heutigen "ABM Kommentar"-Entwürfe mit Link zum Post und vollem Kommentartext
 - Agent ID: `trig_01UxjAikb8EBAhQT9hdu7U8h`
 
 ### Was passiert
