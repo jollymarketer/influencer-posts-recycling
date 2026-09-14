@@ -138,17 +138,35 @@ def test_relevance_gate_drops_hiring_low_scores_and_unparseable():
     assert acd.relevance_gate(posts, _cfg(), {"relevance_gate": False}) == posts
 
 
+def test_domain_cap_ignores_rows_without_domain():
+    # Livetest 14.09.2026: drei domainlose Posts, nur zwei Entwuerfe, weil ""
+    # als eine Firma zaehlte.
+    posts = [_post(f"p{i}", author=f"a{i}") for i in range(4)]
+    picked = acd.apply_caps(posts, [], MON, {"drafts_total": 3, "per_domain_per_week": 2})
+    assert len(picked) == 3
+    mit = [dict(p, domain="x.com") for p in posts]
+    assert len(acd.apply_caps(mit, [], MON, {"drafts_total": 3, "per_domain_per_week": 2})) == 2
+
+
 def test_gate_parse_survives_garbage():
     assert acd._parse_gate("kein json") == (False, 0, "")
     assert acd._parse_gate('Hier: {"kommentierbar": false, "score": 2, "grund": "Event"}') == (False, 2, "Event")
 
 
-def test_title_carries_typ_and_company():
-    ctx, m = _patch()
+def test_title_carries_typ_and_company_and_type_is_avoided_next():
+    ctx, m = _patch(fetch_watchlist_posts=MagicMock(return_value=[_post("p1", "a1"), _post("p2", "a2")]))
     with ctx:
         acd.run_abm_comment_drafts(_cfg(), MON)
     draft = m["create_comment_entry"].call_args.args[0]
     assert draft["title"] == "ABM Kommentar [6 Der Beleg]: N N (Firma A)"
+    calls = m["draft_comment"].call_args_list
+    assert calls[0].kwargs["avoid_types"] == [] and calls[1].kwargs["avoid_types"] == ["6 Der Beleg"]
+
+
+def test_gate_prompt_binds_to_the_posters_field():
+    assert "Themenfeld von Richard" in acd.GATE_PROMPT.format(
+        poster="Richard", name="n", title="t", company="c", text="x")
+    assert "Börsen- und Aktienanalysen" in acd.GATE_PROMPT
 
 
 def test_jolly_config_block():

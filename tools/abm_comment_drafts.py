@@ -138,10 +138,11 @@ def fetch_watchlist_posts(rows: list, settings: dict) -> list:
     return posts
 
 
-GATE_PROMPT = """Du prüfst, ob ein LinkedIn-Post eines Zielkunden ein fachlicher Beitrag ist, unter dem ein Kommentar von {poster} als Praktiker Sinn ergibt.
+GATE_PROMPT = """Du prüfst, ob ein LinkedIn-Post eines Zielkunden ein Beitrag ist, unter dem ein Kommentar von {poster} als Praktiker für B2B-Vertrieb, Marketing und Go-to-Market Sinn ergibt.
 
 Nicht kommentierbar: Stellenanzeige, Event- oder Messe-Werbung, Produkt-Launch ohne inhaltliche Aussage, private Anlässe (Urlaub, Jubiläum, Geburtstag, Auszeichnung), reines Weiterreichen fremder Inhalte, Sprache weder Deutsch noch Englisch.
-Score 10: Fachthema mit eigener These oder Erfahrung, an die sich anknüpfen lässt. Score 0: nichts zum Anknüpfen.
+Themenfeld von {poster}: Vertrieb, Marketing, Pipeline, Neukundengewinnung, Positionierung, Kundenverständnis, Wachstum und Führung eines B2B-Unternehmens. Posts außerhalb dieses Felds (Börsen- und Aktienanalysen, Produkt- oder Technikdetails, Politik, allgemeine Lebensweisheiten) bekommen höchstens Score 3, auch wenn sie fachlich gut sind: {poster} hätte dort nichts Eigenes beizutragen.
+Score 10: Thema im Feld, eigene These oder Erfahrung, an die sich anknüpfen lässt. Score 0: nichts zum Anknüpfen.
 
 POST von {name} ({title}, {company}):
 ---
@@ -223,11 +224,16 @@ def apply_caps(posts: list, log: list, now, settings: dict) -> list:
             break
         if post["author_url"] in blocked_authors:
             continue
-        if domain_counts.get(post["domain"], 0) >= domain_cap:
+        # Ohne Domain (Jolly-Watchlist, 14.09.2026) gibt es keinen Firmen-
+        # Deckel: sonst zaehlten alle domainlosen Posts als EINE Firma und
+        # der Lauf endete nach zwei Entwuerfen (Livetest 14.09.).
+        domain = post.get("domain") or ""
+        if domain and domain_counts.get(domain, 0) >= domain_cap:
             continue
         picked.append(post)
         blocked_authors.add(post["author_url"])
-        domain_counts[post["domain"]] = domain_counts.get(post["domain"], 0) + 1
+        if domain:
+            domain_counts[domain] = domain_counts.get(domain, 0) + 1
     return picked
 
 
@@ -281,12 +287,14 @@ def run_abm_comment_drafts(cfg=None, now=None) -> int:
         print(f"  Wochen-Guard nicht schreibbar (nicht kritisch): {e}", file=sys.stderr)
 
     poster = settings.get("poster", "Reinhard")
-    written = 0
+    written, used_types = 0, []
     for post in apply_caps(posts, log, now, settings):
         try:
-            draft = draft_comment(cfg, post, poster)
+            draft = draft_comment(cfg, post, poster, avoid_types=used_types[-1:])
             if not draft:
                 continue
+            if draft.get("typ"):
+                used_types.append(draft["typ"])
             typ = f" [{draft['typ']}]" if draft.get("typ") else ""
             wo = post.get("domain") or post.get("company") or ""
             draft["title"] = f"ABM Kommentar{typ}: {post['influencer']} ({wo})"[:250]
@@ -299,7 +307,7 @@ def run_abm_comment_drafts(cfg=None, now=None) -> int:
                   file=sys.stderr)
             continue
         written += 1
-        print(f"    OK: {poster} -> {post['influencer'][:30]} ({post['domain']})")
+        print(f"    OK: {poster} -> {post['influencer'][:30]} ({wo})")
 
     print(f"  ABM-Kommentar-Entwuerfe geschrieben: {written}")
     if written:
