@@ -20,10 +20,14 @@ Audit (Punkte 1 und 5) folgen als eigenes Brainstorming.
 - [x] Jolly-Config ABM_COMMENT_DRAFTS (3 je Tag), Verdrahtung in run_research.main,
       Notion-Seed (Kommentar-Ziel, ABM-Autor, ABM-Domain, Poster, Status).
 - [x] tools/jolly_watchlist.py (HubSpot + SN-Poster + Pool-aktiv -> CSV).
-- [ ] Aktivitaets-Sieb 1.938 Bestandspersonen (Freigabe 3,90 USD), laeuft.
-- [ ] Sales Navigator Stack 3 (Poster 30 Tage), 6 Slices, laeuft bis SN-Ende 17./18.09.
-- [ ] Watchlist-CSV bauen, committen; Railway zieht den Code beim naechsten Cron.
-- [ ] Erster Livelauf pruefen: 3 Zeilen "ABM Kommentar" in der Jolly-DB.
+- [x] Aktivitaets-Sieb 1.938 Bestandspersonen: 621 aktiv in 30 Tagen (32 %).
+- [ ] Sales Navigator Stack 3 (Poster 30 Tage), 6 Slices, laeuft mit Waechter
+      (stuendlicher Push) bis SN-Ende 17./18.09.
+- [x] Watchlist in Supabase (1.775 am 14.09. abends), CSV nur lokal: Repo ist
+      PUBLIC, Prospect-Daten nie committen (Befund 14.09.2026).
+- [x] Livelauf 14.09.: 2 Entwuerfe, drei Fixes (Domain-Deckel, Gate-Themenfeld,
+      Typ-Vermeidung). Ab 15.09. Cron mit 3 je Werktag pruefen.
+- [ ] Richard: Repo privat + Bild-Repo; Lisocon-CSV aus dem oeffentlichen Stand.
 
 ## Plan
 
