@@ -56,6 +56,14 @@ Neue LinkedIn-Posts der GTM/RevOps-Influencer finden, scoren, recyceln und tägl
    - Dimensionen: Topic Fit, ICP-Relevanz, Recyclierbarkeit, Einzigartigkeit, Themen-Diversität
    - Viralität: logarithmisch aus Likes/Comments/Shares (Engagement-Daten aus Apify)
 5. Winner wählen: höchster Score, Mindest-Score 25/60
+   - Format über Matrix-Quote, Anti-Repeat und Best-Fit (`tools/content_matrix`, `pick_format`)
+   - Danach die Hook-Formel: `run_research.choose_hook` rotiert deterministisch über
+     die Formeln des Formats (`tools/hooks.HOOKS_BY_FORMAT`), am längsten nicht genutzte
+     zuerst, gemessen an den letzten 20 Hooks aus Notion (`get_recent_hooks`). Steuerlisten
+     STOP/DO MORE liest sie aus `engine_meta.hook_steering_<mandant>` (Verfall 60 Tage,
+     heute leer). Die Formel ersetzt Zeile 1 der Formatstruktur im DE- und EN-Prompt und
+     landet als Select "Hook" in Notion. Seed bei neuer DB: `python scripts/add_hook_property.py`.
+     Spec: `docs/superpowers/specs/2026-09-14-hook-katalog-und-audit-design.md`.
 6. DACH-deutschen LinkedIn-Draft + Bild-Prompt generieren (Claude Sonnet)
 7. Bild generieren (kie.ai, Nano Banana 2, 1:1)
 8. Notion-Eintrag des Winners updaten:
@@ -143,6 +151,13 @@ den Abstand bis zur Auswertbarkeit. Es fliesst bewusst noch nichts in den
 Generierungs-Prompt zurück — ein Muster aus vier Posts ist kein Muster.
 
 Nur-Lese-Blick ohne Scrape und ohne Schreiben: `python tools/engagement_stats.py`
+
+Seit 14.09.2026 zählt "Hook" als weitere Dimension. Der Hook-Audit aus der
+Spec (Export-Join, Engagement-Rate, Reach-Index, Steuerung, Plan Tasks 7-11)
+ist bewusst nicht gebaut: Median 152 Impressions je Post über 12 Monate,
+5 Engagements im Median. Bei dieser Reichweite misst ein Hook-Audit Rauschen.
+Wiedervorlage, wenn die Reichweite fünfmal höher liegt; bis dahin laufen die
+Hook-IDs auf und `engagement_stats` zeigt den Median je Hook im Log.
 
 ## Content-Run (manuell, nur bei Bedarf)
 

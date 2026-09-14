@@ -3,6 +3,15 @@
 Quelle: Repo-Vergleich 14.09.2026. Vier Punkte, ein PR. Hook-Katalog und
 Audit (Punkte 1 und 5) folgen als eigenes Brainstorming.
 
+## Hook-Katalog und Audit (Plan docs/superpowers/plans/2026-09-14-hook-katalog-und-audit.md)
+
+- [x] Tasks 1-6: Katalog, Rotation, Prompt-Zeile, Notion "Hook" (geseedet in
+      der Jolly-DB 14.09.2026), Hook-Wahl im Winner-Flow, 140-Zeichen-Hinweis.
+      Commits ab63ada, 9d70a07. Suite 767.
+- [ ] Tasks 7-11 (Audit): zurueckgestellt, Entscheidung Richard 14.09.2026.
+      Median 152 Impressions je Post, Audit misst Rauschen. Wiedervorlage bei
+      fuenffacher Reichweite. Stattdessen: Kommentar-Drafts fuer Jolly.
+
 ## Plan
 
 - [x] Textwache: Satzlaengen-Rhythmus (Variationskoeffizient unter 0.35 ab
