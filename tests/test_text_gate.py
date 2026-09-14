@@ -113,3 +113,10 @@ def test_human_writing_samples_pass_the_rhythm_check():
     block = md.split("## Schreibmuster", 1)[1].split("## Datengrundlage", 1)[0]
     assert len(block) > 300
     assert not any("Satzlaengen" in n for n in tg.shape_notes(block))
+
+
+def test_shape_notes_flag_a_first_line_over_140_chars():
+    lang = "A" * 150 + "."
+    text = "\n\n" + lang + "\n\nZweiter Absatz."
+    assert any("Erste Zeile 151 Zeichen" in n for n in tg.shape_notes(text))
+    assert not any("Erste Zeile" in n for n in tg.shape_notes("Kurz.\n\n" + lang))

@@ -103,6 +103,7 @@ def violations(text: str, max_chars: int) -> list[str]:
 # noch einmal ab; bei Jolly und lisocon ist dieser Hinweis der einzige Fang.
 MIN_SENTENCE_CV = 0.35
 MIN_SENTENCES = 4
+MAX_FIRST_LINE_CHARS = 140   # mobiler Schnitt "mehr anzeigen" (Repo-Vergleich 14.09.2026)
 BULLET_STDEV_MIN = 1.6
 MIN_BULLETS = 3
 
@@ -152,4 +153,8 @@ def shape_notes(text: str) -> list[str]:
     if m:
         out.append("Pointen-Frage als Einzeiler, als Aussage in den Absatz ziehen: "
                    f"\"{m.group(0).strip()}\"")
+    first = next((l.strip() for l in text.splitlines() if l.strip()), "")
+    if len(first) > MAX_FIRST_LINE_CHARS:
+        out.append(f"Erste Zeile {len(first)} Zeichen, mobil bricht LinkedIn bei etwa "
+                   f"{MAX_FIRST_LINE_CHARS}: Hook kuerzen")
     return out

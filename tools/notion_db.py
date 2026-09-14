@@ -413,6 +413,7 @@ def update_with_draft(
     asset_id: str = "",
     post_text: str = "",
     post_url: str = "",
+    hook: str = "",
 ):
     """
     Aktualisiert einen Notion-Eintrag mit dem generierten LinkedIn-Post + Bild-URL.
@@ -477,6 +478,22 @@ def update_with_draft(
             print(f"  Format-Property gesetzt: {post_format}", flush=True)
         except Exception as e:
             print(f"  Format-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
+
+    # Hook-Formel separat + non-fatal (wie Format): treibt die Rotation im
+    # naechsten Run via get_recent_hooks und ist der Join-Schluessel des
+    # Hook-Audits (Spec 2026-09-14). Fehlt die Property, laeuft der Post ohne.
+    if hook:
+        try:
+            hr = _notion_request(
+                "PATCH",
+                f"{NOTION_API}/pages/{page_id}",
+                headers=_headers(),
+                json={"properties": {"Hook": {"select": {"name": hook}}}},
+            )
+            hr.raise_for_status()
+            print(f"  Hook-Property gesetzt: {hook}", flush=True)
+        except Exception as e:
+            print(f"  Hook-Property fehlgeschlagen (nicht kritisch): {e}", flush=True)
 
     # Infografik-Typ separat + non-fatal (wie Format): treibt das Anti-Repeat im
     # naechsten Run via get_recent_infographic_types. Fehlt die Property in Notion,
@@ -633,6 +650,32 @@ def get_recent_formats(limit: int = 3) -> list[str]:
         if name:
             formats.append(name)
     return formats
+
+
+def get_recent_hooks(limit: int = 20) -> list[str]:
+    """Hook-Formeln der letzten N Eintraege, neueste zuerst, fuer die
+    Rotation (tools/hooks.pick_hook). Tolerant: fehlende Property -> []."""
+    payload = {
+        "filter": {
+            "or": [
+                {"property": "Status", "select": {"equals": "Posted"}},
+                {"property": "Status", "select": {"equals": "Posting"}},
+                {"property": "Status", "select": {"equals": "Approved"}},
+                {"property": "Status", "select": {"equals": "Ready to Review"}},
+            ]
+        },
+        "sorts": [{"timestamp": "last_edited_time", "direction": "descending"}],
+        "page_size": limit,
+    }
+    resp = _notion_request("POST", f"{NOTION_API}/databases/{NOTION_DB_ID}/query",
+                           headers=_headers(), json=payload)
+    resp.raise_for_status()
+    out = []
+    for page in resp.json().get("results", []):
+        name = _select_name(page.get("properties", {}), "Hook")
+        if name:
+            out.append(name)
+    return out
 
 
 def get_recent_infographic_types(limit: int = 4) -> list[str]:
@@ -950,7 +993,7 @@ PUBLISHED_STATUSES = ("Posted", "Posting")
 # Dimensionen, entlang derer die Wirkung eines Posts ausgewertet wird
 # (tools/engagement_stats.py). Namen = Notion-Select-Properties.
 ENGAGEMENT_DIMENSIONS = ("Format", "Persona", "Bild-Variante", "Infografik-Typ",
-                         "Matrix-Job", "Matrix-Stage", "Poster")
+                         "Matrix-Job", "Matrix-Stage", "Poster", "Hook")
 
 # Poster -> Notion-URL-Property. Pro Mandant, weil die DBs unterschiedlich
 # gebaut sind: lisocon hat zwei Poster-Spalten, jolly eine einzige fuer Richard

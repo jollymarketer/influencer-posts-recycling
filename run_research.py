@@ -37,9 +37,12 @@ from tools.notion_db import (
     get_recent_boxes,
     get_recent_assets,
     get_recent_personas,
+    get_recent_hooks,
     create_post_entry,
     update_with_draft,
 )
+from tools.hooks import HOOKS, load_steering, pick_hook
+from tools.topic_pool import get_meta
 from tools.linkedin_scraper import scrape_new_posts
 from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.substack_scraper import scrape_substack_posts
@@ -127,6 +130,27 @@ def scrape_daily_keyword_posts(existing_urls: set, new_posts: list) -> list:
     except Exception as e:
         print(f"  FEHLER - Keyword-Scraping (nicht kritisch): {e}", file=sys.stderr)
         return []
+
+
+def choose_hook(cfg, post_format: str, today) -> str:
+    """Hook-Formel fuer diesen Post: Rotation ueber die letzten 20 Hooks aus
+    Notion plus Steuerlisten aus engine_meta (tools/hooks, Spec 2026-09-14).
+    Beide Quellen sind nicht kritisch: ohne sie laeuft die Rotation ab
+    Katalogreihe."""
+    try:
+        recent = get_recent_hooks(limit=20)
+    except Exception as e:
+        print(f"  Recent-Hooks laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+        recent = []
+    try:
+        steering = load_steering(get_meta(f"hook_steering_{cfg.NAME}"), today)
+    except Exception as e:
+        print(f"  Hook-Steuerung nicht lesbar (nicht kritisch): {e}", file=sys.stderr)
+        steering = {}
+    hook_id = pick_hook(post_format, recent, steering)
+    print(f"  Hook: {hook_id} ({HOOKS[hook_id]['name']}), zuletzt: {recent[:3]}, "
+          f"Steuerung: STOP {steering.get('stop', [])} DO MORE {steering.get('do_more', [])}")
+    return hook_id
 
 
 def run_daily():
@@ -268,6 +292,10 @@ def run_daily():
         if dominant:
             persona = dominant
 
+    # Schritt 4.7: Hook-Formel (Rotation, Spec 2026-09-14). Nach dem
+    # Asset-Backstop, weil der das Format noch aendern kann.
+    hook_id = choose_hook(_cfg, post_format, datetime.now(timezone.utc).date())
+
     # Persona-Split (GTM-Call Jae 2026-07-09): Poster-Property fuer das
     # Make-Routing plus Stimm-Wechsel im DE-Prompt (voice_de der Persona).
     poster = ""
@@ -309,6 +337,7 @@ def run_daily():
             persona_en=persona_block(persona, "en"),
             persona_voice_de=persona_voice_de,
             asset=chosen_asset,
+            hook_id=hook_id,
         )
     except Exception as e:
         print(f"  FEHLER bei Content-Generierung: {e}", file=sys.stderr)
@@ -337,15 +366,19 @@ def run_daily():
                         assets_en=assets_block(post_format, chosen_asset, "en"),
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
+                        hook_id=hook_id,
                     )
                 else:
                     print("  Zahlen-Guard erneut verletzt - Downgrade auf Method.", file=sys.stderr)
                     post_format = "Method"
                     chosen_asset = None
+                    # Zahlenformel des Asset-Formats passt nicht zu Method: neu waehlen.
+                    hook_id = choose_hook(_cfg, post_format, datetime.now(timezone.utc).date())
                     linkedin_draft, en_draft, image_prompt, infographic_skeleton, sound_byte, kontext = generate_post_and_image_prompt(
                         winner, post_format, recent_infographic_types=recent_infographic_types,
                         persona_de=persona_block(persona, "de"),
                         persona_en=persona_block(persona, "en"),
+                        hook_id=hook_id,
                     )
             if not linkedin_draft:
                 print("  FEHLER: Leerer Draft nach Guard-Behandlung.", file=sys.stderr)
@@ -451,6 +484,7 @@ def run_daily():
             asset_id=(chosen_asset or {}).get("id", ""),
             post_text=winner["post_text"],
             post_url=winner["post_url"],
+            hook=hook_id,
         )
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:

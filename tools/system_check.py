@@ -45,6 +45,10 @@ READBACK_NOTION_PROPS = ("Likes", "Kommentare", "Shares", "Engagement-Stand",
                          "Date Posted")
 COMMENT_NOTION_PROPS = ("Kommentar-Ziel", "Poster")
 ABM_COMMENT_NOTION_PROPS = ("Kommentar-Ziel", "Poster", "ABM-Autor", "ABM-Domain")
+# Weiche Properties: fehlen sie, laeuft der Post ohne (non-fatal geschrieben),
+# der Check nennt nur das Seed-Skript. "Hook" seit 14.09.2026 (tools/hooks).
+SOFT_NOTION_PROPS = ("Hook",)
+SOFT_NOTION_SEEDS = {"Hook": "scripts/add_hook_property.py"}
 
 APIFY_ACTORS = ("harvestapi~linkedin-profile-posts",)
 APIFY_KEYWORD_ACTOR = "harvestapi~linkedin-post-search"
@@ -52,6 +56,14 @@ APIFY_KEYWORD_ACTOR = "harvestapi~linkedin-post-search"
 
 def _result(name: str, ok: bool, severity: str, detail: str) -> dict:
     return {"name": name, "ok": ok, "severity": severity, "detail": detail}
+
+
+def soft_notion_findings(present: set) -> list:
+    """Ein weicher Befund je SOFT_NOTION_PROPS-Eintrag."""
+    return [_result(f"notion:property:{p}", p in present, SOFT,
+                    "vorhanden" if p in present
+                    else f"fehlt, anlegen mit: python {SOFT_NOTION_SEEDS[p]}")
+            for p in SOFT_NOTION_PROPS]
 
 
 # --- Pure Logik (testbar ohne Netz) -----------------------------------------
@@ -168,6 +180,7 @@ def check_notion(cfg) -> list:
         _result("notion:db", True, HARD, f"erreichbar ({len(present)} Properties)"),
         _result("notion:properties", not missing, HARD,
                 "vollstaendig" if not missing else f"fehlen: {', '.join(missing)}"),
+        *soft_notion_findings(present),
     ]
 
 
