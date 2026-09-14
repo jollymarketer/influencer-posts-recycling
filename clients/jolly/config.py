@@ -294,3 +294,30 @@ CONTENT_PERSONAS = [
         "cta_style": "discovery",
     },
 ]
+
+# Kommentar-Entwuerfe auf Posts der eigenen Zielgruppe (Richard 14.09.2026,
+# Freigabe 3 je Werktag). Quelle ist die Watchlist aus HubSpot-Warmkontakten,
+# Sales-Navigator-Postern und gesiebten Bestandslisten (tools/jolly_watchlist.py),
+# nie die Themen-Suche: die liefert Anbieter, keine Kaeufer (Messlauf 14.09.).
+# Tageslauf (day None) ueber einen rotierenden Ausschnitt, ein Post je Profil,
+# Fenster 30h; Haiku-Gate sortiert Stellenanzeigen, Events und Privates aus.
+# Eigene Kunden nie (exclude_companies). Kosten je Lauf ~1 USD Apify.
+ABM_COMMENT_DRAFTS = {
+    # Liste liegt in Supabase (comment_watchlist), nicht im oeffentlichen Repo.
+    # Die CSV ist nur der lokale Bauabzug (gitignored).
+    "watchlist_source": "db",
+    "watchlist_csv": os.path.join(os.path.dirname(__file__), "abm_watchlist.csv"),
+    "day": None,               # taeglich (Cron laeuft Mo-Fr)
+    "profiles_per_run": 500,   # Rotation ueber die Liste, ~1 USD je Lauf
+    "max_posts_per_profile": 1,
+    "max_age_hours": 30,
+    "min_words": 40,
+    "poster": "Richard",
+    "author_dedup_days": 14,   # max 1 Kommentar je Person in 14 Tagen
+    "per_domain_per_week": 2,
+    "drafts_total": 3,         # Richards Tagesbudget, von Hand zu posten
+    "relevance_gate": True,
+    "min_relevance": 6,
+    "exclude_companies": ["lindner software", "in2go", "swot controlling", "fynbiz",
+                          "compeon", "nutrix", "jolly marketer"],
+}

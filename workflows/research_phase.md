@@ -125,6 +125,28 @@ New → (Daily Run) → Skipped (nicht als Winner gewählt)
 - Bildgenerierung fehlgeschlagen → Post wird trotzdem als "Ready to Review" gespeichert (ohne Bild)
 - Leerer LinkedIn-Draft → Run bricht ab, kein Notion-Update
 
+## Kommentar-Entwürfe auf Posts der Zielgruppe (Jolly, seit 14.09.2026)
+
+Nach dem Readback ruft `run_research.main` den Watchlist-Pfad `tools/abm_comment_drafts.py`
+(bei lisocon der ABM-Wochenlauf) als Tageslauf: rotierender Ausschnitt von 500 Profilen aus
+`clients/jolly/abm_watchlist.csv`, ein Post je Profil, Fenster 30 Stunden, Kunden-Sperrliste,
+Haiku-Gate "fachlich und kommentierbar" (Schwelle 6), höchstens 3 Entwürfe, ein Kommentar je
+Person in 14 Tagen. Ablage als Notion-Zeilen mit Status "ABM Kommentar", Titel trägt Kommentar-Typ
+und Firma. Posten bleibt manuell.
+
+Warum Watchlist und nicht Themen-Suche (Messläufe 14.09.2026, zusammen ~0,65 USD):
+- Keyword-Suche über 8 Begriffe DE/EN, eine Woche: 77 Posts, davon 1 bis 2 von echten Käufern.
+  Käufer schreiben nicht über "Vertriebspipeline", Anbieter tun das.
+- Profil-Scrape der 245 warmen HubSpot-Kontakte: 55 mit Post in 14 Tagen, rund 5,5 je Werktag.
+
+Watchlist bauen: `python tools/jolly_watchlist.py` liest `clients/jolly/watchlist/`
+(HubSpot-Warmkontakte, Sales-Navigator-Poster Stack 3, gesiebte Bestandslisten) und schreibt die
+CSV. Quellen nachziehen: HubSpot per MCP-Export, SN nur bis Abo-Ende, Bestand über
+das Aktivitäts-Sieb (ein Post je Profil, 30 Tage, 0,002 USD je Profil).
+
+Kosten je Werktag: rund 1 USD Apify plus bis zu 30 Haiku-Aufrufe. Notion-Seed bei neuer DB:
+`python scripts/setup_engagement_comment_props.py` (legt auch "Poster" an).
+
 ## Engagement-Auswertung (nach dem Readback)
 
 `tools/engagement_readback.py` schrieb Likes/Kommentare/Shares bisher nach

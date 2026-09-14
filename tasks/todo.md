@@ -12,6 +12,19 @@ Audit (Punkte 1 und 5) folgen als eigenes Brainstorming.
       Median 152 Impressions je Post, Audit misst Rauschen. Wiedervorlage bei
       fuenffacher Reichweite. Stattdessen: Kommentar-Drafts fuer Jolly.
 
+## Kommentar-Drafts Jolly auf Zielgruppen-Watchlist (14.09.2026)
+
+- [x] Messlauf 1 Keyword-Suche: 1-2 Kaeufer-Posts je Woche, verworfen.
+- [x] Messlauf 2 HubSpot warm (245): 55 aktiv in 14 Tagen, 5,5 je Werktag.
+- [x] ABM-Pfad: Tageslauf, Rotation, Kunden-Sperrliste, Haiku-Gate, Typ im Titel.
+- [x] Jolly-Config ABM_COMMENT_DRAFTS (3 je Tag), Verdrahtung in run_research.main,
+      Notion-Seed (Kommentar-Ziel, ABM-Autor, ABM-Domain, Poster, Status).
+- [x] tools/jolly_watchlist.py (HubSpot + SN-Poster + Pool-aktiv -> CSV).
+- [ ] Aktivitaets-Sieb 1.938 Bestandspersonen (Freigabe 3,90 USD), laeuft.
+- [ ] Sales Navigator Stack 3 (Poster 30 Tage), 6 Slices, laeuft bis SN-Ende 17./18.09.
+- [ ] Watchlist-CSV bauen, committen; Railway zieht den Code beim naechsten Cron.
+- [ ] Erster Livelauf pruefen: 3 Zeilen "ABM Kommentar" in der Jolly-DB.
+
 ## Plan
 
 - [x] Textwache: Satzlaengen-Rhythmus (Variationskoeffizient unter 0.35 ab

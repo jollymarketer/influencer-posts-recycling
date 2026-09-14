@@ -47,6 +47,7 @@ from tools.linkedin_scraper import scrape_new_posts
 from tools.linkedin_keyword_scraper import scrape_keyword_posts
 from tools.substack_scraper import scrape_substack_posts
 from tools.engagement_readback import run_readback
+from tools.abm_comment_drafts import run_abm_comment_drafts
 from tools.post_scorer import (
     MAX_SCORE,
     score_posts,
@@ -535,6 +536,14 @@ def main(now=None):
         run_readback(_cfg)
     except Exception as e:
         print(f"  Readback fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+    # Kommentar-Entwuerfe auf Posts der Zielgruppe (Watchlist-Pfad, Jolly seit
+    # 14.09.2026). Nicht kritisch, steigt ohne ABM_COMMENT_DRAFTS selbst aus.
+    if getattr(_cfg, "ABM_COMMENT_DRAFTS", None):
+        print("\n=== Kommentar-Entwuerfe (Watchlist) ===")
+        try:
+            run_abm_comment_drafts(_cfg, now or datetime.now(timezone.utc))
+        except Exception as e:
+            print(f"  Kommentar-Entwuerfe fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
     weekday = (now or datetime.now(timezone.utc)).weekday()
     if weekday == 3 and _cfg.FEATURES.get("keyword_scrape"):  # Thursday, UTC: keyword scrape feeds Friday's 7-day clustering window
         print("\n=== Donnerstag: starte Keyword-Scrape ===")

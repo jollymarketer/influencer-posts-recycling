@@ -17,6 +17,9 @@ NEW_PROPS = {
     "Kommentar-Ziel": {"url": {}},
     "ABM-Autor": {"url": {}},
     "ABM-Domain": {"rich_text": {}},
+    # Jolly-DB (14.09.2026) hatte kein Poster-Select; Optionen entstehen beim
+    # ersten Schreiben. lisocon hat die Property schon, dort passiert nichts.
+    "Poster": {"select": {"options": []}},
 }
 NEW_STATUS_OPTIONS = ["Kommentar", "ABM Kommentar"]
 
