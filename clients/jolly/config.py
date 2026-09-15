@@ -14,8 +14,8 @@ Jolly Marketer ist eine B2B Revenue Engine Company (Fractional CMO / GTM as a Se
 POSITIONIERUNG: Planbare B2B-Pipeline in 90 Tagen durch systematischen Outbound.
 
 ICP:
-B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum sowie etablierte B2B-Unternehmen (bis ca. 50 MA, z.B. Tech-Services, Software-nahe Dienstleister), die seit Jahren am Markt sind, deren Neugeschaeft aus Empfehlungen, Bestandskunden oder klassischem Vertrieb kommt und denen ein planbarer digitaler Akquise-Kanal fehlt. Buying Personas: Founder, CEO, Inhaber, Geschaeftsfuehrer, CRO, CSO, VP Sales, Head of Sales - Entscheider, die planbaren Outbound und eine Revenue Engine brauchen, aber bisher keine interne Rolle haben, die das System denkt (nicht nur bedient).
-NICHT ICP (Richard 15.09.2026): Beratungen sowie Agenturen und Dienstleister fuer Vertrieb und Marketing, das sind Wettbewerber. Software-Anbieter, auch fuer Vertrieb und Marketing, bleiben ICP.
+B2B SaaS und Tech-Unternehmen (5-250 MA) im deutschsprachigen Raum sowie etablierte B2B-Unternehmen (bis ca. 50 MA, z.B. Tech-Services, Software-nahe Dienstleister, Beratungen ausserhalb von Vertrieb und Marketing), die seit Jahren am Markt sind, deren Neugeschaeft aus Empfehlungen, Bestandskunden oder klassischem Vertrieb kommt und denen ein planbarer digitaler Akquise-Kanal fehlt. Buying Personas: Founder, CEO, Inhaber, Geschaeftsfuehrer, CRO, CSO, VP Sales, Head of Sales - Entscheider, die planbaren Outbound und eine Revenue Engine brauchen, aber bisher keine interne Rolle haben, die das System denkt (nicht nur bedient).
+NICHT ICP (Richard 15.09.2026): Beratungen, Agenturen und andere Dienstleister fuer Vertrieb und Marketing, das sind Wettbewerber. Andere Beratungen (IT, Unternehmensberatung) und Software-Anbieter, auch fuer Vertrieb und Marketing, bleiben ICP.
 
 KERN-THEMEN die den ICP interessieren:
 GTM-Strategie, Outbound-Systeme, Cold Email, Pipeline-Aufbau, RevOps, Sales-Marketing-Alignment,

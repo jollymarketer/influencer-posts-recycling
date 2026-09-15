@@ -205,7 +205,9 @@ def relevance_gate(posts: list, cfg, settings: dict) -> list:
                                     text=post["post_text"][:2500])
         try:
             resp = _gate_client(cfg).messages.create(
-                model=GATE_MODEL, max_tokens=200,
+                # temperature 0: dasselbe Urteil je Post (Livetest 15.09.: ohne schwankte
+                # der Wettbewerber-Befund fuer denselben Post zwischen Laeufen)
+                model=GATE_MODEL, max_tokens=200, temperature=0,
                 messages=[{"role": "user", "content": prompt}])
             ok, score, grund = _parse_gate(resp.content[0].text)
         except Exception as e:
