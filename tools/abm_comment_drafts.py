@@ -140,8 +140,10 @@ def fetch_watchlist_posts(rows: list, settings: dict) -> list:
 
 
 # Eine Definition fuer Gate und Watchlist-Bereinigung (tools/jolly_watchlist_competitors.py).
-COMPETITOR_RULE = """wettbewerber = true nur, wenn das Produkt selbst Hilfe für den Vertrieb oder das Marketing ANDERER Firmen ist: Vertriebs- oder Marketing-Agentur, Vertriebs-, Marketing- oder GTM-Beratung, Coaching oder Training für Vertrieb, Software für Vertrieb, Marketing, CRM oder Revenue Operations, Leadgenerierung oder Terminierung, Events oder Communities für Vertrieb.
-wettbewerber = false für jede Firma, die etwas anderes verkauft, zum Beispiel Software für Compliance, Datenschutz, Projekte, Logistik oder Personal, IT-Dienstleistung und IT-Beratung, Industrie, Handel. Auch dann false, wenn der Autor Geschäftsführer oder Head of Sales ist, über die eigene Akquise schreibt oder Vertriebstipps teilt. Im Zweifel false."""
+# Richard 15.09.2026: Beratungen und Agenturen sind Wettbewerber, Software-Anbieter
+# (auch fuer Vertrieb und Marketing) sind ICP.
+COMPETITOR_RULE = """wettbewerber = true nur, wenn die Firma DIENSTLEISTUNG für den Vertrieb oder das Marketing ANDERER Firmen verkauft: Agentur für Vertrieb, Marketing, Werbung, SEO oder Content, Beratung für Vertrieb, Marketing, Go-to-Market oder CRM-Einführung, Coaching oder Training für Vertrieb, Leadgenerierung, Terminierung, Telesales oder Sales-Outsourcing, Events oder Communities für Vertrieb. Verkauft sie Software und Dienstleistung, zählt das Hauptangebot.
+wettbewerber = false für Softwarefirmen, auch wenn ihre Software für Vertrieb, Marketing, CRM oder Revenue Operations ist. Ebenso false für jede Firma, die etwas anderes verkauft, zum Beispiel Software für Compliance, Projekte, Logistik oder Personal, IT-Dienstleistung, Industrie, Handel. Auch dann false, wenn der Autor Geschäftsführer oder Head of Sales ist, über die eigene Akquise schreibt oder Vertriebstipps teilt. Im Zweifel false."""
 
 GATE_PROMPT = """Du prüfst, ob ein LinkedIn-Post eines Zielkunden ein Beitrag ist, unter dem ein Kommentar von {poster} als Praktiker für B2B-Vertrieb, Marketing und Go-to-Market Sinn ergibt.
 
