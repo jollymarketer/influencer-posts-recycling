@@ -1054,11 +1054,10 @@ def get_comment_target_urls() -> set:
     """Bereits bekommentierte Quell-Posts (Dedup für die Kommentar-Queue),
     Influencer- und ABM-Pfad zusammen: ein Post bekommt nie zwei Entwuerfe.
     Die Ziel-URL steht bewusst NICHT in "LinkedIn Post URL": sonst würde ein
-    kommentierter Post nie mehr als Slate-Kandidat durch den Dedup kommen."""
-    pages = _query_db({"or": [
-        {"property": "Status", "select": {"equals": COMMENT_STATUS}},
-        {"property": "Status", "select": {"equals": ABM_COMMENT_STATUS}},
-    ]})
+    kommentierter Post nie mehr als Slate-Kandidat durch den Dedup kommen.
+    Filter auf das Feld statt auf den Status (Richard 15.09.2026): erledigte
+    Kommentare bekommen einen anderen Status und muessen trotzdem sperren."""
+    pages = _query_db({"property": "Kommentar-Ziel", "url": {"is_not_empty": True}})
     return {(p.get("properties", {}).get("Kommentar-Ziel") or {}).get("url") or ""
             for p in pages} - {""}
 
@@ -1066,8 +1065,9 @@ def get_comment_target_urls() -> set:
 def get_abm_comment_log() -> list:
     """Historie der ABM-Kommentar-Zeilen fuer die Obergrenzen des Briefs
     (1 je Person in 14 Tagen, 2 je Firma pro Woche). Rueckgabe je Zeile:
-    author_url, domain, created (UTC)."""
-    pages = _query_db({"property": "Status", "select": {"equals": ABM_COMMENT_STATUS}})
+    author_url, domain, created (UTC). Filter auf ABM-Autor statt Status, damit
+    abgehakte Kommentare (Status "Kommentiert") weiter zaehlen."""
+    pages = _query_db({"property": "ABM-Autor", "url": {"is_not_empty": True}})
     log = []
     for p in pages:
         props = p.get("properties", {})

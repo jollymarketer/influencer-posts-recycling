@@ -320,7 +320,7 @@ ABM_COMMENT_DRAFTS = {
     "poster": "Richard",
     "author_dedup_days": 14,   # max 1 Kommentar je Person in 14 Tagen
     "per_domain_per_week": 2,
-    "drafts_total": 3,         # Richards Tagesbudget, von Hand zu posten
+    "drafts_total": 5,         # Richards Tagesbudget, von Hand zu posten (15.09.2026: 3 -> 5)
     "relevance_gate": True,
     "min_relevance": 6,
     "exclude_companies": ["lindner software", "in2go", "swot controlling", "fynbiz",
