@@ -235,3 +235,6 @@ def test_watchlist_builder_merges_sources_with_prio_and_dedupe(tmp_path):
     assert all(r["typ"] == "person" for r in rows)
     text = out.read_text(encoding="utf-8")
     assert text.startswith(HEADER.strip()) and text.count("\n") == 5
+    # Sperrliste (Wettbewerber 15.09.2026) haelt Firmen beim Neuaufbau draussen
+    (src / jw.BLOCK_FILE).write_text("bau  ag\nCee SaaS\n", encoding="utf-8")
+    assert [r["last_name"] for r in jw.build(str(src), str(out))] == ["Forgber", "Alt"]

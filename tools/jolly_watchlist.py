@@ -39,6 +39,7 @@ HEADER = ["prio", "typ", "domain", "company", "persona", "first_name", "last_nam
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DEFAULT = os.path.join(ROOT, "clients", "jolly", "watchlist")
 OUT_DEFAULT = os.path.join(ROOT, "clients", "jolly", "abm_watchlist.csv")
+BLOCK_FILE = "competitor_block.txt"
 
 
 def _key(url: str) -> str:
@@ -61,12 +62,25 @@ def _row(prio: str, url: str, name: str, title: str, company: str, source: str =
             "letzter_kommentar_am": "", "kommentar_anzahl": "", "source": source}
 
 
+def load_block(src_dir: str) -> set:
+    """Gesperrte Firmen (Wettbewerber, Richard 15.09.2026) aus BLOCK_FILE, ein
+    Firmenname je Zeile, Vergleich ohne Gross/Klein und Mehrfach-Leerzeichen.
+    Liegt im gitignored Quellordner, damit ein Neuaufbau sie nicht zurueckholt."""
+    path = os.path.join(src_dir, BLOCK_FILE)
+    if not os.path.exists(path):
+        return set()
+    return {" ".join(line.lower().split()) for line in open(path, encoding="utf-8") if line.strip()}
+
+
 def build(src_dir: str, out_path: str) -> list:
     """Alle Quellen lesen, mischen, schreiben. Rueckgabe: die Zeilen in Reihenfolge."""
     rows, seen = [], set()
+    block = load_block(src_dir)
 
     def add(row):
         k = _key(row["linkedin_url"])
+        if " ".join(row["company"].lower().split()) in block:
+            return
         if k and k not in seen:
             seen.add(k)
             rows.append(row)

@@ -139,6 +139,10 @@ def fetch_watchlist_posts(rows: list, settings: dict) -> list:
     return posts
 
 
+# Eine Definition fuer Gate und Watchlist-Bereinigung (tools/jolly_watchlist_competitors.py).
+COMPETITOR_RULE = """wettbewerber = true nur, wenn das Produkt selbst Hilfe für den Vertrieb oder das Marketing ANDERER Firmen ist: Vertriebs- oder Marketing-Agentur, Vertriebs-, Marketing- oder GTM-Beratung, Coaching oder Training für Vertrieb, Software für Vertrieb, Marketing, CRM oder Revenue Operations, Leadgenerierung oder Terminierung, Events oder Communities für Vertrieb.
+wettbewerber = false für jede Firma, die etwas anderes verkauft, zum Beispiel Software für Compliance, Datenschutz, Projekte, Logistik oder Personal, IT-Dienstleistung und IT-Beratung, Industrie, Handel. Auch dann false, wenn der Autor Geschäftsführer oder Head of Sales ist, über die eigene Akquise schreibt oder Vertriebstipps teilt. Im Zweifel false."""
+
 GATE_PROMPT = """Du prüfst, ob ein LinkedIn-Post eines Zielkunden ein Beitrag ist, unter dem ein Kommentar von {poster} als Praktiker für B2B-Vertrieb, Marketing und Go-to-Market Sinn ergibt.
 
 Nicht kommentierbar: Stellenanzeige, Event- oder Messe-Werbung, Produkt-Launch ohne inhaltliche Aussage, private Anlässe (Urlaub, Jubiläum, Geburtstag, Auszeichnung), reines Weiterreichen fremder Inhalte, Sprache weder Deutsch noch Englisch.
@@ -146,8 +150,7 @@ Themenfeld von {poster}: Vertrieb, Marketing, Pipeline, Neukundengewinnung, Posi
 Score 10: Thema im Feld, eigene These oder Erfahrung, an die sich anknüpfen lässt. Score 0: nichts zum Anknüpfen.
 
 Getrennt davon, als eigenes Feld "wettbewerber": Was verkauft die Firma des Autors ihren Kunden? Nur das zählt, nicht die Rolle des Autors und nicht das Thema des Posts.
-wettbewerber = true nur, wenn das Produkt selbst Hilfe für den Vertrieb oder das Marketing ANDERER Firmen ist: Vertriebs- oder Marketing-Agentur, Vertriebs-, Marketing- oder GTM-Beratung, Coaching oder Training für Vertrieb, Software für Vertrieb, Marketing, CRM oder Revenue Operations, Leadgenerierung oder Terminierung, Events oder Communities für Vertrieb.
-wettbewerber = false für jede Firma, die etwas anderes verkauft, zum Beispiel Software für Compliance, Datenschutz, Projekte, Logistik oder Personal, IT-Dienstleistung und IT-Beratung, Industrie, Handel. Auch dann false, wenn der Autor Geschäftsführer oder Head of Sales ist, über die eigene Akquise schreibt oder Vertriebstipps teilt. Im Zweifel false.
+""" + COMPETITOR_RULE + """
 
 POST von {name} ({title}, {company}):
 ---

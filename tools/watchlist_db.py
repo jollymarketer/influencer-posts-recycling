@@ -36,6 +36,21 @@ def get_watchlist(client: str) -> list[dict]:
         start += PAGE
 
 
+def delete_watchlist(client: str, urls: list[str]) -> int:
+    """Loescht Zeilen eines Mandanten je linkedin_url (Wettbewerber-Bereinigung
+    15.09.2026). Rueckgabe: Zahl tatsaechlich geloeschter Zeilen laut Antwort."""
+    url = f"{_base_url()}/rest/v1/{TABLE}"
+    headers = {**_headers_write(), "Prefer": "return=representation"}
+    deleted = 0
+    for i in range(0, len(urls), 100):
+        quoted = ",".join('"' + u.replace('"', '') + '"' for u in urls[i:i + 100])
+        resp = requests.delete(url, headers=headers, timeout=TIMEOUT,
+                               params={"client": f"eq.{client}", "linkedin_url": f"in.({quoted})"})
+        _check(resp)
+        deleted += len(resp.json())
+    return deleted
+
+
 def upsert_watchlist(client: str, rows: list[dict]) -> int:
     """Upsert je (client, linkedin_url) in Bloecken. Rueckgabe: Zahl gesendeter Zeilen."""
     url = f"{_base_url()}/rest/v1/{TABLE}?on_conflict=client,linkedin_url"
