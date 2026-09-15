@@ -303,6 +303,10 @@ CONTENT_PERSONAS = [
 # Tageslauf (day None) ueber einen rotierenden Ausschnitt, ein Post je Profil,
 # Fenster 30h; Haiku-Gate sortiert Stellenanzeigen, Events und Privates aus.
 # Eigene Kunden nie (exclude_companies). Kosten je Lauf ~1 USD Apify.
+# Richard 15.09.2026: jeder Kommentar mit genau einem passenden Emoji
+# (tools/comment_drafts.py misst und erzwingt es).
+COMMENT_EMOJI = True
+
 ABM_COMMENT_DRAFTS = {
     # Liste liegt in Supabase (comment_watchlist), nicht im oeffentlichen Repo.
     # Die CSV ist nur der lokale Bauabzug (gitignored).

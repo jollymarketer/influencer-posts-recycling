@@ -68,8 +68,8 @@ Wähle den Typ, der zu diesem Post passt. Nie aus Gewohnheit Typ 1.
 9. Der Einzeiler: unter zwölf Wörtern, treffend oder witzig.{avoid}
 
 HARTE REGELN
-- 2 bis 4 Saetze, nie laenger. Kein Absatz-Geschreibsel, keine Listen, keine Emojis,
-  kein Emoji als erstes Zeichen.
+- 2 bis 4 Saetze, nie laenger. Kein Absatz-Geschreibsel, keine Listen.
+- {emoji_rule}
 - Sprache: exakt die Sprache des Posts oben. Englischer Post, englischer Kommentar.
 - Ein eigener konkreter Gedanke aus der Praxis, den der Post NICHT enthaelt.
   Zustimmung allein ist wertlos, Widerspruch ohne Substanz auch. Den Post nie
@@ -100,12 +100,11 @@ _AVOID_NOTE = ("\n\nNICHT diesen Typ, in diesem Lauf schon verwendet: {types}. "
                "Ein Kommentar-Lauf mit lauter gleichen Typen liest sich als Serie.")
 
 # Verstaendlichkeit (Richard 15.09.2026, Kommentar Truempi "zu kompliziert"):
-# die Satzlaenge wird gemessen statt nur verlangt. Ein Nachversuch mit den zu
-# langen Saetzen als Hinweis, danach faellt der Entwurf weg.
+# Satzlaenge und Emoji werden gemessen statt nur verlangt. Ein Nachversuch mit
+# den Verstoessen als Hinweis, danach faellt der Entwurf weg.
 MAX_SENTENCE_WORDS = 20
-_RETRY_NOTE = ("\n\nDEIN LETZTER ENTWURF WAR ZU KOMPLIZIERT. Diese Saetze haben mehr als "
-               "{max_words} Woerter:\n{sentences}\nSchreibe den Kommentar neu, einfacher "
-               "und in kuerzeren Saetzen.")
+_RETRY_NOTE = ("\n\nDEIN LETZTER ENTWURF VERLETZT HARTE REGELN:\n{issues}\n"
+               "Schreibe den Kommentar neu und halte alle harten Regeln ein.")
 
 
 def rotate_profiles(influencers: list, per_day: int, day_index: int) -> list:
@@ -234,6 +233,31 @@ def long_sentences(text: str, max_words: int = MAX_SENTENCE_WORDS) -> list[str]:
     return [s for s in sentences if len(s.split()) > max_words]
 
 
+# Emoji je Mandant (cfg.COMMENT_EMOJI): Richard 15.09.2026 will in jedem seiner
+# Kommentare genau ein passendes Emoji; lisocon und SWOT bleiben ohne.
+_EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⭐⭕⌚-⏿]")
+EMOJI_ON = ("Genau ein Emoji, das zum Inhalt passt, am Ende eines Satzes oder am Schluss, "
+            "kein Emoji als erstes Zeichen. Wähle es nach dem Inhalt des Kommentars, nicht "
+            "aus Gewohnheit (nicht standardmäßig 🎯).")
+EMOJI_OFF = "Keine Emojis, kein Emoji als erstes Zeichen."
+
+
+def emoji_count(text: str) -> int:
+    return len(_EMOJI.findall(text or ""))
+
+
+def comment_issues(text: str, emoji: bool = False) -> list[str]:
+    """Messbare Verstoesse gegen die harten Regeln, als Hinweis fuer den Nachversuch."""
+    issues = [f"Satz mit mehr als {MAX_SENTENCE_WORDS} Woertern: {s}" for s in long_sentences(text)]
+    if re.search(r"—|\s–\s", text or ""):
+        issues.append("Gedankenstrich als Satzzeichen, ersetze ihn durch Punkt oder Komma")
+    if emoji and emoji_count(text) != 1:
+        issues.append(f"Genau ein passendes Emoji noetig, gefunden: {emoji_count(text)}")
+    elif emoji and _EMOJI.match(text.strip()):
+        issues.append("Das Emoji steht am Anfang, es gehoert ans Satzende oder an den Schluss")
+    return issues
+
+
 def draft_comment(cfg, post: dict, poster: str,
                   avoid_types: list[str] | None = None) -> dict | None:
     """Ein LLM-Call pro Kommentar, ein zweiter nur bei zu langen Saetzen.
@@ -248,6 +272,7 @@ def draft_comment(cfg, post: dict, poster: str,
         post_text=post["post_text"][:4000],
         avoid=_AVOID_NOTE.format(types=", ".join(avoid_types)) if avoid_types else "",
         max_words=MAX_SENTENCE_WORDS,
+        emoji_rule=EMOJI_ON if getattr(cfg, "COMMENT_EMOJI", False) else EMOJI_OFF,
     )
     for attempt in range(2):
         resp = _llm.messages.create(model=COMMENT_MODEL, max_tokens=600,
@@ -255,13 +280,12 @@ def draft_comment(cfg, post: dict, poster: str,
         typ, angle, comment = _split_header(resp.content[0].text)
         if not comment:
             return None
-        too_long = long_sentences(comment)
-        if not too_long:
+        issues = comment_issues(comment, emoji=getattr(cfg, "COMMENT_EMOJI", False))
+        if not issues:
             break
-        prompt += _RETRY_NOTE.format(max_words=MAX_SENTENCE_WORDS,
-                                     sentences="\n".join(f"- {s}" for s in too_long))
+        prompt += _RETRY_NOTE.format(issues="\n".join(f"- {s}" for s in issues))
     else:
-        print(f"    Kommentar verworfen, Saetze zu lang: {post.get('post_url', '')[:60]}",
+        print(f"    Kommentar verworfen ({'; '.join(issues)[:120]}): {post.get('post_url', '')[:60]}",
               file=sys.stderr)
         return None
     label = f"Kommentar {poster} [{typ}]" if typ else f"Kommentar {poster}"

@@ -33,7 +33,8 @@ def test_prompt_lists_nine_types_and_german_banned_openers():
         assert f"\n{n}. " in p
     assert "Der Beleg" in p and "Der Reframe" in p and "Der Einzeiler" in p
     assert "Toller Beitrag" in p and "Danke fürs Teilen" in p
-    assert "kein Emoji als erstes Zeichen" in p
+    assert "{emoji_rule}" in p
+    assert "kein Emoji als erstes Zeichen" in cd.EMOJI_ON and "kein Emoji als erstes Zeichen" in cd.EMOJI_OFF
     assert "TYP: " in p
 
 
@@ -71,7 +72,7 @@ LONG = ("Where it breaks down is when the prospect has done zero research before
 
 def test_prompt_demands_plain_language_and_sentence_cap():
     p = cd.COMMENT_PROMPT.format(voice="", context="", influencer="Anna", post_text="",
-                                 avoid="", max_words=cd.MAX_SENTENCE_WORDS)
+                                 avoid="", max_words=cd.MAX_SENTENCE_WORDS, emoji_rule=cd.EMOJI_ON)
     assert "Hoechstens 20 Woerter je Satz" in p and "Jargon" in p
 
 
@@ -86,6 +87,21 @@ def test_draft_comment_retries_once_on_long_sentence(monkeypatch):
     d = cd.draft_comment(CFG, POST, "Jae")
     assert d["comment"] == "Kurz und klar."
     assert len(fake.prompts) == 2 and LONG in fake.prompts[1]
+
+
+def test_emoji_rule_only_for_clients_that_want_it(monkeypatch):
+    # Richard 15.09.2026: Jolly-Kommentare mit genau einem Emoji, andere Mandanten ohne
+    jolly = SimpleNamespace(**vars(CFG), COMMENT_EMOJI=True)
+    fake = _SeqLLM(["TYP: 4 x\n\nKurz und klar.", "TYP: 4 x\n\nKurz und klar. 🎯"])
+    monkeypatch.setattr(cd, "_llm", fake)
+    assert cd.draft_comment(jolly, POST, "Richard")["comment"] == "Kurz und klar. 🎯"
+    assert cd.EMOJI_ON in fake.prompts[0] and "Emoji noetig" in fake.prompts[1]
+    fake = _SeqLLM(["TYP: 4 x\n\nKurz und klar."])
+    monkeypatch.setattr(cd, "_llm", fake)
+    assert cd.draft_comment(CFG, POST, "Jae")["comment"] == "Kurz und klar."
+    assert cd.EMOJI_OFF in fake.prompts[0]
+    assert cd.comment_issues("🎯 Kurz.", emoji=True) and not cd.comment_issues("Kurz. 🚀", emoji=True)
+    assert cd.comment_issues("Kurz — klar. 🚀", emoji=True) and cd.comment_issues("Kurz – klar.")
 
 
 def test_draft_comment_drops_draft_when_retry_still_too_long(monkeypatch):
