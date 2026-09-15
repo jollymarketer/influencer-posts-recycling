@@ -306,6 +306,15 @@ CONTENT_PERSONAS = [
 # Richard 15.09.2026: jeder Kommentar mit genau einem passenden Emoji
 # (tools/comment_drafts.py misst und erzwingt es).
 COMMENT_EMOJI = True
+# Richard 15.09.2026: 30 bis 40 Woerter, Witz mit Leitplanken (nur wenn das Gate
+# den Post als nicht ernst markiert), Floskeln und Pitch gemessen. "Der Beleg"
+# erfand Ich-Erlebnisse, "Der Einzeiler" passt nicht zu 30 Woertern.
+COMMENT_STYLE = {
+    "words": (30, 40),
+    "humor": True,
+    "banned_types": ["Der Beleg", "Der Einzeiler"],
+    "brand_words": ["Jolly"],
+}
 
 ABM_COMMENT_DRAFTS = {
     # Liste liegt in Supabase (comment_watchlist), nicht im oeffentlichen Repo.

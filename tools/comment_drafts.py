@@ -57,19 +57,11 @@ fachlichen Beitrag lesen, nicht als getarnte Werbung.
 
 KOMMENTAR-TYPEN
 Wähle den Typ, der zu diesem Post passt. Nie aus Gewohnheit Typ 1.
-1. Das Datum: eine eigene Beobachtung, die den Punkt des Posts stützt oder relativiert.
-2. Fehlender Fall: die Grenze der Aussage benennen. "Das gilt, bis ... Dann ..."
-3. Widerspruch mit Substanz: erst der Teil, der stimmt, dann die Gabelung.
-4. Eine Zeile weiterbauen: eine Zeile des Posts wörtlich aufgreifen und daran weiterdenken.
-5. Die echte Frage: eine Frage, deren Antwort den Autor weiterbringt. Nie "würde mich interessieren".
-6. Der Beleg: du hast das selbst erlebt; zwei Sätze, was dabei passiert ist, ohne Firma und ohne Zahl.
-7. Die Korrektur: ein sachlicher Fehler im Post. Richtig, kurz, freundlich, nur wenn du sicher bist.
-8. Der Reframe: "Anders gelesen:" derselbe Sachverhalt aus einer anderen Perspektive.
-9. Der Einzeiler: unter zwölf Wörtern, treffend oder witzig.{avoid}
+{types}{avoid}
 
 HARTE REGELN
-- 2 bis 4 Saetze, nie laenger. Kein Absatz-Geschreibsel, keine Listen.
-- {emoji_rule}
+- {length_rule} Kein Absatz-Geschreibsel, keine Listen.
+- {emoji_rule}{style_rules}
 - Sprache: exakt die Sprache des Posts oben. Englischer Post, englischer Kommentar.
 - Ein eigener konkreter Gedanke aus der Praxis, den der Post NICHT enthaelt.
   Zustimmung allein ist wertlos, Widerspruch ohne Substanz auch. Den Post nie
@@ -93,11 +85,94 @@ HARTE REGELN
 
 DAZU ZWEI KOPFZEILEN (interne Notiz, wird nicht gepostet)
 Erste Zeile "TYP: " plus Nummer und Name des gewählten Typs, zum Beispiel
-"TYP: 6 Der Beleg". Zweite Zeile "ANSATZ: " plus 5 bis 10 Woerter, die den
+"TYP: 4 Eine Zeile weiterbauen". Zweite Zeile "ANSATZ: " plus 5 bis 10 Woerter, die den
 Winkel des Kommentars beschreiben. Danach eine Leerzeile, dann der Kommentar."""
 
 _AVOID_NOTE = ("\n\nNICHT diesen Typ, in diesem Lauf schon verwendet: {types}. "
                "Ein Kommentar-Lauf mit lauter gleichen Typen liest sich als Serie.")
+
+# Nummern bleiben fest, auch wenn ein Mandant Typen sperrt: die Nummer steht in
+# den Notion-Titeln alter Entwuerfe.
+COMMENT_TYPES = [
+    (1, "Das Datum", "eine eigene Beobachtung, die den Punkt des Posts stützt oder relativiert."),
+    (2, "Fehlender Fall", 'die Grenze der Aussage benennen. "Das gilt, bis ... Dann ..."'),
+    (3, "Widerspruch mit Substanz", "erst der Teil, der stimmt, dann die Gabelung."),
+    (4, "Eine Zeile weiterbauen", "eine Zeile des Posts wörtlich aufgreifen und daran weiterdenken."),
+    (5, "Die echte Frage", 'eine Frage, deren Antwort den Autor weiterbringt. Nie "würde mich interessieren".'),
+    (6, "Der Beleg", "du hast das selbst erlebt; zwei Sätze, was dabei passiert ist, ohne Firma und ohne Zahl."),
+    (7, "Die Korrektur", "ein sachlicher Fehler im Post. Richtig, kurz, freundlich, nur wenn du sicher bist."),
+    (8, "Der Reframe", '"Anders gelesen:" derselbe Sachverhalt aus einer anderen Perspektive.'),
+    (9, "Der Einzeiler", "unter zwölf Wörtern, treffend oder witzig."),
+]
+LENGTH_RULE_DEFAULT = "2 bis 4 Saetze, nie laenger."
+
+
+def _types_block(banned=()) -> str:
+    return "\n".join(f"{n}. {name}: {desc}" for n, name, desc in COMMENT_TYPES
+                     if name not in banned)
+
+
+# Kommentar-Stil je Mandant (cfg.COMMENT_STYLE), Richard 15.09.2026 fuer Jolly:
+# 30 bis 40 Woerter, Witz mit Leitplanken, konkretes Detail aus dem Post,
+# Anrede spiegelt den Post, Floskeln und Pitch gemessen statt nur verboten.
+# Witz nur, wenn das Relevanz-Gate den Post ausdruecklich als nicht ernst
+# markiert hat (post["ernst"] is False); ohne Gate-Urteil kein Witz.
+HUMOR_ON = ("- Genau ein Satz mit spürbarem Augenzwinkern: trockene Selbstironie über den "
+            "Alltag in Vertrieb, Marketing oder Agenturen, sodass der Autor beim Lesen "
+            "schmunzelt. Nie auf Kosten des Autors, keine Wortspiele mit Namen, kein "
+            "erfundenes eigenes Erlebnis. Der fachliche Gedanke bleibt der Kern.")
+HUMOR_OFF = "- Kein Witz, keine Ironie: ruhig, respektvoll, sachlich."
+STYLE_RULES = """
+- Greife ein konkretes Detail aus dem Post auf, ein Wort oder Beispiel, das nur in
+  diesem Post steht. Wer den Kommentar liest, merkt: du hast den Post gelesen.
+- Anrede spiegelt den Post: duzt der Autor seine Leser, sprich ihn mit du an.
+  Sonst neutral ohne direkte Anrede. Nie Sie.
+- Höchstens eine Frage, und nur, wenn sie wirklich weiterführt.
+- Nie {brand} erwähnen, nie pitchen.
+{humor}"""
+
+FLOSKELN = ["spannender beitrag", "spannender post", "spannendes thema", "toller beitrag",
+            "starker beitrag", "guter beitrag", "super beitrag", "danke fürs teilen",
+            "danke für das teilen", "danke für den beitrag", "genau das", "sehe ich genauso",
+            "sehe ich auch so", "kann ich nur unterschreiben", "absolut", "auf den punkt",
+            "wichtiger punkt", "guter punkt", "great post", "love this", "couldn't agree more",
+            "thanks for sharing", "spot on", "game changer", "gamechanger", "100%"]
+_DU = re.compile(r"\b(du|dich|dir|dein|deine|deinen|deinem|deiner|deines|euch|euer|eure)\b", re.I)
+_SIE = {"Sie", "Ihnen", "Ihr", "Ihre", "Ihren", "Ihrem", "Ihrer", "Ihres"}
+_WORD = re.compile(r"\w", re.U)
+
+
+def word_count(text: str) -> int:
+    """Woerter ohne Emoji und lose Satzzeichen."""
+    return sum(1 for w in (text or "").split() if _WORD.search(w))
+
+
+def style_issues(text: str, post_text: str, style: dict) -> list[str]:
+    """Messbare Verstoesse gegen cfg.COMMENT_STYLE."""
+    issues = []
+    low = (text or "").lower()
+    lo, hi = style.get("words", (30, 40))
+    n = word_count(text)
+    if not lo <= n <= hi:
+        issues.append(f"{n} Woerter, erlaubt sind {lo} bis {hi}")
+    hits = [f for f in FLOSKELN if re.search(r"(?<!\w)" + re.escape(f) + r"(?!\w)", low)]
+    if hits:
+        issues.append(f"Floskel entfernen: {', '.join(hits)}")
+    if text.count("?") > 1:
+        issues.append("Hoechstens eine Frage")
+    brands = [b for b in style.get("brand_words", []) if b.lower() in low]
+    if brands:
+        issues.append(f"Eigene Firma genannt ({', '.join(brands)}), kein Pitch")
+    if _DU.search(text or "") and not _DU.search(post_text or ""):
+        issues.append("Der Autor duzt nicht: neutral schreiben, ohne du")
+    for sentence in re.split(r"(?<=[.!?])\s+", (text or "").strip()):
+        if _SIE & {w.strip(".,!?:;") for w in sentence.split()[1:]}:
+            issues.append("Nie Sie-Anrede")
+            break
+    post_words = {w.lower() for w in re.findall(r"\w{6,}", post_text or "")}
+    if not post_words & {w.lower() for w in re.findall(r"\w{6,}", text or "")}:
+        issues.append("Kein konkretes Detail aus dem Post aufgegriffen")
+    return issues
 
 # Verstaendlichkeit (Richard 15.09.2026, Kommentar Truempi "zu kompliziert"):
 # Satzlaenge und Emoji werden gemessen statt nur verlangt. Ein Nachversuch mit
@@ -260,17 +335,30 @@ def comment_issues(text: str, emoji: bool = False) -> list[str]:
 
 def draft_comment(cfg, post: dict, poster: str,
                   avoid_types: list[str] | None = None) -> dict | None:
-    """Ein LLM-Call pro Kommentar, ein zweiter nur bei zu langen Saetzen.
-    Rueckgabe None bei leerer Antwort oder wenn auch der Nachversuch Saetze
-    ueber MAX_SENTENCE_WORDS hat.
+    """Ein LLM-Call pro Kommentar, ein zweiter nur bei messbaren Verstoessen
+    (comment_issues, style_issues). Rueckgabe None bei leerer Antwort oder wenn
+    auch der Nachversuch Verstoesse hat.
     avoid_types: Kommentar-Typen, die dieser Lauf schon vergeben hat (die
     Callsite reicht den letzten durch, damit keine Serie entsteht)."""
+    style = getattr(cfg, "COMMENT_STYLE", None)
+    if style:
+        lo, hi = style.get("words", (30, 40))
+        # Livetest 15.09.: ohne Zielwert landeten die Entwuerfe am Deckel oder darueber
+        length_rule = f"{lo} bis {hi} Woerter insgesamt, Ziel etwa {(lo + hi) // 2}, 2 bis 4 Saetze."
+        style_rules = STYLE_RULES.format(
+            brand=" oder ".join(style.get("brand_words", [])) or "die eigene Firma",
+            humor=HUMOR_ON if style.get("humor") and post.get("ernst") is False else HUMOR_OFF)
+    else:
+        length_rule, style_rules = LENGTH_RULE_DEFAULT, ""
     prompt = COMMENT_PROMPT.format(
         voice=_voice(cfg, poster),
         context=cfg.CONTEXT.strip(),
         influencer=post.get("influencer", "der Autor"),
         post_text=post["post_text"][:4000],
+        types=_types_block((style or {}).get("banned_types", ())),
         avoid=_AVOID_NOTE.format(types=", ".join(avoid_types)) if avoid_types else "",
+        length_rule=length_rule,
+        style_rules=style_rules,
         max_words=MAX_SENTENCE_WORDS,
         emoji_rule=EMOJI_ON if getattr(cfg, "COMMENT_EMOJI", False) else EMOJI_OFF,
     )
@@ -281,6 +369,8 @@ def draft_comment(cfg, post: dict, poster: str,
         if not comment:
             return None
         issues = comment_issues(comment, emoji=getattr(cfg, "COMMENT_EMOJI", False))
+        if style:
+            issues += style_issues(comment, post["post_text"], style)
         if not issues:
             break
         prompt += _RETRY_NOTE.format(issues="\n".join(f"- {s}" for s in issues))

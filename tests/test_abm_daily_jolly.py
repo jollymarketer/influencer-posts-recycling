@@ -184,6 +184,19 @@ def test_gate_rejects_competitors_and_sees_title():
                            '"kommentierbar": true, "score": 8, "grund": "These"}') == (True, 8, "These")
 
 
+def test_gate_marks_serious_posts_and_humor_needs_explicit_false():
+    # Richard 15.09.2026: bei Kuendigung, Krankheit, Insolvenz kein Witz
+    assert '"ernst": true oder false' in acd.GATE_PROMPT.format(
+        poster="Richard", name="n", title="t", company="c", text="x")
+    assert acd._parse_ernst('{"ernst": false}') is False
+    assert acd._parse_ernst('{"ernst": true}') is True
+    assert acd._parse_ernst('{"ernst": "nein"}') is None and acd._parse_ernst("kaputt") is None
+    gate = _FakeGate('{"wettbewerber": false, "ernst": false, "kommentierbar": true, "score": 8, "grund": "x"}')
+    with patch.object(acd, "_gate_client", MagicMock(return_value=gate)):
+        out = acd.relevance_gate([_post()], _cfg(), {"relevance_gate": True})
+    assert out[0]["ernst"] is False
+
+
 def test_fetch_watchlist_posts_carries_title():
     item = {"content": "wort " * 30, "linkedinUrl": "p1", "postedAt": "x",
             "query": {"targetUrl": "u1"}}

@@ -154,11 +154,13 @@ Score 10: Thema im Feld, eigene These oder Erfahrung, an die sich anknüpfen lä
 Getrennt davon, als eigenes Feld "wettbewerber": Was verkauft die Firma des Autors ihren Kunden? Nur das zählt, nicht die Rolle des Autors und nicht das Thema des Posts.
 """ + COMPETITOR_RULE + """
 
+Getrennt davon, als eigenes Feld "ernst": true, wenn der Post von Kündigung, Entlassung, Krankheit, Tod, Trauer, Insolvenz, Scheitern oder einer persönlichen Krise handelt oder der Ton betroffen ist. Sonst false. Im Zweifel true.
+
 POST von {name} ({title}, {company}):
 ---
 {text}
 ---
-Antworte NUR mit JSON: {{"verkauft": "<was die Firma verkauft, 3 bis 8 Wörter>", "wettbewerber": true oder false, "kommentierbar": true oder false, "score": 0 bis 10, "grund": "<ein Satz>"}}"""
+Antworte NUR mit JSON: {{"verkauft": "<was die Firma verkauft, 3 bis 8 Wörter>", "wettbewerber": true oder false, "ernst": true oder false, "kommentierbar": true oder false, "score": 0 bis 10, "grund": "<ein Satz>"}}"""
 
 _gate_clients: dict = {}
 
@@ -187,6 +189,17 @@ def _parse_gate(raw: str) -> tuple[bool, int, str]:
         return False, 0, ""
 
 
+def _parse_ernst(raw: str) -> bool | None:
+    """Gate-Feld "ernst" (Richard 15.09.2026: bei ernsten Themen kein Witz).
+    Nur ein ausdrueckliches false gibt den Witz frei, alles andere ist None/True."""
+    m = re.search(r"\{.*\}", raw or "", re.S)
+    try:
+        value = json.loads(m.group(0)).get("ernst") if m else None
+    except ValueError:
+        return None
+    return value if isinstance(value, bool) else None
+
+
 def relevance_gate(posts: list, cfg, settings: dict) -> list:
     """Nur mit settings["relevance_gate"]: Stellenanzeigen fallen ohne
     Modellaufruf, den Rest bewertet Haiku (GATE_PROMPT). Es bleiben Posts mit
@@ -210,11 +223,12 @@ def relevance_gate(posts: list, cfg, settings: dict) -> list:
                 model=GATE_MODEL, max_tokens=200, temperature=0,
                 messages=[{"role": "user", "content": prompt}])
             ok, score, grund = _parse_gate(resp.content[0].text)
+            ernst = _parse_ernst(resp.content[0].text)
         except Exception as e:
             print(f"    Gate-Fehler (Post uebersprungen): {e}", file=sys.stderr)
             continue
         if ok and score >= min_score:
-            kept.append({**post, "relevance": score, "relevance_grund": grund})
+            kept.append({**post, "relevance": score, "relevance_grund": grund, "ernst": ernst})
     kept.sort(key=lambda p: (-p["relevance"], p["prio"] or "9", p["age_hours"]))
     return kept
 
