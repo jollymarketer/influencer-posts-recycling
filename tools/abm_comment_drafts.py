@@ -131,6 +131,7 @@ def fetch_watchlist_posts(rows: list, settings: dict) -> list:
             "author_url": row["linkedin_url"],
             "domain": row.get("domain", ""),
             "company": row.get("company", ""),
+            "title": row.get("title", ""),
             "prio": row.get("prio", ""),
             "age_hours": age,
         })
@@ -144,11 +145,15 @@ Nicht kommentierbar: Stellenanzeige, Event- oder Messe-Werbung, Produkt-Launch o
 Themenfeld von {poster}: Vertrieb, Marketing, Pipeline, Neukundengewinnung, Positionierung, Kundenverständnis, Wachstum und Führung eines B2B-Unternehmens. Posts außerhalb dieses Felds (Börsen- und Aktienanalysen, Produkt- oder Technikdetails, Politik, allgemeine Lebensweisheiten) bekommen höchstens Score 3, auch wenn sie fachlich gut sind: {poster} hätte dort nichts Eigenes beizutragen.
 Score 10: Thema im Feld, eigene These oder Erfahrung, an die sich anknüpfen lässt. Score 0: nichts zum Anknüpfen.
 
+Getrennt davon, als eigenes Feld "wettbewerber": Was verkauft die Firma des Autors ihren Kunden? Nur das zählt, nicht die Rolle des Autors und nicht das Thema des Posts.
+wettbewerber = true nur, wenn das Produkt selbst Hilfe für den Vertrieb oder das Marketing ANDERER Firmen ist: Vertriebs- oder Marketing-Agentur, Vertriebs-, Marketing- oder GTM-Beratung, Coaching oder Training für Vertrieb, Software für Vertrieb, Marketing, CRM oder Revenue Operations, Leadgenerierung oder Terminierung, Events oder Communities für Vertrieb.
+wettbewerber = false für jede Firma, die etwas anderes verkauft, zum Beispiel Software für Compliance, Datenschutz, Projekte, Logistik oder Personal, IT-Dienstleistung und IT-Beratung, Industrie, Handel. Auch dann false, wenn der Autor Geschäftsführer oder Head of Sales ist, über die eigene Akquise schreibt oder Vertriebstipps teilt. Im Zweifel false.
+
 POST von {name} ({title}, {company}):
 ---
 {text}
 ---
-Antworte NUR mit JSON: {{"kommentierbar": true oder false, "score": 0 bis 10, "grund": "<ein Satz>"}}"""
+Antworte NUR mit JSON: {{"verkauft": "<was die Firma verkauft, 3 bis 8 Wörter>", "wettbewerber": true oder false, "kommentierbar": true oder false, "score": 0 bis 10, "grund": "<ein Satz>"}}"""
 
 _gate_clients: dict = {}
 
@@ -161,11 +166,17 @@ def _gate_client(cfg):
 
 
 def _parse_gate(raw: str) -> tuple[bool, int, str]:
+    """Wettbewerber (Richard 15.09.2026: Konver, Pangea Summit) sind nie
+    kommentierbar, egal was kommentierbar und score sagen. Eigenes Feld, weil
+    Haiku die Anbieter-Frage in einem gemeinsamen Urteil auf jeden B2B-Verkaeufer
+    ausdehnte (Livetest 15.09.)."""
     m = re.search(r"\{.*\}", raw or "", re.S)
     if not m:
         return False, 0, ""
     try:
         d = json.loads(m.group(0))
+        if d.get("wettbewerber") is True:
+            return False, 0, f"Wettbewerber: {d.get('verkauft') or ''}"[:200]
         return bool(d.get("kommentierbar")), int(d.get("score") or 0), str(d.get("grund") or "")[:200]
     except (ValueError, TypeError):
         return False, 0, ""

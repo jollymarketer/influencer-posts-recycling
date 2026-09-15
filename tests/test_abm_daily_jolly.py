@@ -169,6 +169,35 @@ def test_gate_prompt_binds_to_the_posters_field():
     assert "Börsen- und Aktienanalysen" in acd.GATE_PROMPT
 
 
+def test_gate_rejects_competitors_and_sees_title():
+    # Richard 15.09.2026: Konver und Pangea Summit sind Wettbewerber, nicht ICP.
+    assert '"wettbewerber": true oder false' in acd.GATE_PROMPT.format(
+        poster="Richard", name="n", title="t", company="c", text="x")
+    # Wettbewerber schlaegt ein positives Themen-Urteil
+    gate = _FakeGate('{"verkauft": "Sales Coaching", "wettbewerber": true, '
+                     '"kommentierbar": true, "score": 9, "grund": "These"}')
+    post = dict(_post(company="Konver"), title="Co-Founder & CEO")
+    with patch.object(acd, "_gate_client", MagicMock(return_value=gate)):
+        assert acd.relevance_gate([post], _cfg(), {"relevance_gate": True}) == []
+    assert "Co-Founder & CEO, Konver" in gate.calls[0]
+    assert acd._parse_gate('{"verkauft": "Compliance-Software", "wettbewerber": false, '
+                           '"kommentierbar": true, "score": 8, "grund": "These"}') == (True, 8, "These")
+
+
+def test_fetch_watchlist_posts_carries_title():
+    item = {"content": "wort " * 30, "linkedinUrl": "p1", "postedAt": "x",
+            "query": {"targetUrl": "u1"}}
+    client = MagicMock()
+    client.actor.return_value.call.return_value = {"defaultDatasetId": "d"}
+    client.dataset.return_value.iterate_items.return_value = [item]
+    row = {"linkedin_url": "u1", "first_name": "E", "last_name": "Y", "company": "Konver",
+           "title": "Co-Founder & CEO", "prio": "2"}
+    with patch.object(acd, "apify_client", MagicMock(return_value=client)), \
+         patch.object(acd, "parse_post_age_hours", MagicMock(return_value=5)):
+        posts = acd.fetch_watchlist_posts([row], {})
+    assert posts[0]["title"] == "Co-Founder & CEO"
+
+
 def test_jolly_config_block():
     from clients.jolly import config as jolly
     s = jolly.ABM_COMMENT_DRAFTS
