@@ -13,6 +13,7 @@ Lauftag ueber `profiles_per_day` Profile mit `max_posts_per_profile` Posts
 (Rotation deckt die volle Liste in wenigen Lauftagen).
 """
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -80,6 +81,12 @@ HARTE REGELN
   "Toller Beitrag", "Danke fürs Teilen", "Sehe ich genauso", "Absolut", "Spannend",
   kein Vorname mit Ausrufezeichen. Keine Frage nur um der Frage willen.
 - Keine Gedankenstriche als Satzzeichen.
+- Einfach und beim ersten Lesen verstaendlich, auch fuer jemanden, der den Post
+  nur ueberflogen hat. Hoechstens {max_words} Woerter je Satz, ein Gedanke je
+  Satz, keine Schachtelsaetze. Alltagswoerter statt Jargon und Bildsprache (nicht
+  "finish line", "owns the context", "frame", "running the structure").
+  Begriffe aus dem Post in einfachen Worten aufgreifen, nie als Etikett wie
+  "the three-challenge frame from the top tier".
 - Wenn eine Frage am Ende steht, dann eine, die den Autor wirklich weiterbringt.
 - Antworte NUR mit dem Kommentartext. Keine Anrede, keine Signatur, keine
   Erklaerung, kein Markdown.
@@ -91,6 +98,14 @@ Winkel des Kommentars beschreiben. Danach eine Leerzeile, dann der Kommentar."""
 
 _AVOID_NOTE = ("\n\nNICHT diesen Typ, in diesem Lauf schon verwendet: {types}. "
                "Ein Kommentar-Lauf mit lauter gleichen Typen liest sich als Serie.")
+
+# Verstaendlichkeit (Richard 15.09.2026, Kommentar Truempi "zu kompliziert"):
+# die Satzlaenge wird gemessen statt nur verlangt. Ein Nachversuch mit den zu
+# langen Saetzen als Hinweis, danach faellt der Entwurf weg.
+MAX_SENTENCE_WORDS = 20
+_RETRY_NOTE = ("\n\nDEIN LETZTER ENTWURF WAR ZU KOMPLIZIERT. Diese Saetze haben mehr als "
+               "{max_words} Woerter:\n{sentences}\nSchreibe den Kommentar neu, einfacher "
+               "und in kuerzeren Saetzen.")
 
 
 def rotate_profiles(influencers: list, per_day: int, day_index: int) -> list:
@@ -213,9 +228,17 @@ def _split_header(raw: str) -> tuple[str, str, str]:
     return typ, angle, "\n".join(lines).strip()
 
 
+def long_sentences(text: str, max_words: int = MAX_SENTENCE_WORDS) -> list[str]:
+    """Saetze mit mehr als max_words Woertern (Satzende . ! ?)."""
+    sentences = re.split(r"(?<=[.!?])\s+", (text or "").strip())
+    return [s for s in sentences if len(s.split()) > max_words]
+
+
 def draft_comment(cfg, post: dict, poster: str,
                   avoid_types: list[str] | None = None) -> dict | None:
-    """Ein LLM-Call pro Kommentar. Rueckgabe None bei leerer Antwort.
+    """Ein LLM-Call pro Kommentar, ein zweiter nur bei zu langen Saetzen.
+    Rueckgabe None bei leerer Antwort oder wenn auch der Nachversuch Saetze
+    ueber MAX_SENTENCE_WORDS hat.
     avoid_types: Kommentar-Typen, die dieser Lauf schon vergeben hat (die
     Callsite reicht den letzten durch, damit keine Serie entsteht)."""
     prompt = COMMENT_PROMPT.format(
@@ -224,11 +247,22 @@ def draft_comment(cfg, post: dict, poster: str,
         influencer=post.get("influencer", "der Autor"),
         post_text=post["post_text"][:4000],
         avoid=_AVOID_NOTE.format(types=", ".join(avoid_types)) if avoid_types else "",
+        max_words=MAX_SENTENCE_WORDS,
     )
-    resp = _llm.messages.create(model=COMMENT_MODEL, max_tokens=600,
-                                messages=[{"role": "user", "content": prompt}])
-    typ, angle, comment = _split_header(resp.content[0].text)
-    if not comment:
+    for attempt in range(2):
+        resp = _llm.messages.create(model=COMMENT_MODEL, max_tokens=600,
+                                    messages=[{"role": "user", "content": prompt}])
+        typ, angle, comment = _split_header(resp.content[0].text)
+        if not comment:
+            return None
+        too_long = long_sentences(comment)
+        if not too_long:
+            break
+        prompt += _RETRY_NOTE.format(max_words=MAX_SENTENCE_WORDS,
+                                     sentences="\n".join(f"- {s}" for s in too_long))
+    else:
+        print(f"    Kommentar verworfen, Saetze zu lang: {post.get('post_url', '')[:60]}",
+              file=sys.stderr)
         return None
     label = f"Kommentar {poster} [{typ}]" if typ else f"Kommentar {poster}"
     return {

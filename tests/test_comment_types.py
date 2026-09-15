@@ -54,6 +54,45 @@ def test_draft_comment_without_header_keeps_whole_text(monkeypatch):
     assert d["title"] == "Kommentar Jae: Anna"
 
 
+class _SeqLLM(_FakeLLM):
+    """Liefert die Antworten der Reihe nach."""
+    def __init__(self, texts):
+        super().__init__("")
+        self.texts = list(texts)
+
+    def create(self, **kw):
+        self.text = self.texts.pop(0)
+        return super().create(**kw)
+
+
+LONG = ("Where it breaks down is when the prospect has done zero research beforehand "
+        "and walks in genuinely disoriented and confused about the whole thing.")
+
+
+def test_prompt_demands_plain_language_and_sentence_cap():
+    p = cd.COMMENT_PROMPT.format(voice="", context="", influencer="Anna", post_text="",
+                                 avoid="", max_words=cd.MAX_SENTENCE_WORDS)
+    assert "Hoechstens 20 Woerter je Satz" in p and "Jargon" in p
+
+
+def test_long_sentences_counts_words_per_sentence():
+    assert cd.long_sentences("Kurz. Auch kurz!") == []
+    assert cd.long_sentences(f"Kurz. {LONG}") == [LONG]
+
+
+def test_draft_comment_retries_once_on_long_sentence(monkeypatch):
+    fake = _SeqLLM([f"TYP: 4 x\n\n{LONG}", "TYP: 4 x\n\nKurz und klar."])
+    monkeypatch.setattr(cd, "_llm", fake)
+    d = cd.draft_comment(CFG, POST, "Jae")
+    assert d["comment"] == "Kurz und klar."
+    assert len(fake.prompts) == 2 and LONG in fake.prompts[1]
+
+
+def test_draft_comment_drops_draft_when_retry_still_too_long(monkeypatch):
+    monkeypatch.setattr(cd, "_llm", _SeqLLM([LONG, LONG]))
+    assert cd.draft_comment(CFG, POST, "Jae") is None
+
+
 def test_draft_comment_names_the_type_to_avoid(monkeypatch):
     fake = _FakeLLM("TYP: 2 Fehlender Fall\nANSATZ: x\n\nText.")
     monkeypatch.setattr(cd, "_llm", fake)
