@@ -211,12 +211,27 @@ def test_fetch_watchlist_posts_carries_title():
     assert posts[0]["title"] == "Co-Founder & CEO"
 
 
+def test_fetch_watchlist_posts_min_comments():
+    # Richard 16.09.2026: nur Posts vorschlagen, unter denen schon kommentiert wurde
+    items = [{"content": "wort " * 30, "linkedinUrl": url, "postedAt": "x",
+              "query": {"targetUrl": "u1"}, **({"engagement": eng} if eng is not None else {})}
+             for url, eng in [("p0", {"comments": 0}), ("p1", {"comments": 1}), ("pn", None)]]
+    client = MagicMock()
+    client.actor.return_value.call.return_value = {"defaultDatasetId": "d"}
+    client.dataset.return_value.iterate_items.return_value = items
+    row = {"linkedin_url": "u1", "first_name": "E", "last_name": "Y", "prio": "2"}
+    with patch.object(acd, "apify_client", MagicMock(return_value=client)), \
+         patch.object(acd, "parse_post_age_hours", MagicMock(return_value=5)):
+        assert [p["post_url"] for p in acd.fetch_watchlist_posts([row], {"min_comments": 1})] == ["p1"]
+        assert len(acd.fetch_watchlist_posts([row], {})) == 3
+
+
 def test_jolly_config_block():
     from clients.jolly import config as jolly
     s = jolly.ABM_COMMENT_DRAFTS
     assert s["day"] is None and s["drafts_total"] == 5 and s["poster"] == "Richard"
     assert s["relevance_gate"] is True and s["max_age_hours"] <= 36
-    assert s["max_posts_per_profile"] == 1
+    assert s["max_posts_per_profile"] == 1 and s["min_comments"] == 1
     assert any("lindner" in e for e in s["exclude_companies"])
     assert os.path.basename(s["watchlist_csv"]) == "abm_watchlist.csv"
 

@@ -96,6 +96,7 @@ def fetch_watchlist_posts(rows: list, settings: dict) -> list:
         return []
     max_age = settings.get("max_age_hours", 168)
     min_words = settings.get("min_words", 25)
+    min_comments = settings.get("min_comments", 0)
     client = apify_client()
     run = client.actor("harvestapi/linkedin-profile-posts").call(run_input={
         "targetUrls": list(by_url),
@@ -116,6 +117,9 @@ def fetch_watchlist_posts(rows: list, settings: dict) -> list:
         text = item.get("content", "") or ""
         url = item.get("linkedinUrl", "") or ""
         if not url or len(text.split()) < min_words:
+            continue
+        # Kommentarzahl zum Scrape-Zeitpunkt; fehlt das Feld, zaehlt es als 0
+        if int(((item.get("engagement") or {}).get("comments")) or 0) < min_comments:
             continue
         age = parse_post_age_hours(item.get("postedAt", ""))
         if age is None or age > max_age:
