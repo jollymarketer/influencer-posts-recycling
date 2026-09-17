@@ -215,7 +215,9 @@ def relevance_gate(posts: list, cfg, settings: dict) -> list:
     poster = settings.get("poster", "")
     kept = []
     for post in posts:
+        who = f"{post.get('influencer', '')[:30]} ({post.get('company', '')[:30]})"
         if is_hiring_ad(post["post_text"]):
+            print(f"    Gate raus: {who} - Stellenanzeige")
             continue
         prompt = GATE_PROMPT.format(poster=poster, name=post.get("influencer", ""),
                                     title=post.get("title", ""), company=post.get("company", ""),
@@ -231,8 +233,11 @@ def relevance_gate(posts: list, cfg, settings: dict) -> list:
         except Exception as e:
             print(f"    Gate-Fehler (Post uebersprungen): {e}", file=sys.stderr)
             continue
+        # Grund je Post ins Log (Richard 17.09.2026: 38 von 40 fielen ohne Beleg)
         if ok and score >= min_score:
             kept.append({**post, "relevance": score, "relevance_grund": grund, "ernst": ernst})
+        else:
+            print(f"    Gate raus: {who} - Score {score}, kommentierbar {ok}: {grund}")
     kept.sort(key=lambda p: (-p["relevance"], p["prio"] or "9", p["age_hours"]))
     return kept
 
