@@ -231,7 +231,7 @@ def test_jolly_config_block():
     s = jolly.ABM_COMMENT_DRAFTS
     assert s["day"] is None and s["drafts_total"] == 5 and s["poster"] == "Richard"
     assert s["relevance_gate"] is True and s["max_age_hours"] <= 36
-    assert s["max_posts_per_profile"] == 1 and s["min_comments"] == 1
+    assert s["max_posts_per_profile"] == 1 and s["min_comments"] == 0
     assert any("lindner" in e for e in s["exclude_companies"])
     assert os.path.basename(s["watchlist_csv"]) == "abm_watchlist.csv"
 

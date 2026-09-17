@@ -326,7 +326,7 @@ ABM_COMMENT_DRAFTS = {
     "max_posts_per_profile": 1,
     "max_age_hours": 30,
     "min_words": 40,
-    "min_comments": 1,         # nur Posts mit mind. einem Kommentar (Richard 16.09.2026)
+    "min_comments": 0,         # Filter aus (Richard 17.09.2026: 41 statt 73 Posts, 1 Entwurf/Tag zu wenig)
     "poster": "Richard",
     "author_dedup_days": 14,   # max 1 Kommentar je Person in 14 Tagen
     "per_domain_per_week": 2,
