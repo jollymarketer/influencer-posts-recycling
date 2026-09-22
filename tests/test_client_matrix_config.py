@@ -66,3 +66,25 @@ def test_comparison_subject_tokens_exist_in_both_configs():
     for cfg in (jolly, lisocon):
         assert cfg.TOKENS["COMPARISON_SUBJECT_DE"]
         assert cfg.TOKENS["COMPARISON_SUBJECT_EN"]
+
+
+def test_topic_fit_frage_deckt_alle_achsen():
+    """Der Achsen-Deckel kann nur wirken, wenn achsenfremde Posts ueberhaupt
+    topic_fit bekommen. Die Frage nennt deshalb jedes der acht Felder."""
+    from clients.jolly import config as jolly_config
+    frage = jolly_config.TOKENS["TOPIC_FIT_QUESTION"].lower()
+    for begriff in ("outbound", "revops", "positionierung", "sales-prozess",
+                    "enablement", "content", "bestandskunden", "ki im gtm"):
+        assert begriff in frage, f"{begriff} fehlt in TOPIC_FIT_QUESTION"
+
+
+def test_voc_block_erzwingt_keinen_rahmen_mehr():
+    """Die vier VoC-Rahmen bleiben Bewertungshilfe. Harte Regeln wortgleich."""
+    from clients.jolly import config as jolly_config
+    doc = jolly_config.CONTEXT  # VOC-Block steht in CONTEXT, nicht im Modul-Docstring
+    assert "bevorzugt in diesen Problem-Rahmen" not in doc
+    assert "kein Pflicht-Rahmen" in doc
+    assert 'NIE "Kaltakquise ist tot" schreiben' in doc
+    assert "US-Zahlen und Dollar-Betraege nie als DACH-Fakt" in doc
+    assert "NIE Anbieter- oder Agenturnamen nennen" in doc
+    assert 'BIG IDEA (Content-Franchise-Dach, traegt jeden Post): "Eine Ebene frueher."' in doc

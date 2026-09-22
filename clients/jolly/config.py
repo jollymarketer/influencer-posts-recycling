@@ -27,8 +27,9 @@ niedriger bewerten (topic_fit, recyclierbarkeit) und in generierten Posts nicht 
 Beilaeufige Erwaehnungen sind ok; grundsaetzlich tool-agnostisch bleiben.
 
 VOC-EVIDENZ (Run 1 2026-07, 157 verifizierte Praktiker-Zitate): die belegten Kaufprobleme des ICP.
-Posts, die auf eines davon einzahlen, bei topic_fit und icp_relevanz hoeher bewerten; generierte
-Posts bevorzugt in diesen Problem-Rahmen setzen:
+Sie sind Bewertungshilfe, kein Pflicht-Rahmen (Richard 22.09.2026): ein Post, der auf eines davon
+einzahlt, ist stark, aber ein konkreter Tipp aus einem anderen GTM-Feld ist nicht schwaecher und
+darf NICHT in einen dieser Rahmen gebogen werden. Die harten Regeln darunter gelten unveraendert:
 - Kaltakquise-Kollaps: mehr Sequenzen denn je, trotzdem weniger Termine; die Ursache liegt eine
   Ebene frueher (Targeting, Offer, Timing), nicht in der Copy. NIE "Kaltakquise ist tot" schreiben.
 - CRM-Datenfriedhof: Forecast und Realitaet laufen auseinander; das ist ein Prozess-Problem, kein
@@ -62,7 +63,7 @@ Praxis oder Annahme, NIE eine Person, ein Anbieter, eine Agentur oder ein benann
 TOKENS = {
     # --- Scoring ---
     "SCORING_ROLE": "Du bist Content-Stratege bei Jolly Marketer.",
-    "TOPIC_FIT_QUESTION": "Passt das Thema zu GTM, Outbound, RevOps, Pipeline, digitaler Neukundengewinnung, SaaS-Growth, Fractional CMO?",
+    "TOPIC_FIT_QUESTION": "Passt das Thema in eines dieser acht GTM-Felder: Outbound-Maschine (Sequenzen, Kanalmix, Deliverability, Listen, Trigger), Daten und RevOps (CRM, Forecast, Reporting, Stage-Definition), Positionierung und Angebot (ICP, Offer, Preis, Messaging), Sales-Prozess (Qualifizierung, Discovery, Buying Committee, Einwaende, Closing), Team und Enablement (erster Sales-Hire, Onboarding, Playbook, Training), Inbound und Content (LinkedIn, Content-Ops, SEO und AEO, Lead Magnets), Bestandskunden und Expansion (Onboarding, Retention, Account Management, Upsell), KI im GTM (AI SDR, Agenten, Recherche-Automatisierung, GTM Engineering)? Ein konkreter Tipp oder eine Anleitung aus einem dieser Felder zaehlt voll, auch ohne Strategie-Rahmen.",
     "ICP_RELEVANZ_QUESTION": "Wuerde ein Founder, CEO, Inhaber, CRO, CSO, VP Sales oder Head of Sales in einem B2B-SaaS/Tech-Unternehmen oder einer etablierten B2B-Firma ohne planbaren digitalen Akquise-Kanal (DACH) diesen Inhalt wollen?",
 
     # --- DE-Post-Prompt ---
