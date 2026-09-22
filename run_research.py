@@ -37,10 +37,13 @@ from tools.notion_db import (
     get_recent_boxes,
     get_recent_assets,
     get_recent_personas,
+    get_recent_axes,
     get_recent_hooks,
     create_post_entry,
     update_with_draft,
+    _patch_select_nonfatal,
 )
+from tools.axis_gate import axis_of, blocked_axes, free_candidates, pool_candidates
 from tools.hooks import HOOKS, load_steering, pick_hook
 from tools.topic_pool import get_meta
 from tools.linkedin_scraper import scrape_new_posts
@@ -80,7 +83,7 @@ from tools.image_archetypes import (
 )
 from tools.kieai_image import generate_image
 from tools.image_repair import repair_wrong_images
-from tools.supabase_db import upsert_posts
+from tools.supabase_db import get_posts_since, upsert_posts
 from tools.system_check import run_system_check
 from run_topic_mining import run_topic_mining
 from run_keyword_scrape import scrape_and_persist
@@ -219,11 +222,64 @@ def run_daily():
         print(f"  FEHLER beim Scoring: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Schritt 3.5: Achsen-Deckel. Jede Achse mit CAP Vorkommen im Fenster der
+    # letzten 10 Notion-Posts ist gesperrt (Spec 2026-09-22). Non-fatal: ohne
+    # Fenster laeuft der Tag wie vorher, ein leeres Fenster sperrt nichts.
+    gesperrt = set()
+    try:
+        recent_axes = get_recent_axes(10)
+        gesperrt = blocked_axes(recent_axes)
+        print(f"  Achsen zuletzt: {recent_axes}")
+        print(f"  Gesperrt: {sorted(gesperrt) or 'keine'}")
+    except Exception as e:
+        print(f"  Achsen-Fenster laden fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+
+    kandidaten = free_candidates(scored, gesperrt)
+    if gesperrt:
+        je_achse = {}
+        for p in scored:
+            key = axis_of(p) or "null"
+            je_achse[key] = je_achse.get(key, 0) + 1
+        print(f"  Kandidaten je Achse: {je_achse}, frei: {len(kandidaten)}/{len(scored)}")
+
+    # Schritt 3.6: Rueckgriff auf den Supabase-Pool, wenn der Deckel alles
+    # wegnimmt. Zieht bis zu 7 Tage alte Posts -- das Tagesfenster ist 6-36h.
+    # Bei jolly haengt kein Format an Aktualitaet, deshalb akzeptiert.
+    if not kandidaten:
+        print("  Deckel nimmt alle Tages-Kandidaten. Rueckgriff auf den Pool ...")
+        try:
+            rows = get_posts_since(7)
+            seen = set(existing_urls) | {p["post_url"] for p in new_posts}
+            pool = pool_candidates(rows, gesperrt, seen)
+            print(f"  Pool: {len(rows)} Zeilen, {len(pool)} nach Deckel und Dedup.")
+            if pool:
+                pool_posts = [{"post_url": r["post_url"],
+                               "post_text": r.get("post_text", ""),
+                               "post_excerpt": (r.get("post_text", "") or "")[:300],
+                               "influencer": r.get("influencer", ""),
+                               "date": f"{r.get('post_date') or ''}T00:00:00Z",
+                               "source": r.get("source", "linkedin"),
+                               "axis": r.get("axis"),
+                               "engagement": {"likes": r.get("likes", 0),
+                                              "comments": r.get("comments", 0),
+                                              "shares": r.get("shares", 0)}}
+                              for r in pool]
+                kandidaten = score_posts(pool_posts, recent_drafts=recent_drafts)
+                for p in kandidaten[:3]:
+                    print(f"  Pool [{p['score']}/{MAX_SCORE}] {p['influencer']}")
+        except Exception as e:
+            print(f"  Pool-Rueckgriff fehlgeschlagen (nicht kritisch): {e}", file=sys.stderr)
+
+    if not kandidaten:
+        print(f"\n  Kein Kandidat nach Achsen-Deckel (gesperrt: {sorted(gesperrt)}) "
+              f"und leerer Pool. Run beendet ohne Entwurf.")
+        return
+
     # Schritt 4: Winner waehlen
-    winner = scored[0] if scored and scored[0]["score"] >= MIN_SCORE else None
+    winner = kandidaten[0] if kandidaten[0]["score"] >= MIN_SCORE else None
     if not winner:
-        top_score = scored[0]["score"] if scored else 0
-        print(f"\n  Kein Post erreicht Mindest-Score {MIN_SCORE}/{MAX_SCORE} (bester: {top_score}). Run beendet.")
+        print(f"\n  Kein Post erreicht Mindest-Score {MIN_SCORE}/{MAX_SCORE} "
+              f"(bester: {kandidaten[0]['score']}). Run beendet.")
         return
 
     print(f"\nSchritt 4: Winner = {winner['influencer']} (Score: {winner['score']}/{MAX_SCORE})")
@@ -240,7 +296,7 @@ def run_daily():
     if target_box:
         print(f"  Pflicht-Box: {target_box[0]} x {target_box[1]}")
         box_formats = formats_for_box(target_box, _cfg)
-        eligible = [p for p in scored[:10] if p["score"] >= MIN_SCORE]
+        eligible = [p for p in kandidaten[:10] if p["score"] >= MIN_SCORE]
         best_idx = rank_box_fit(eligible, target_box, box_formats)
         if best_idx is None:
             print("  Kein Quell-Post traegt die Pflicht-Box (Fit < 6) - Defizit bleibt offen, freier Run.")
@@ -487,6 +543,10 @@ def run_daily():
             post_url=winner["post_url"],
             hook=hook_id,
         )
+        achse = axis_of(winner)
+        if achse:
+            _patch_select_nonfatal(page_id, "Achse", achse)
+            print(f"  Achse: {achse}")
         print(f"  Done: {winner['influencer']} -> {target_status}")
     except Exception as e:
         print(f"  FEHLER beim Notion-Speichern: {e}", file=sys.stderr)

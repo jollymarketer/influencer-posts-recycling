@@ -823,6 +823,12 @@ def get_recent_personas(limit: int = 2) -> list[str]:
     return _get_recent_select("Persona", limit)
 
 
+def get_recent_axes(limit: int = 10) -> list[str]:
+    """Themenachsen der letzten N Eintraege (Deckel: max 2 je Achse im
+    Fenster). Tolerant: fehlende Property -> []."""
+    return _get_recent_select("Achse", limit)
+
+
 def create_slate_entry(candidate: dict, matrix_prio: bool = False,
                        draft: dict | None = None) -> str:
     """Themenvorschlag-Zeile fuer den Slate-Modus (spec 2026-07-16, Amendment
