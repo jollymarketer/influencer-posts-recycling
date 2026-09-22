@@ -178,6 +178,56 @@ FEATURES = {
     "supabase_persist": True,   # Rohdaten fuer das woechentliche Blog-Topic-Mining
     "keyword_scrape": True,     # Donnerstag: Keyword-Scrape fuer Jolly-Blog-Themen
     "topic_mining": True,       # Freitag: Blog-Topic-Clustering
+    "axis_classifier": True,    # Haiku sortiert Profil-/Substack-Posts auf Themenachsen
+}
+
+# Themenachsen (Spec 2026-09-22, Keyword-Set von Richard freigegeben am
+# 22.09.2026). Herkunft fuer run_axis_scrape.py und Umkehrabbildung fuer den
+# Donnerstags-Keyword-Scrape. Einzige Wahrheit: run_keyword_scrape.JOLLY_KEYWORDS
+# leitet sich hieraus ab, nicht umgekehrt.
+#
+# Warum acht Achsen: die letzten 40 Drafts lagen mit 58 Prozent in drei
+# Themenbloecken (Pipeline/Forecast, Outbound, ICP), kein einziger war ein Tipp
+# oder eine Anleitung. Was nicht gescrapt wird, kann kein Thema werden.
+#
+# Bewusst KEINE Abo-Metriken (NRR, Churn, Expansion Revenue) und keine
+# US-SaaS-Org-Sprache (Compensation Plan, Ramp Time): Richards ICP umfasst
+# Tech-Services und Industrie-Mittelstand, die diese Begriffe nicht sprechen.
+KEYWORDS_BY_AXIS = {
+    "outbound_maschine": [
+        "cold email", "cold email deliverability", "email warmup", "intent data",
+        "outbound sequence", "sales sequence", "lead list building",
+        "multichannel outbound",
+    ],
+    "daten_und_revops": [
+        "revenue operations", "revops automation", "sales forecasting",
+        "crm hygiene", "pipeline review", "sales reporting", "deal stages",
+    ],
+    "positionierung_und_angebot": [
+        "ideal customer profile", "fractional cmo", "go-to-market strategy",
+        "account based marketing", "offer design", "b2b positioning", "b2b pricing",
+    ],
+    "sales_prozess": [
+        "buying committee", "sales discovery call", "sales qualification",
+        "objection handling", "b2b negotiation", "deal closing",
+    ],
+    "team_und_enablement": [
+        "first sales hire", "sales onboarding", "sales playbook",
+        "sales training b2b", "sales enablement", "sales hiring",
+    ],
+    "inbound_und_content": [
+        "b2b lead generation", "demand generation", "answer engine optimization",
+        "linkedin content strategy", "lead magnet", "b2b webinar",
+        "content operations",
+    ],
+    "bestand_und_expansion": [
+        "customer onboarding", "customer retention b2b", "account management b2b",
+        "key account management", "upsell cross-sell", "customer success playbook",
+    ],
+    "ki_im_gtm": [
+        "gtm engineering", "ai sdr", "ai personalization sales",
+        "ai agents sales", "ai lead research", "ai go to market",
+    ],
 }
 
 # Daily-Kadenz (Cron Mo-Fr): 24h-Pool, max 3 Posts/Profil, Filter 6-36h.

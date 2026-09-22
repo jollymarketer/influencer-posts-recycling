@@ -89,3 +89,55 @@ def test_missing_url_raises(monkeypatch):
     import pytest
     with pytest.raises(RuntimeError):
         supabase_db.upsert_posts([_post()], source="linkedin")
+
+
+def test_to_row_traegt_die_achse():
+    row = supabase_db._to_row(_post(), "linkedin_search", axis="ki_im_gtm")
+    assert row["axis"] == "ki_im_gtm"
+    assert row["axis_classified_at"]
+
+
+def test_to_row_ohne_achse_laesst_die_spalte_weg():
+    """Ein mitgeschicktes null wuerde unter resolution=merge-duplicates eine
+    schon klassifizierte Zeile beim naechsten Scrape wieder leeren."""
+    row = supabase_db._to_row(_post(), "linkedin")
+    assert "axis" not in row
+    assert "axis_classified_at" not in row
+
+
+def test_get_unclassified_filtert_auf_zeitstempel_nicht_auf_achse(monkeypatch):
+    """'Passt in keine Achse' ist axis=null MIT Zeitstempel und darf nicht in
+    jedem Lauf erneut bezahlt werden."""
+    monkeypatch.setenv("SUPABASE_URL", "https://db.example.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_KEY", "key")
+    resp = MagicMock(status_code=200)
+    resp.json.return_value = []
+    with patch("tools.supabase_db.requests.get", return_value=resp) as mock_get:
+        supabase_db.get_unclassified_posts(90, limit=7)
+    params = mock_get.call_args.kwargs["params"]
+    assert params["axis_classified_at"] == "is.null"
+    assert "axis" not in params
+    assert params["source"] == "in.(linkedin,substack)"
+    assert params["limit"] == "7"
+
+
+def test_set_axis_schreibt_none_mit_zeitstempel(monkeypatch):
+    monkeypatch.setenv("SUPABASE_URL", "https://db.example.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_KEY", "key")
+    resp = MagicMock(status_code=204)
+    with patch("tools.supabase_db.requests.patch", return_value=resp) as mock_patch:
+        supabase_db.set_axis("https://x.com/p/1", None)
+    body = mock_patch.call_args.kwargs["json"]
+    assert body["axis"] is None
+    assert body["axis_classified_at"]
+    assert mock_patch.call_args.kwargs["params"]["post_url"] == "eq.https://x.com/p/1"
+
+
+def test_axis_distribution_zaehlt_null_eigen(monkeypatch):
+    monkeypatch.setenv("SUPABASE_URL", "https://db.example.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_KEY", "key")
+    resp = MagicMock(status_code=200)
+    resp.json.return_value = [{"axis": "ki_im_gtm"}, {"axis": None}, {"axis": "ki_im_gtm"}]
+    with patch("tools.supabase_db.requests.get", return_value=resp):
+        out = supabase_db.axis_distribution(30)
+    assert out == {"ki_im_gtm": 2, "null": 1}

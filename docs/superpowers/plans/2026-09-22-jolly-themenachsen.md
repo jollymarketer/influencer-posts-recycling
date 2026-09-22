@@ -62,13 +62,15 @@ Richard bekommt exakt diese Tabelle im Chat. Bereits gelockte Begriffe sind unma
 | Achse | Begriffe |
 |---|---|
 | `outbound_maschine` | cold email, cold email deliverability, email warmup, intent data, outbound sequence (neu), sales sequence (neu), lead list building (neu), multichannel outbound (neu) |
-| `daten_und_revops` | revenue operations, revops automation, sales forecasting, crm hygiene (neu), pipeline review (neu), sales attribution (neu), deal stages (neu) |
+| `daten_und_revops` | revenue operations, revops automation, sales forecasting, crm hygiene (neu), pipeline review (neu), sales reporting (neu), deal stages (neu) |
 | `positionierung_und_angebot` | ideal customer profile, fractional cmo, go-to-market strategy, account based marketing, offer design (neu), b2b positioning (neu), b2b pricing (neu) |
 | `sales_prozess` | buying committee, sales discovery call (neu), sales qualification (neu), objection handling (neu), b2b negotiation (neu), deal closing (neu) |
-| `team_und_enablement` | first sales hire (neu), sales onboarding (neu), sales playbook (neu), sales compensation plan (neu), sales enablement (neu), sales ramp time (neu) |
+| `team_und_enablement` | first sales hire (neu), sales onboarding (neu), sales playbook (neu), sales training b2b (neu), sales enablement (neu), sales hiring (neu) |
 | `inbound_und_content` | b2b lead generation, demand generation, answer engine optimization, linkedin content strategy (neu), lead magnet (neu), b2b webinar (neu), content operations (neu) |
-| `bestand_und_expansion` | customer onboarding (neu), customer retention b2b (neu), upsell expansion revenue (neu), churn signals (neu), net revenue retention (neu), customer success playbook (neu) |
+| `bestand_und_expansion` | customer onboarding (neu), customer retention b2b (neu), account management b2b (neu), key account management (neu), upsell cross-sell (neu), customer success playbook (neu) |
 | `ki_im_gtm` | gtm engineering, ai sdr, ai personalization sales, ai agents sales (neu), ai lead research (neu), ai go to market (neu) |
+
+Freigegeben von Richard am 22.09.2026 mit drei Korrekturen gegenueber dem ersten Entwurf: keine Abo-Metriken (`net revenue retention`, `churn signals`, `upsell expansion revenue` raus), keine US-SaaS-Org-Sprache (`sales compensation plan`, `sales ramp time` raus), `sales attribution` durch das breitere `sales reporting` ersetzt. Grund: der ICP umfasst Tech-Services und Industrie-Mittelstand, die diese Begriffe nicht sprechen. Die Achse `bestand_und_expansion` bleibt, nur anders besetzt.
 
 - [ ] **Step 2: Failing test schreiben**
 
