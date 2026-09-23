@@ -184,10 +184,21 @@ def test_style_issues_flag_templates_and_topic_emoji():
     du_post = STYLE_POST["post_text"] + " Wie ist das bei dir?"
     for bad in ("Das stimmt, solange der Vertrieb mitzieht.", "Die meisten Teams merken das spät.",
                 "Anders gelesen: das ist Pipeline.", "Das ist kein Tool-Problem, sondern Führung.",
-                "Der Satz trifft es gut."):
+                "Der Satz trifft es gut.", "Der Agent klingt überzeugend, bis der Einkäufer kommt.",
+                "Das ist kein Führungsversagen, sondern ein Prozesszeichen.",
+                "Then the offer is broken, not the channel 😬"):
         assert any("Schablonensatz" in i for i in cd.style_issues(bad + " " + GOOD, du_post, STYLE)), bad
     for topic in ("💡", "🗺️"):
         assert any("Themen-Emoji" in i for i in cd.style_issues(GOOD.replace("📈", topic), du_post, STYLE)), topic
+    assert cd.style_issues(GOOD.replace("📈", "😅"), du_post, STYLE) == []
+
+
+def test_agreement_opener_only_in_first_sentence():
+    # Probelauf 2 (23.09.2026): "finde ich treffend" und "is right" als Einstieg
+    for first in ("Den Vergleich finde ich treffend.", "The instinct to listen more is right."):
+        assert cd.AGREEMENT_OPENER.search(first), first
+    assert not cd.AGREEMENT_OPENER.search("Kandidat zwölf hilft nicht, wenn das Profil fehlt.")
+    du_post = STYLE_POST["post_text"] + " Wie ist das bei dir?"
     assert cd.style_issues(GOOD.replace("📈", "😅"), du_post, STYLE) == []
 
 

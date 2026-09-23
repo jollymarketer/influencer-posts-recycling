@@ -71,9 +71,10 @@ HARTE REGELN
   Szene mit Rolle und Handlung (wer tut was, wann); eine andere Antwort auf die
   Frage des Autors. Allgemeine Weisheiten zaehlen nicht. Die Schlussfrage des
   Autors nie nur in eigene Worte fassen.
-- Keine Schablonensaetze: nicht "X stimmt, bis/solange ...", nicht "Das ist kein
-  X-Problem, sondern ...", nicht "Die meisten ...", nicht "Wer X, der Y", nicht
-  "Das ist der Moment/Schritt, der ...". Konkrete Rollen, Dinge und Handlungen
+- Keine Schablonensaetze: nicht "X stimmt/klingt gut, bis ...", nicht "kein X,
+  sondern Y", nicht "X, nicht Y", nicht "Die meisten ...", nicht "Wer X, der Y",
+  nicht "Das ist der Moment/Schritt, der ...". Der erste Satz stimmt nie nur zu
+  ("finde ich treffend", "is right"), er bringt schon den eigenen Gedanken. Konkrete Rollen, Dinge und Handlungen
   statt abstrakter Woerter wie Bedarf, Fundament, Wert oder Perspektive.
 - Niemals das eigene Produkt, den Firmennamen, eine Kundenreferenz, eine Zahl
   oder einen Link nennen. Kein Pitch, kein Angebot, kein Hinweis auf die eigene
@@ -189,21 +190,37 @@ def style_issues(text: str, post_text: str, style: dict) -> list[str]:
     generic = sorted(set(GENERIC_EMOJI) & set(text or ""))
     if generic:
         issues.append(f"Themen-Emoji {' '.join(generic)} ersetzen durch eines, das Stimmung traegt")
+    first = re.split(r"(?<=[.!?])\s+", (text or "").strip())[0]
+    if AGREEMENT_OPENER.search(first):
+        issues.append("Erster Satz stimmt nur zu: mit dem eigenen Gedanken einsteigen")
     return issues
 
 
 # Richard 23.09.2026: 27 ABM-Entwuerfe "blutleer, klingt nach KI". Gemessen, nicht
 # nur verboten: Schablonen aus den Typ-Beschreibungen, Aphorismen ueber "die
 # meisten", Themen-Emoji als Deko.
+# Probelauf 2 (23.09.): Abwandlungen rutschten durch ("klingt ueberzeugend, bis",
+# "kein Fuehrungsversagen, sondern", "the offer is broken, not the channel"),
+# daher Satzbau statt Einzelwort.
 TEMPLATE_PATTERNS = [re.compile(p, re.I) for p in (
-    r"\b(stimmt|gilt|funktioniert|hilft)\b[^.!?]{0,40}\b(bis|solange)\b",
-    r"\b(holds|works|stands)\b[^.!?]{0,40}\b(as long as|until)\b",
+    r"\b(stimmt|gilt|funktioniert|hilft|klingt|wirkt|passt)\b[^.!?]{0,40}\b(bis|solange)\b",
+    r"\b(holds|works|stands|sounds|looks)\b[^.!?]{0,40}\b(as long as|until)\b",
     r"\bdie meisten\b", r"\bmost (teams|people|companies|sales teams)\b",
-    r"\bkein [\w-]+-?problem\b[^.!?]{0,30}\b(sondern|das ist)\b",
+    r"\bkein(e|en|em|er)?\b[^.!?]{0,40}\bsondern\b",
     r"\bnot an? [\w-]+ problem\b", r"\banders gelesen\b",
+    r",\s+not\s+(the\s+|an?\s+)?[\w-]+\s*(?:[^\w\s,]|$)",
+    r",\s+nicht\s+(der|die|das|den|dem)\s+[\w-]+\s*(?:[^\w\s,]|$)",
     r"\bdas ist (der|genau der) (moment|schritt|punkt)\b",
     r"\btrifft es (gut|genau|auf den punkt)\b", r"\b(spot on|nails it)\b",
 )]
+# Zustimmung als Einstieg, nur im ersten Satz geprueft ("finde ich treffend",
+# "The instinct to listen more is right").
+AGREEMENT_OPENER = re.compile(
+    r"\b(finde ich [\w ]{0,20}(treffend|gut|richtig|stark|wichtig)"
+    r"|(ist|sind|war) (sehr |absolut |genau )?(treffend|richtig|zutreffend)"
+    r"|trifft (es|den)|stimmt (genau|voll|absolut)|kann ich (nur )?best(ae|ä)tigen"
+    r"|(is|are|was) (so |exactly |absolutely )?(right|true|spot on)"
+    r"|couldn'?t agree|i agree|agree with|this resonates|resonates)\b", re.I)
 GENERIC_EMOJI = "🔍💡🔄🧠🧭📋📉🎯🗺"
 
 VALUE_GATE_PROMPT = """Ein LinkedIn-Post und ein Kommentar darunter.
@@ -223,6 +240,9 @@ Autor nicht selbst geschrieben haette? Zaehlt: ein Test oder Handgriff, den ein
 Leser anwenden kann; eine konkrete Szene mit Rolle und Handlung; eine andere
 Antwort auf die Frage des Autors. Zaehlt nicht: Zustimmung, allgemeine Weisheit,
 Aphorismus, der Post oder seine Schlussfrage in anderen Worten.
+Beginnt der Kommentar mit Zustimmung oder Lob fuer den Post ("stimmt", "treffend",
+"is right"), oder baut er auf "nicht X, sondern Y" auf, lautet das Urteil NEIN,
+auch wenn danach ein Gedanke folgt.
 Erste Zeile nur JA oder NEIN. Zweite Zeile ein Satz Begruendung."""
 
 
