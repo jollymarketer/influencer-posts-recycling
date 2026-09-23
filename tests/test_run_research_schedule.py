@@ -16,7 +16,9 @@ MONDAY = dt.datetime(2026, 6, 8, tzinfo=dt.timezone.utc)     # weekday 0
 def _system_check_go():
     """Phase 0 telefoniert (Notion, Apify, Anthropic). Fuer die Scheduling-Tests
     steht sie auf GO; die Gate-Tests unten patchen sie erneut auf NO-GO."""
-    with patch.object(run_research, "run_system_check", return_value=True):
+    # 23.09.2026: ABM-Kommentare liefen hier ungemockt (live Apify + Notion)
+    with patch.object(run_research, "run_system_check", return_value=True), \
+         patch.object(run_research, "run_abm_comment_drafts"):
         yield
 
 

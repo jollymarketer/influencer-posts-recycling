@@ -64,6 +64,19 @@ def test_mining_filters_and_writes_top5():
 from datetime import datetime, timezone
 
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _no_live_side_jobs(monkeypatch):
+    # 23.09.2026: main() lief ungemockt durch Readback und ABM-Kommentare,
+    # ein pytest-Lauf scrapte live (Apify) und schrieb 6 Entwuerfe nach Notion
+    for name in ("run_readback", "run_abm_comment_drafts", "scrape_and_persist",
+                 "sync_topic_decisions"):
+        monkeypatch.setattr(run_research, name, MagicMock())
+    monkeypatch.setattr(run_research, "run_system_check", MagicMock(return_value=True))
+
+
 class _FixedDate(datetime):
     _wd = 0
     @classmethod
