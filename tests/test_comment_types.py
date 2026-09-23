@@ -183,9 +183,11 @@ def test_style_issues_flag_templates_and_topic_emoji():
     # Typ-Beschreibungen und Themen-Emoji als Deko fallen messbar auf.
     du_post = STYLE_POST["post_text"] + " Wie ist das bei dir?"
     for bad in ("Das stimmt, solange der Vertrieb mitzieht.", "Die meisten Teams merken das spät.",
-                "Anders gelesen: das ist Pipeline.", "Das ist kein Tool-Problem, sondern Führung."):
+                "Anders gelesen: das ist Pipeline.", "Das ist kein Tool-Problem, sondern Führung.",
+                "Der Satz trifft es gut."):
         assert any("Schablonensatz" in i for i in cd.style_issues(bad + " " + GOOD, du_post, STYLE)), bad
-    assert any("Themen-Emoji" in i for i in cd.style_issues(GOOD.replace("📈", "💡"), du_post, STYLE))
+    for topic in ("💡", "🗺️"):
+        assert any("Themen-Emoji" in i for i in cd.style_issues(GOOD.replace("📈", topic), du_post, STYLE)), topic
     assert cd.style_issues(GOOD.replace("📈", "😅"), du_post, STYLE) == []
 
 
@@ -200,3 +202,12 @@ def test_value_gate_retries_then_drops(monkeypatch):
     monkeypatch.setattr(cd, "_llm", _SeqLLM([f"TYP: 4 x\n\n{GOOD}", "NEIN\nx",
                                              f"TYP: 4 x\n\n{GOOD}", "vielleicht"]))
     assert cd.draft_comment(jolly, du_post, "Richard") is None
+
+
+def test_retries_setting_allows_second_retry(monkeypatch):
+    # Richard 23.09.2026: ein Nachversuch warf 9 von 17 Entwuerfen weg
+    jolly = SimpleNamespace(**vars(CFG), COMMENT_STYLE=dict(STYLE, retries=2))
+    du_post = dict(STYLE_POST, post_text=STYLE_POST["post_text"] + " Wie ist das bei dir?")
+    fake = _SeqLLM([f"TYP: 4 x\n\n{LONG}", f"TYP: 4 x\n\n{LONG}", f"TYP: 4 x\n\n{GOOD}"])
+    monkeypatch.setattr(cd, "_llm", fake)
+    assert cd.draft_comment(jolly, du_post, "Richard")["comment"] == GOOD

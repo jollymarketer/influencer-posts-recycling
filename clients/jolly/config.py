@@ -366,8 +366,9 @@ COMMENT_STYLE = {
     "banned_types": ["Der Beleg", "Der Einzeiler"],
     "brand_words": ["Jolly"],
     # Richard 23.09.2026: Entwuerfe ohne eigenen Gedanken ("blutleer") fallen
-    # nach einem Nachversuch weg, Urteil per LLM-Leser (value_gate)
+    # nach den Nachversuchen weg, Urteil per LLM-Leser (value_gate)
     "value_gate": True,
+    "retries": 2,              # Nachversuche bei Verstoessen, Default 1 (Richard 23.09.2026)
 }
 
 ABM_COMMENT_DRAFTS = {

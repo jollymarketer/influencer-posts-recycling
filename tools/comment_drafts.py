@@ -202,8 +202,9 @@ TEMPLATE_PATTERNS = [re.compile(p, re.I) for p in (
     r"\bkein [\w-]+-?problem\b[^.!?]{0,30}\b(sondern|das ist)\b",
     r"\bnot an? [\w-]+ problem\b", r"\banders gelesen\b",
     r"\bdas ist (der|genau der) (moment|schritt|punkt)\b",
+    r"\btrifft es (gut|genau|auf den punkt)\b", r"\b(spot on|nails it)\b",
 )]
-GENERIC_EMOJI = "🔍💡🔄🧠🧭📋📉🎯"
+GENERIC_EMOJI = "🔍💡🔄🧠🧭📋📉🎯🗺"
 
 VALUE_GATE_PROMPT = """Ein LinkedIn-Post und ein Kommentar darunter.
 
@@ -426,7 +427,8 @@ def draft_comment(cfg, post: dict, poster: str,
         max_words=MAX_SENTENCE_WORDS,
         emoji_rule=EMOJI_ON if getattr(cfg, "COMMENT_EMOJI", False) else EMOJI_OFF,
     )
-    for attempt in range(2):
+    # Richard 23.09.2026: ein Nachversuch warf 9 von 17 Entwuerfen an Formregeln weg
+    for attempt in range(1 + (style or {}).get("retries", 1)):
         resp = _llm.messages.create(model=COMMENT_MODEL, max_tokens=600,
                                     messages=[{"role": "user", "content": prompt}])
         typ, angle, comment = _split_header(resp.content[0].text)
