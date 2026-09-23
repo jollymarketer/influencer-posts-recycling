@@ -66,6 +66,15 @@ HARTE REGELN
 - Ein eigener konkreter Gedanke aus der Praxis, den der Post NICHT enthaelt.
   Zustimmung allein ist wertlos, Widerspruch ohne Substanz auch. Den Post nie
   nacherzaehlen. Ein Gedanke, nicht zwei.
+- Mehrwert-Test: Der Kommentar enthaelt mindestens eines davon, das im Post fehlt:
+  einen Test oder Handgriff, den ein Leser morgen anwenden kann; eine konkrete
+  Szene mit Rolle und Handlung (wer tut was, wann); eine andere Antwort auf die
+  Frage des Autors. Allgemeine Weisheiten zaehlen nicht. Die Schlussfrage des
+  Autors nie nur in eigene Worte fassen.
+- Keine Schablonensaetze: nicht "X stimmt, bis/solange ...", nicht "Das ist kein
+  X-Problem, sondern ...", nicht "Die meisten ...", nicht "Wer X, der Y", nicht
+  "Das ist der Moment/Schritt, der ...". Konkrete Rollen, Dinge und Handlungen
+  statt abstrakter Woerter wie Bedarf, Fundament, Wert oder Perspektive.
 - Niemals das eigene Produkt, den Firmennamen, eine Kundenreferenz, eine Zahl
   oder einen Link nennen. Kein Pitch, kein Angebot, kein Hinweis auf die eigene
   Website. Kein "bei uns sehen wir das so".
@@ -95,13 +104,15 @@ _AVOID_NOTE = ("\n\nNICHT diesen Typ, in diesem Lauf schon verwendet: {types}. "
 # den Notion-Titeln alter Entwuerfe.
 COMMENT_TYPES = [
     (1, "Das Datum", "eine eigene Beobachtung, die den Punkt des Posts stützt oder relativiert."),
-    (2, "Fehlender Fall", 'die Grenze der Aussage benennen. "Das gilt, bis ... Dann ..."'),
+    # Richard 23.09.2026: die woertlichen Satzmuster in Typ 2 und 8 landeten als
+    # Schablone in fast jedem Entwurf ("stimmt, bis", "Anders gelesen:").
+    (2, "Fehlender Fall", "die Grenze der Aussage an einem konkreten Fall zeigen, in dem sie nicht mehr gilt."),
     (3, "Widerspruch mit Substanz", "erst der Teil, der stimmt, dann die Gabelung."),
     (4, "Eine Zeile weiterbauen", "eine Zeile des Posts wörtlich aufgreifen und daran weiterdenken."),
     (5, "Die echte Frage", 'eine Frage, deren Antwort den Autor weiterbringt. Nie "würde mich interessieren".'),
     (6, "Der Beleg", "du hast das selbst erlebt; zwei Sätze, was dabei passiert ist, ohne Firma und ohne Zahl."),
     (7, "Die Korrektur", "ein sachlicher Fehler im Post. Richtig, kurz, freundlich, nur wenn du sicher bist."),
-    (8, "Der Reframe", '"Anders gelesen:" derselbe Sachverhalt aus einer anderen Perspektive.'),
+    (8, "Der Reframe", "derselbe Sachverhalt aus Sicht einer anderen Rolle, etwa Käufer statt Anbieter."),
     (9, "Der Einzeiler", "unter zwölf Wörtern, treffend oder witzig."),
 ]
 LENGTH_RULE_DEFAULT = "2 bis 4 Saetze, nie laenger."
@@ -172,7 +183,59 @@ def style_issues(text: str, post_text: str, style: dict) -> list[str]:
     post_words = {w.lower() for w in re.findall(r"\w{6,}", post_text or "")}
     if not post_words & {w.lower() for w in re.findall(r"\w{6,}", text or "")}:
         issues.append("Kein konkretes Detail aus dem Post aufgegriffen")
+    templates = [m.group(0) for p in TEMPLATE_PATTERNS for m in [p.search(text or "")] if m]
+    if templates:
+        issues.append(f"Schablonensatz umschreiben: {', '.join(templates)}")
+    generic = sorted(set(GENERIC_EMOJI) & set(text or ""))
+    if generic:
+        issues.append(f"Themen-Emoji {' '.join(generic)} ersetzen durch eines, das Stimmung traegt")
     return issues
+
+
+# Richard 23.09.2026: 27 ABM-Entwuerfe "blutleer, klingt nach KI". Gemessen, nicht
+# nur verboten: Schablonen aus den Typ-Beschreibungen, Aphorismen ueber "die
+# meisten", Themen-Emoji als Deko.
+TEMPLATE_PATTERNS = [re.compile(p, re.I) for p in (
+    r"\b(stimmt|gilt|funktioniert|hilft)\b[^.!?]{0,40}\b(bis|solange)\b",
+    r"\b(holds|works|stands)\b[^.!?]{0,40}\b(as long as|until)\b",
+    r"\bdie meisten\b", r"\bmost (teams|people|companies|sales teams)\b",
+    r"\bkein [\w-]+-?problem\b[^.!?]{0,30}\b(sondern|das ist)\b",
+    r"\bnot an? [\w-]+ problem\b", r"\banders gelesen\b",
+    r"\bdas ist (der|genau der) (moment|schritt|punkt)\b",
+)]
+GENERIC_EMOJI = "🔍💡🔄🧠🧭📋📉🎯"
+
+VALUE_GATE_PROMPT = """Ein LinkedIn-Post und ein Kommentar darunter.
+
+POST
+---
+{post_text}
+---
+
+KOMMENTAR
+---
+{comment}
+---
+
+Enthaelt der Kommentar einen konkreten Gedanken, der im Post fehlt und den der
+Autor nicht selbst geschrieben haette? Zaehlt: ein Test oder Handgriff, den ein
+Leser anwenden kann; eine konkrete Szene mit Rolle und Handlung; eine andere
+Antwort auf die Frage des Autors. Zaehlt nicht: Zustimmung, allgemeine Weisheit,
+Aphorismus, der Post oder seine Schlussfrage in anderen Worten.
+Erste Zeile nur JA oder NEIN. Zweite Zeile ein Satz Begruendung."""
+
+
+def value_gate(comment: str, post_text: str) -> str | None:
+    """Leser-Gate nach der Generierung: None bei JA, sonst der Befund.
+    Unlesbares Urteil zaehlt als NEIN (fail-closed)."""
+    resp = _llm.messages.create(model=COMMENT_MODEL, max_tokens=150, messages=[{
+        "role": "user",
+        "content": VALUE_GATE_PROMPT.format(post_text=post_text[:4000], comment=comment)}])
+    lines = resp.content[0].text.strip().splitlines() or [""]
+    if lines[0].strip().upper().startswith("JA"):
+        return None
+    reason = " ".join(l.strip() for l in lines[1:]).strip() or "kein Urteil"
+    return f"Kein eigener Mehrwert gegenueber dem Post: {reason}"
 
 # Verstaendlichkeit (Richard 15.09.2026, Kommentar Truempi "zu kompliziert"):
 # Satzlaenge und Emoji werden gemessen statt nur verlangt. Ein Nachversuch mit
@@ -313,7 +376,8 @@ def long_sentences(text: str, max_words: int = MAX_SENTENCE_WORDS) -> list[str]:
 _EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⭐⭕⌚-⏿]")
 EMOJI_ON = ("Genau ein Emoji, das zum Inhalt passt, am Ende eines Satzes oder am Schluss, "
             "kein Emoji als erstes Zeichen. Wähle es nach dem Inhalt des Kommentars, nicht "
-            "aus Gewohnheit (nicht standardmäßig 🎯).")
+            "aus Gewohnheit (nicht standardmäßig 🎯). Das Emoji trägt Stimmung wie "
+            "Augenzwinkern oder Seufzen, kein Themen-Symbol wie 🔍 💡 🔄 🧠.")
 EMOJI_OFF = "Keine Emojis, kein Emoji als erstes Zeichen."
 
 
@@ -371,6 +435,11 @@ def draft_comment(cfg, post: dict, poster: str,
         issues = comment_issues(comment, emoji=getattr(cfg, "COMMENT_EMOJI", False))
         if style:
             issues += style_issues(comment, post["post_text"], style)
+        # Mehrwert-Urteil nur fuer einen sonst sauberen Entwurf, spart den Call
+        if style and style.get("value_gate") and not issues:
+            verdict = value_gate(comment, post["post_text"])
+            if verdict:
+                issues.append(verdict)
         if not issues:
             break
         prompt += _RETRY_NOTE.format(issues="\n".join(f"- {s}" for s in issues))

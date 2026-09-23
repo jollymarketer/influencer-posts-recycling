@@ -176,3 +176,27 @@ def test_draft_comment_names_the_type_to_avoid(monkeypatch):
     assert "6 Der Beleg" in fake.prompts[0] and "NICHT" in fake.prompts[0]
     cd.draft_comment(CFG, POST, "Jae")
     assert "NICHT diesen Typ" not in fake.prompts[1]
+
+
+def test_style_issues_flag_templates_and_topic_emoji():
+    # Richard 23.09.2026: "blutleer, klingt nach KI". Schablonen aus den alten
+    # Typ-Beschreibungen und Themen-Emoji als Deko fallen messbar auf.
+    du_post = STYLE_POST["post_text"] + " Wie ist das bei dir?"
+    for bad in ("Das stimmt, solange der Vertrieb mitzieht.", "Die meisten Teams merken das spät.",
+                "Anders gelesen: das ist Pipeline.", "Das ist kein Tool-Problem, sondern Führung."):
+        assert any("Schablonensatz" in i for i in cd.style_issues(bad + " " + GOOD, du_post, STYLE)), bad
+    assert any("Themen-Emoji" in i for i in cd.style_issues(GOOD.replace("📈", "💡"), du_post, STYLE))
+    assert cd.style_issues(GOOD.replace("📈", "😅"), du_post, STYLE) == []
+
+
+def test_value_gate_retries_then_drops(monkeypatch):
+    jolly = SimpleNamespace(**vars(CFG), COMMENT_STYLE=dict(STYLE, value_gate=True))
+    du_post = dict(STYLE_POST, post_text=STYLE_POST["post_text"] + " Wie ist das bei dir?")
+    fake = _SeqLLM([f"TYP: 4 x\n\n{GOOD}", "NEIN\nNur Zustimmung.",
+                    f"TYP: 4 x\n\n{GOOD}", "JA\nKonkreter Test."])
+    monkeypatch.setattr(cd, "_llm", fake)
+    assert cd.draft_comment(jolly, du_post, "Richard")["comment"] == GOOD
+    assert "Nur Zustimmung." in fake.prompts[2]
+    monkeypatch.setattr(cd, "_llm", _SeqLLM([f"TYP: 4 x\n\n{GOOD}", "NEIN\nx",
+                                             f"TYP: 4 x\n\n{GOOD}", "vielleicht"]))
+    assert cd.draft_comment(jolly, du_post, "Richard") is None
