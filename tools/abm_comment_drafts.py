@@ -264,12 +264,14 @@ def apply_caps(posts: list, log: list, now, settings: dict) -> list:
         if len(picked) >= total:
             break
         if post["author_url"] in blocked_authors:
+            print(f"    Cap raus: {post.get('influencer', '')[:30]} - Person schon in {author_days} Tagen kommentiert")
             continue
         # Ohne Domain (Jolly-Watchlist, 14.09.2026) gibt es keinen Firmen-
         # Deckel: sonst zaehlten alle domainlosen Posts als EINE Firma und
         # der Lauf endete nach zwei Entwuerfen (Livetest 14.09.).
         domain = post.get("domain") or ""
         if domain and domain_counts.get(domain, 0) >= domain_cap:
+            print(f"    Cap raus: {post.get('influencer', '')[:30]} - Firma {domain} hat {domain_cap} in 7 Tagen")
             continue
         picked.append(post)
         blocked_authors.add(post["author_url"])

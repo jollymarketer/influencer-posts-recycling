@@ -387,7 +387,7 @@ ABM_COMMENT_DRAFTS = {
     "per_domain_per_week": 2,
     "drafts_total": 5,         # Richards Tagesbudget, von Hand zu posten (15.09.2026: 3 -> 5)
     "relevance_gate": True,
-    "min_relevance": 6,
+    "min_relevance": 5,        # Richard 25.09.2026: bei 6 an zwei Tagen 0 Entwuerfe (4 von 46 durchs Gate)
     "exclude_companies": ["lindner software", "in2go", "swot controlling", "fynbiz",
                           "compeon", "nutrix", "jolly marketer"],
 }

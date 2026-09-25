@@ -453,6 +453,8 @@ def draft_comment(cfg, post: dict, poster: str,
                                     messages=[{"role": "user", "content": prompt}])
         typ, angle, comment = _split_header(resp.content[0].text)
         if not comment:
+            print(f"    Kommentar verworfen (leere Modellantwort): {post.get('post_url', '')[:60]}",
+                  file=sys.stderr)
             return None
         issues = comment_issues(comment, emoji=getattr(cfg, "COMMENT_EMOJI", False))
         if style:
