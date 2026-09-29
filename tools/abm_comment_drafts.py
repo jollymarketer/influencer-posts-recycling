@@ -208,10 +208,13 @@ def relevance_gate(posts: list, cfg, settings: dict) -> list:
     """Nur mit settings["relevance_gate"]: Stellenanzeigen fallen ohne
     Modellaufruf, den Rest bewertet Haiku (GATE_PROMPT). Es bleiben Posts mit
     kommentierbar=true und Score >= min_relevance, absteigend nach Score,
-    bei Gleichstand nach Prio und Alter. Ohne Gate: Liste unveraendert."""
+    bei Gleichstand nach Prio und Alter. Mit fallback_min_relevance bleiben
+    auch Posts ab diesem Score als Reserve (relevance < min_relevance), die
+    der Lauf nur bis fallback_min_drafts nutzt. Ohne Gate: Liste unveraendert."""
     if not settings.get("relevance_gate"):
         return posts
     min_score = int(settings.get("min_relevance", 6))
+    floor = min(min_score, int(settings.get("fallback_min_relevance", min_score)))
     poster = settings.get("poster", "")
     kept = []
     for post in posts:
@@ -234,8 +237,10 @@ def relevance_gate(posts: list, cfg, settings: dict) -> list:
             print(f"    Gate-Fehler (Post uebersprungen): {e}", file=sys.stderr)
             continue
         # Grund je Post ins Log (Richard 17.09.2026: 38 von 40 fielen ohne Beleg)
-        if ok and score >= min_score:
+        if ok and score >= floor:
             kept.append({**post, "relevance": score, "relevance_grund": grund, "ernst": ernst})
+            if score < min_score:
+                print(f"    Gate Reserve: {who} - Score {score}: {grund}")
         else:
             print(f"    Gate raus: {who} - Score {score}, kommentierbar {ok}: {grund}")
     kept.sort(key=lambda p: (-p["relevance"], p["prio"] or "9", p["age_hours"]))
@@ -321,8 +326,11 @@ def run_abm_comment_drafts(cfg=None, now=None) -> int:
     posts = [p for p in fetch_watchlist_posts(rows, settings) if p["post_url"] not in done]
     print(f"  {len(rows)} Watchlist-Profile gescrapt, {len(posts)} frische Posts.")
     posts = relevance_gate(posts, cfg, settings)
+    min_score = int(settings.get("min_relevance", 6))
+    fallback_drafts = int(settings.get("fallback_min_drafts", 0))
     if settings.get("relevance_gate"):
-        print(f"  Relevanz-Gate: {len(posts)} kommentierbar.")
+        reserve = sum(1 for p in posts if p["relevance"] < min_score)
+        print(f"  Relevanz-Gate: {len(posts) - reserve} kommentierbar, {reserve} Reserve.")
 
     try:
         set_meta(meta_key, week)
@@ -332,6 +340,10 @@ def run_abm_comment_drafts(cfg=None, now=None) -> int:
     poster = settings.get("poster", "Reinhard")
     written, used_types = 0, []
     for post in apply_caps(posts, log, now, settings):
+        # Reserve-Posts (unter min_relevance) nur, solange der Lauf unter
+        # fallback_min_drafts liegt; die Liste ist nach Score sortiert.
+        if post.get("relevance", min_score) < min_score and written >= fallback_drafts:
+            break
         try:
             draft = draft_comment(cfg, post, poster, avoid_types=used_types[-1:])
             if not draft:

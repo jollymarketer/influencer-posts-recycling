@@ -138,6 +138,41 @@ def test_relevance_gate_drops_hiring_low_scores_and_unparseable():
     assert acd.relevance_gate(posts, _cfg(), {"relevance_gate": False}) == posts
 
 
+def test_fallback_fills_up_to_min_drafts_with_reserve_posts():
+    # Richard 29.09.2026: Entwuerfe jeden Wochentag. Score-4-Posts als Reserve,
+    # aber nur bis fallback_min_drafts, und nie vor einem Score-5+-Post.
+    posts = [_post(f"p{i}", author=f"a{i}") for i in range(4)]
+    scores = iter([4, 5, 4, 4])
+
+    class Gate(_FakeGate):
+        def create(self, **kw):
+            self.text = '{"kommentierbar": true, "score": %d, "grund": "g"}' % next(scores)
+            return super().create(**kw)
+
+    cfg = _cfg(min_relevance=5, fallback_min_relevance=4, fallback_min_drafts=2, drafts_total=5)
+    ctx, m = _patch(fetch_watchlist_posts=MagicMock(return_value=posts),
+                    _gate_client=MagicMock(return_value=Gate("")))
+    with ctx:
+        assert acd.run_abm_comment_drafts(cfg, MON) == 2
+    urls = [c.args[1]["post_url"] for c in m["draft_comment"].call_args_list]
+    assert urls == ["p1", "p0"]
+
+
+def test_fallback_counts_failed_drafts_and_stays_off_without_setting():
+    posts = [_post(f"p{i}", author=f"a{i}") for i in range(3)]
+    low = MagicMock(return_value=_FakeGate('{"kommentierbar": true, "score": 4, "grund": "g"}'))
+    # Erster Reserve-Entwurf scheitert an der Qualitaetspruefung: zwei weitere versuchen
+    ctx, m = _patch(fetch_watchlist_posts=MagicMock(return_value=posts), _gate_client=low,
+                    draft_comment=MagicMock(side_effect=[None, {"title": "t", "typ": ""},
+                                                         {"title": "t", "typ": ""}]))
+    with ctx:
+        cfg = _cfg(min_relevance=5, fallback_min_relevance=4, fallback_min_drafts=2)
+        assert acd.run_abm_comment_drafts(cfg, MON) == 2
+    ctx, m = _patch(fetch_watchlist_posts=MagicMock(return_value=posts), _gate_client=low)
+    with ctx:
+        assert acd.run_abm_comment_drafts(_cfg(min_relevance=5), MON) == 0
+
+
 def test_domain_cap_ignores_rows_without_domain():
     # Livetest 14.09.2026: drei domainlose Posts, nur zwei Entwuerfe, weil ""
     # als eine Firma zaehlte.
